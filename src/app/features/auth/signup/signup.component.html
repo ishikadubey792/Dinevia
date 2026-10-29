@@ -1,0 +1,256 @@
+<app-navbar></app-navbar>
+
+<main class="auth-page" role="main">
+  <div class="container auth-container">
+    <div class="auth-card signup-card">
+      <!-- Brand & Header -->
+      <div class="auth-card-header">
+        <span class="auth-eyebrow">Gastronomic Membership</span>
+        <h1 class="auth-title">Create Your Account</h1>
+        <p class="auth-subtitle">
+          Join an exclusive network of diners securing verified reservations across Michelin-starred sanctuaries and trending culinary destinations.
+        </p>
+      </div>
+
+      <!-- Demo Simulation Notice -->
+      <div class="demo-notice-pill" role="note">
+        <span class="notice-icon">✦</span>
+        <div class="notice-text">
+          <strong>Demo Registration:</strong> Account creation is simulated for frontend UI demonstration. No backend database modifications will occur.
+        </div>
+      </div>
+
+      <!-- Feedback Alerts -->
+      @if (errorMessage()) {
+        <div class="alert-box alert-error" role="alert">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      @if (successMessage()) {
+        <div class="alert-box alert-success" role="status">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          <span>{{ successMessage() }}</span>
+        </div>
+      }
+
+      <!-- Signup Form -->
+      <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+        <!-- Full Name Field -->
+        <div class="form-group">
+          <label for="signupName" class="form-label">
+            <span>Full Legal Name</span>
+            <span class="required-star">*</span>
+          </label>
+          <div class="input-wrapper" [class.input-invalid]="isFieldInvalid('fullName')">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+            </svg>
+            <input 
+              type="text" 
+              id="signupName" 
+              formControlName="fullName"
+              placeholder="e.g. Lorde Evelyn Wright"
+              class="auth-input"
+              autocomplete="name"
+            />
+          </div>
+          @if (isFieldInvalid('fullName')) {
+            <span class="error-hint">Please enter your full name (at least 2 characters).</span>
+          }
+        </div>
+
+        <!-- Email & Phone in 2-Columns on Desktop -->
+        <div class="form-grid-2">
+          <!-- Email Field -->
+          <div class="form-group">
+            <label for="signupEmail" class="form-label">
+              <span>Email Address</span>
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper" [class.input-invalid]="isFieldInvalid('email')">
+              <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>
+              <input 
+                type="email" 
+                id="signupEmail" 
+                formControlName="email"
+                placeholder="e.g. evelyn@example.com"
+                class="auth-input"
+                autocomplete="email"
+              />
+            </div>
+            @if (isFieldInvalid('email')) {
+              <span class="error-hint">Please enter a valid email address.</span>
+            }
+          </div>
+
+          <!-- Phone Number Field -->
+          <div class="form-group">
+            <label for="signupPhone" class="form-label">
+              <span>Mobile Phone</span>
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper" [class.input-invalid]="isFieldInvalid('phone')">
+              <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
+                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 4V3z" />
+              </svg>
+              <input 
+                type="tel" 
+                id="signupPhone" 
+                formControlName="phone"
+                placeholder="+1 (555) 234-5678"
+                class="auth-input"
+                autocomplete="tel"
+              />
+            </div>
+            @if (isFieldInvalid('phone')) {
+              <span class="error-hint">Please enter a valid telephone number.</span>
+            }
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <label for="signupPassword" class="form-label">
+            <span>Password</span>
+            <span class="required-star">*</span>
+          </label>
+          <div class="input-wrapper" [class.input-invalid]="isFieldInvalid('password')">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+            </svg>
+            <input 
+              [type]="isPasswordVisible() ? 'text' : 'password'" 
+              id="signupPassword" 
+              formControlName="password"
+              placeholder="Minimum 8 characters with numbers & symbols"
+              class="auth-input has-toggle"
+              autocomplete="new-password"
+            />
+            <button 
+              type="button" 
+              class="password-toggle-btn"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="isPasswordVisible() ? 'Hide password' : 'Show password'">
+              @if (isPasswordVisible()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon" aria-hidden="true">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon" aria-hidden="true">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              }
+            </button>
+          </div>
+
+          <!-- Password Strength Indicator -->
+          @if (signupForm.get('password')?.value) {
+            <div class="strength-meter-wrap">
+              <div class="meter-bars">
+                <span class="bar" [class.filled]="passwordStrength().score >= 1" [class]="passwordStrength().class"></span>
+                <span class="bar" [class.filled]="passwordStrength().score >= 2" [class]="passwordStrength().class"></span>
+                <span class="bar" [class.filled]="passwordStrength().score >= 3" [class]="passwordStrength().class"></span>
+                <span class="bar" [class.filled]="passwordStrength().score >= 4" [class]="passwordStrength().class"></span>
+              </div>
+              <span class="strength-label">Password Strength: <strong>{{ passwordStrength().label }}</strong></span>
+            </div>
+          }
+          @if (isFieldInvalid('password')) {
+            <span class="error-hint">Password must be at least 8 characters.</span>
+          }
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="form-group">
+          <label for="signupConfirmPassword" class="form-label">
+            <span>Confirm Password</span>
+            <span class="required-star">*</span>
+          </label>
+          <div class="input-wrapper" [class.input-invalid]="isFieldInvalid('confirmPassword') || hasPasswordMismatch()">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
+              <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <input 
+              [type]="isConfirmPasswordVisible() ? 'text' : 'password'" 
+              id="signupConfirmPassword" 
+              formControlName="confirmPassword"
+              placeholder="Re-enter your password"
+              class="auth-input has-toggle"
+              autocomplete="new-password"
+            />
+            <button 
+              type="button" 
+              class="password-toggle-btn"
+              (click)="toggleConfirmPasswordVisibility()"
+              [attr.aria-label]="isConfirmPasswordVisible() ? 'Hide password' : 'Show password'">
+              @if (isConfirmPasswordVisible()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon" aria-hidden="true">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon" aria-hidden="true">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              }
+            </button>
+          </div>
+          @if (hasPasswordMismatch()) {
+            <span class="error-hint">Passwords do not match.</span>
+          }
+        </div>
+
+        <!-- Terms and Conditions Checkbox -->
+        <div class="terms-row">
+          <label class="checkbox-container">
+            <input type="checkbox" formControlName="agreeTerms" class="custom-checkbox" />
+            <span class="checkbox-label">
+              I agree to Dinevia's <strong>Member Hospitality Charter</strong> and <strong>Privacy Policies</strong>.
+            </span>
+          </label>
+          @if (isFieldInvalid('agreeTerms')) {
+            <span class="error-hint">You must accept the terms to create an account.</span>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          [disabled]="isLoading()"
+          class="btn btn-terracotta btn-lg auth-submit-btn">
+          @if (!isLoading()) {
+            <span>Create Complimentary Membership</span>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          } @else {
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Initializing Member Profile...</span>
+          }
+        </button>
+      </form>
+
+      <!-- Bottom Card Switcher -->
+      <div class="auth-card-footer">
+        <p class="footer-text">
+          <span>Already have a Dinevia account?</span>
+          <a routerLink="/login" class="footer-action-link">Log In</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

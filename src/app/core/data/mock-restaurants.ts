@@ -18,7 +18,23 @@ export const MOCK_RESTAURANTS: Restaurant[] = [
     description: 'An intimate dining sanctuary pairing aged truffles, heritage flour pastas, and cellar treasures curated by master sommelier Elena Rossi.',
     availableSlots: ['6:00 PM', '7:30 PM', '8:45 PM', '9:15 PM'],
     highlights: ['Chef’s Tasting Table', 'Private Wine Vault', 'Valet Parking'],
-    dressCode: 'Smart Elegant'
+    dressCode: 'Smart Elegant',
+    chefName: 'Elena & Matteo Rossi',
+    phone: '+1 (212) 555-0198',
+    address: '142 Mercer Street, SoHo, New York, NY 10012',
+    hours: 'Tue – Sun: 5:30 PM – 11:00 PM',
+    dietaryOptions: ['Vegetarian Tasting Menu', 'Gluten-Free Pasta on Request', 'Nut-Free Kitchen'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Tagliolini al Tartufo Bianco', description: 'Hand-rolled 30-yolk egg pasta, butter from Normandy, freshly shaved Alba white truffle.', price: '$68', category: 'main', tag: "Chef's Signature" },
+      { name: 'Bistecca alla Fiorentina', description: 'Dry-aged Chianina beef, rosemary sea salt, cold-pressed Tuscan olive oil emulsion.', price: '$145', category: 'main', tag: 'Wood-Fired' },
+      { name: 'Carpaccio di Ricciola', description: 'Yellowtail kingfish, blood orange reduction, pickled baby capers, wild fennel.', price: '$34', category: 'starter' },
+      { name: 'Torta al Cioccolato Valrhona', description: 'Dark chocolate ganache tart, candied Piedmont hazelnuts, smoked fleur de sel gelato.', price: '$22', category: 'dessert' }
+    ]
   },
   {
     id: 'rest-2',
@@ -37,7 +53,23 @@ export const MOCK_RESTAURANTS: Restaurant[] = [
     description: 'Twelve seats along a 200-year-old Hinoki cypress counter. Experience hyper-seasonal omakase orchestrated with poetic precision.',
     availableSlots: ['5:30 PM', '7:45 PM', '9:30 PM'],
     highlights: ['18-Course Omakase', 'Rare Junmai Daiginjo Sake', 'No Children Under 12'],
-    dressCode: 'Sophisticated Casual'
+    dressCode: 'Sophisticated Casual',
+    chefName: 'Master Kenjiro Takahashi',
+    phone: '+44 20 7946 0912',
+    address: '18 Berkeley Street, Mayfair, London W1J 8NQ',
+    hours: 'Wed – Sun: Two seatings (6:00 PM & 8:30 PM)',
+    dietaryOptions: ['Pescatarian Only', 'Shellfish-Free Accommodated with 48h notice'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Otoro Aburi Nigiri', description: 'Aged bluefin tuna belly, binchotan sear, aged nikiri glaze, fresh Shizuoka wasabi.', price: 'Omakase', category: 'main', tag: 'Imperial Choice' },
+      { name: 'Hokkaido Uni & Caviar Tart', description: 'Fresh sea urchin tongue, Royal Ossetra caviar, crispy nori tartlet, shiso emulsion.', price: 'Omakase', category: 'starter' },
+      { name: 'A5 Miyazaki Wagyu Sukiyaki', description: 'Marrow bone broth, poached organic quail yolk, shaved black winter truffle.', price: 'Omakase', category: 'main' },
+      { name: 'Matcha Mille-Feuille', description: 'Ceremonial Uji green tea cream, caramelized phyllo crisps, yuzu sorbet.', price: 'Omakase', category: 'dessert' }
+    ]
   },
   {
     id: 'rest-3',
@@ -56,7 +88,23 @@ export const MOCK_RESTAURANTS: Restaurant[] = [
     description: 'A sensory celebration of slow-cooked dum pukht, saffron-infused gravies, and smoked clay-oven delicacies amidst gilded arches.',
     availableSlots: ['6:30 PM', '7:00 PM', '8:15 PM', '9:00 PM'],
     highlights: ['Botanical Cocktails', 'Courtyard Seating', 'Live Sitar Duets'],
-    dressCode: 'Smart Casual'
+    dressCode: 'Smart Casual',
+    chefName: 'Chef Sanjeev Kapur',
+    phone: '+1 (212) 555-0841',
+    address: '385 Greenwich Street, Tribeca, New York, NY 10013',
+    hours: 'Mon – Sun: 5:00 PM – 10:30 PM',
+    dietaryOptions: ['Comprehensive Vegetarian & Vegan Tasting Menus', 'Halal Certified Poultry & Lamb'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Awadhi Shahi Dum Biryani', description: 'Aged basmati rice sealed in earthen pots with fragrant saffron, rose water, and tender young lamb.', price: '$46', category: 'main', tag: 'Heritage Dum' },
+      { name: 'Galouti Kebab on Sheermal', description: 'Smoked melt-in-mouth lamb patties infused with 28 royal spices on saffron cardamom bread.', price: '$28', category: 'starter' },
+      { name: 'Lobster Moilee', description: 'Butter-poached Maine lobster tail, tender coconut reduction, curry leaf crackle, black mustard.', price: '$54', category: 'main' },
+      { name: 'Kulfi Falooda Royale', description: 'Pistachio saffron frozen custard, rose syrup ribbons, rabri pearls, edible 24k gold leaf.', price: '$18', category: 'dessert' }
+    ]
   },
   {
     id: 'rest-4',
@@ -75,7 +123,23 @@ export const MOCK_RESTAURANTS: Restaurant[] = [
     description: 'Ancestral heirloom corn tortillas, 30-ingredient black moles, and rare artisanal mezcals served under sun-drenched terrace pergolas.',
     availableSlots: ['6:00 PM', '6:45 PM', '8:00 PM', '9:15 PM'],
     highlights: ['Outdoor Garden', 'Mezcal Library', 'Seasonal Tasting Menu'],
-    dressCode: 'Casual Chic'
+    dressCode: 'Casual Chic',
+    chefName: 'Marisol Gomez',
+    phone: '+1 (415) 555-0329',
+    address: '920 Valencia St, Mission District, San Francisco, CA 94110',
+    hours: 'Tue – Sun: 4:30 PM – 10:00 PM',
+    dietaryOptions: ['Naturally Gluten-Free (Masa-based)', 'Vegan Mole Flight Available'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Mole Negro con Pato Confitado', description: 'Slow-braised duck confit bathed in traditional Oaxacan 32-ingredient dark cocoa and chile mole.', price: '$44', category: 'main', tag: 'House Icon' },
+      { name: 'Aguachile de Vieiras', description: 'Day-boat sea scallops, charred serrano lime emulsion, shaved watermelon radish, avocado foam.', price: '$26', category: 'starter' },
+      { name: 'Tacos de Barbacoa de Borrego', description: 'Maguey leaf slow-steamed lamb shank, heirloom blue corn tortillas, charred tomatillo salsa.', price: '$36', category: 'main' },
+      { name: 'Churros Criollos con Tres Chocolates', description: 'Handcrafted churros rolled in canela sugar, served with single-origin Mexican chocolate fondue.', price: '$16', category: 'dessert' }
+    ]
   },
   {
     id: 'rest-5',
@@ -94,7 +158,23 @@ export const MOCK_RESTAURANTS: Restaurant[] = [
     description: 'Heritage breed steaks aged 45 days in Himalayan salt chambers, paired with bone marrow jus, truffle pomme purée, and vintage Bordeaux.',
     availableSlots: ['6:15 PM', '7:15 PM', '8:30 PM', '9:45 PM'],
     highlights: ['Private Cigar Terrace', 'Sommelier Selection', 'Dry-Aging Room Tour'],
-    dressCode: 'Cocktail Attire'
+    dressCode: 'Cocktail Attire',
+    chefName: 'Sir Arthur Sterling',
+    phone: '+44 20 7946 0833',
+    address: '45 Floral Street, Covent Garden, London WC2E 9DA',
+    hours: 'Daily: 12:00 PM – 3:00 PM & 5:30 PM – 11:30 PM',
+    dietaryOptions: ['Vegetarian Hearth Roast Options', 'Celiac-Friendly Sauces & Sides'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1504973960431-1c467e159aa4?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: '45-Day Salt-Aged Porterhouse (32oz)', description: 'Prime Aberdeen Angus cut, smoked beef tallow baste, roasted bone marrow, charred leeks.', price: '$130', category: 'main', tag: 'Signature Cut' },
+      { name: 'Steak Tartare Royale', description: 'Hand-chopped tenderloin, quail egg yolk, shallot brunoise, caperberries, toasted brioche.', price: '$29', category: 'starter' },
+      { name: 'Dover Sole Meunière', description: 'Pan-seared whole Dover sole, brown butter noisette, capers, flat-leaf Italian parsley.', price: '$58', category: 'main' },
+      { name: 'Sticky Toffee Pudding & Clotted Cream', description: 'Warm medjool date sponge cake, rich muscovado toffee sauce, Cornish clotted cream.', price: '$19', category: 'dessert' }
+    ]
   },
   {
     id: 'rest-6',
@@ -113,6 +193,224 @@ export const MOCK_RESTAURANTS: Restaurant[] = [
     description: 'Crisp Peking duck carved tableside, translucent scallop dumplings, and rare aged Pu-erh teas served with breathtaking skyline panoramas.',
     availableSlots: ['6:00 PM', '7:30 PM', '8:15 PM'],
     highlights: ['Skyline View', 'Tea Master Experience', 'Private Salons'],
-    dressCode: 'Smart Elegant'
+    dressCode: 'Smart Elegant',
+    chefName: 'Master Wai-Chung Leung',
+    phone: '+1 (415) 555-0711',
+    address: '600 California Street, Financial District, San Francisco, CA 94108',
+    hours: 'Tue – Sun: 11:30 AM – 2:30 PM & 5:30 PM – 10:00 PM',
+    dietaryOptions: ['Pescatarian Delicacies', 'Vegetarian Dim Sum Basket'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Tableside Lacquered Imperial Duck', description: 'Three courses: crispy skin with sugar crystal dip, sliced breast with handmade pancakes, duck bone broth.', price: '$98', category: 'main', tag: 'Signature Feast' },
+      { name: 'Black Gold Har Gow', description: 'Translucent dumpling wrappers dusted in gold leaf, wild tiger prawns, bamboo shoots.', price: '$24', category: 'starter' },
+      { name: 'Wok-Tossed Chilean Sea Bass', description: 'Caramelized supreme soy, ginger crisps, scallion nest, fermented black garlic broth.', price: '$52', category: 'main' },
+      { name: 'Chilled Mango Sago Pomelo', description: 'Alphonso mango purée, coconut milk pearls, pink pomelo vesicles, edible orchids.', price: '$16', category: 'dessert' }
+    ]
+  },
+  {
+    id: 'rest-7',
+    name: 'Le Miroir Gastronomique',
+    tagline: 'Haute French Elegance & Grand Cru Cellar Flights',
+    cuisine: 'French',
+    location: 'Upper East Side',
+    neighborhood: 'Upper East Side',
+    city: 'New York',
+    rating: 4.96,
+    reviewCount: 580,
+    priceRange: '$$$$',
+    imageUrl: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=900&q=80',
+    badge: '3 Michelin Stars',
+    featured: true,
+    description: 'An ethereal palace of French culinary heritage. Silken sauces, Brittany blue lobster, and crystal chandeliers define this legendary temple of gastronomy.',
+    availableSlots: ['5:45 PM', '7:15 PM', '8:45 PM', '9:30 PM'],
+    highlights: ['Grand Sommelier Library', 'Caviar Service', 'Private Salon Dining'],
+    dressCode: 'Black Tie Optional / Formal',
+    chefName: 'Chef Jean-Luc Bernard',
+    phone: '+1 (212) 555-0988',
+    address: '768 Madison Avenue, Upper East Side, New York, NY 10065',
+    hours: 'Wed – Sun: 6:00 PM – 11:00 PM',
+    dietaryOptions: ['Pre-arranged Vegetarian Grand Menu', 'Dairy-Free Adaptations Available'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Homard Bleu Rôti', description: 'Brittany blue lobster roasted with coral butter, baby turnips, verjus and sea fennel emulsion.', price: '$82', category: 'main', tag: "Chef's Signature" },
+      { name: 'Foie Gras Poêlé au Sauternes', description: 'Pan-seared duck liver, brioche feuilletée, poached mirabelle plums, candied pistachios.', price: '$38', category: 'starter' },
+      { name: 'Pigeonneau de Bresse en Croûte', description: 'Farm-raised squab breast wrapped in puff pastry with wild morels and Périgord truffle sauce.', price: '$76', category: 'main' },
+      { name: 'Soufflé au Grand Marnier', description: 'Classic airy soufflé infused with orange liqueur, served with crème anglaise tableside.', price: '$26', category: 'dessert' }
+    ]
+  },
+  {
+    id: 'rest-8',
+    name: 'Thalassa Horizon',
+    tagline: 'Aegean Seafood Sanctuary & Sunken Terrace Views',
+    cuisine: 'Mediterranean',
+    location: 'Chelsea Waterfront',
+    neighborhood: 'Chelsea',
+    city: 'New York',
+    rating: 4.84,
+    reviewCount: 290,
+    priceRange: '$$$',
+    imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=80',
+    badge: 'Waterfront Terrace',
+    featured: false,
+    description: 'Fresh catch flown in directly from the Aegean Sea, grilled over olive wood coals and accompanied by crisp Assyrtiko wines and ocean breezes.',
+    availableSlots: ['5:30 PM', '6:30 PM', '8:00 PM', '9:15 PM'],
+    highlights: ['Sunset Terrace', 'Whole Fish by the Pound', 'Greek Wine Cellar'],
+    dressCode: 'Resort Elegant',
+    chefName: 'Chef Nikos Karamanlis',
+    phone: '+1 (212) 555-0377',
+    address: ' Pier 59, West 18th Street, New York, NY 10011',
+    hours: 'Daily: 12:00 PM – 10:30 PM',
+    dietaryOptions: ['Pescatarian Paradise', 'Gluten-Free Fresh Grills', 'Vegan Mezze Platter'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Lavraki Salt-Crust Mediterranean Seabass', description: 'Baked whole in sea salt crust, carved tableside with ladolemono and wild caper shoots.', price: '$58', category: 'main', tag: 'Catch of the Day' },
+      { name: 'Grilled Mediterranean Octopus', description: 'Charred over olive wood, Santorini fava purée, pickled shallots, oregano blossoms.', price: '$27', category: 'starter' },
+      { name: 'Spanakopita Royale', description: 'Crispy hand-stretched phyllo leaves, wild mountain greens, barrel-aged Dodoni feta.', price: '$22', category: 'starter' },
+      { name: 'Warm Baklava with Mastic Ice Cream', description: 'Layered walnut and pistachio pastry, Greek thyme honey, Chios mastic gelato.', price: '$16', category: 'dessert' }
+    ]
+  },
+  {
+    id: 'rest-9',
+    name: 'Trattoria Nostra',
+    tagline: 'Neighborhood Soul, Handcrafted Pastas & Natural Wines',
+    cuisine: 'Italian',
+    location: 'Greenwich Village',
+    neighborhood: 'Greenwich Village',
+    city: 'New York',
+    rating: 4.78,
+    reviewCount: 380,
+    priceRange: '$$',
+    imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80',
+    badge: 'Neighborhood Gem',
+    featured: false,
+    description: 'An inviting brick-lined trattoria radiating warmth and hearty aroma. Fresh handmade pastas rolled daily by nonna and paired with bio-dynamic natural wines.',
+    availableSlots: ['5:00 PM', '6:15 PM', '7:45 PM', '8:30 PM', '9:45 PM'],
+    highlights: ['Cozy Candlelit Vibe', 'Natural Wine Program', 'Outdoor Patio'],
+    dressCode: 'Casual',
+    chefName: 'Gianna DeLuca',
+    phone: '+1 (212) 555-0455',
+    address: '88 Bedford Street, Greenwich Village, New York, NY 10014',
+    hours: 'Mon – Sun: 4:00 PM – 11:00 PM',
+    dietaryOptions: ['Vegetarian Pastas Available', 'House Gluten-Free Gnocchi'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Cacio e Pepe al Mattarello', description: 'Thick tonnarelli pasta, 24-month aged Pecorino Romano DOP, toasted Tellicherry black pepper.', price: '$26', category: 'main', tag: 'Crowd Favorite' },
+      { name: 'Rigatoni alla Vodka Rustica', description: 'Slow-simmered San Marzano tomatoes, sweet cream, Calabrian chili, crispy guanciale.', price: '$28', category: 'main' },
+      { name: 'Burrata Pugliese', description: 'Fresh creamy burrata, heirloom cherry tomatoes, basil pesto, grilled sourdough.', price: '$19', category: 'starter' },
+      { name: 'Nonna’s Classic Tiramisu', description: 'Espresso-soaked savoiardi ladyfingers, velvety mascarpone cream, dark cocoa dust.', price: '$14', category: 'dessert' }
+    ]
+  },
+  {
+    id: 'rest-10',
+    name: 'Sakura Izakaya & Robata',
+    tagline: 'Charcoal Skewers, Craft Sake & Lively Tokyo Vibes',
+    cuisine: 'Japanese',
+    location: 'East Village',
+    neighborhood: 'East Village',
+    city: 'New York',
+    rating: 4.81,
+    reviewCount: 315,
+    priceRange: '$$',
+    imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=900&q=80',
+    badge: 'Popular Choice',
+    featured: false,
+    description: 'Electric Tokyo alleyway spirit with smoky binchotan charcoal robata, crispy karaage, and an adventurous menu of unpasteurized craft sakes.',
+    availableSlots: ['5:30 PM', '6:45 PM', '8:15 PM', '9:30 PM', '10:15 PM'],
+    highlights: ['Open Robata Grill', 'Craft Sake Flights', 'Late Night Seating'],
+    dressCode: 'Casual Chic',
+    chefName: 'Tatsuya Mori',
+    phone: '+1 (212) 555-0812',
+    address: '112 St Marks Place, East Village, New York, NY 10009',
+    hours: 'Daily: 5:00 PM – 1:00 AM',
+    dietaryOptions: ['Robata Veggie Skewers', 'Gluten-Free Tamari upon request'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Kurobuta Pork Belly Skewers', description: 'Slow-braised then charcoal crisped with scallion tare glaze and yuzu kosho.', price: '$16', category: 'starter' },
+      { name: 'Spicy Salmon Crispy Rice', description: 'Seared sushi rice cakes, minced king salmon, spicy kewpie, serrano slices, sweet soy.', price: '$18', category: 'starter' },
+      { name: 'Wagyu Beef Tsukune', description: 'Minced wagyu meatball skewers with sweet tare and an organic runny egg yolk for dipping.', price: '$22', category: 'main', tag: 'Robata Favorite' },
+      { name: 'Black Sesame Crème Brûlée', description: 'Toasted black sesame custard under a cracked caramelized sugar crust.', price: '$12', category: 'dessert' }
+    ]
+  },
+  {
+    id: 'rest-11',
+    name: 'Tamarind & Cumin',
+    tagline: 'Casual Heritage Thali, Chaat & Botanical Lassi',
+    cuisine: 'Indian',
+    location: 'Kensington',
+    neighborhood: 'Kensington',
+    city: 'London',
+    rating: 4.76,
+    reviewCount: 220,
+    priceRange: '$$',
+    imageUrl: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=900&q=80',
+    badge: 'Cozy Dining',
+    featured: false,
+    description: 'An aromatic haven serving nostalgic railway curries, street food chaats bursting with tangy tamarind, and fragrant tandoor breads fresh from the fire.',
+    availableSlots: ['12:30 PM', '1:30 PM', '6:00 PM', '7:30 PM', '8:45 PM'],
+    highlights: ['All-Day Dining', 'Regional Thalis', 'Spiced Chai Bar'],
+    dressCode: 'Casual',
+    chefName: 'Rhea Sen',
+    phone: '+44 20 7946 0544',
+    address: '62 Old Brompton Road, South Kensington, London SW7 3DY',
+    hours: 'Daily: 12:00 PM – 10:00 PM',
+    dietaryOptions: ['100% Vegetarian & Vegan Friendly', 'Halal Meats'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Dahi Sev Puri Platter', description: 'Crisp semolina shells filled with spiced potatoes, sweet yogurt, date tamarind chutney, crunchy sev.', price: '$14', category: 'starter', tag: 'Street Classic' },
+      { name: 'Old Delhi Butter Chicken', description: 'Charcoal-grilled tandoori chicken simmered in velvet fenugreek and plum tomato gravy.', price: '$24', category: 'main' },
+      { name: 'Paneer Makhani Lababdar', description: 'Soft cottage cheese simmered with diced bell peppers, onion seeds, and rich cashew cream.', price: '$22', category: 'main' },
+      { name: 'Cardamom & Rose Jalebi', description: 'Crispy warm pretzel coils soaked in saffron rose syrup, served with chilled condensed milk rabri.', price: '$11', category: 'dessert' }
+    ]
+  },
+  {
+    id: 'rest-12',
+    name: 'Casa Oaxaca Bistro',
+    tagline: 'Artisanal Street Tacos, Handcrafted Salsas & Mezcal',
+    cuisine: 'Mexican',
+    location: 'Mission & Marina',
+    neighborhood: 'Mission',
+    city: 'San Francisco',
+    rating: 4.79,
+    reviewCount: 260,
+    priceRange: '$$',
+    imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=900&q=80',
+    badge: 'Trending',
+    featured: false,
+    description: 'Vibrant cantina known for hand-pressed heirloom corn tortillas, sizzling carnitas, and refreshing frozen passionfruit mezcal margaritas.',
+    availableSlots: ['5:00 PM', '6:30 PM', '7:45 PM', '9:00 PM'],
+    highlights: ['Heated Outdoor Patio', 'Tequila & Mezcal Flights', 'Live Latin Beats'],
+    dressCode: 'Casual',
+    chefName: 'Carlos Fuentes',
+    phone: '+1 (415) 555-0678',
+    address: '2104 Mission Street, San Francisco, CA 94110',
+    hours: 'Mon – Sat: 4:30 PM – 11:00 PM',
+    dietaryOptions: ['Gluten-Free Certified Corn Tortillas', 'Vegan Jackfruit Tacos'],
+    galleryImages: [
+      'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=900&q=80'
+    ],
+    menuHighlights: [
+      { name: 'Birria QuesaTacos Trio', description: 'Crispy pan-fried corn tortillas stuffed with melted Oaxaca cheese and braised beef, with hot consommé dip.', price: '$22', category: 'main', tag: 'Must Try' },
+      { name: 'Fresh Guacamole Molcajete', description: 'Hass avocados crushed tableside with lime, cilantro, jalapeño, and warm hand-pressed tortilla chips.', price: '$15', category: 'starter' },
+      { name: 'Carnitas Michoacanas', description: 'Crispy slow-braised pork shoulder, pickled red onions, cilantro, salsa verde cruda.', price: '$24', category: 'main' },
+      { name: 'Tres Leches de Coco', description: 'Light sponge soaked in three milks infused with coconut cream and topped with toasted coconut flakes.', price: '$12', category: 'dessert' }
+    ]
   }
 ];

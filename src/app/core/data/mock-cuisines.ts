@@ -48,5 +48,21 @@ export const MOCK_CUISINES: Cuisine[] = [
     restaurantCount: 27,
     imageUrl: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=700&q=80',
     slug: 'chinese'
+  },
+  {
+    id: 'cuisine-french',
+    name: 'French',
+    tagline: 'Haute gastronomy, velvety reductions & grand cru cellar pairings',
+    restaurantCount: 31,
+    imageUrl: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=700&q=80',
+    slug: 'french'
+  },
+  {
+    id: 'cuisine-mediterranean',
+    name: 'Mediterranean',
+    tagline: 'Aegean seafood, cold-pressed olives & wood-fired flatbreads',
+    restaurantCount: 22,
+    imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=80',
+    slug: 'mediterranean'
   }
 ];

@@ -1,0 +1,357 @@
+<app-navbar></app-navbar>
+
+<main class="profile-page" role="main">
+  <div class="container">
+    <!-- Breadcrumbs -->
+    <nav class="profile-breadcrumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a routerLink="/" class="crumb-anchor">Home</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        <li class="crumb-active" aria-current="page">Member Profile</li>
+      </ol>
+    </nav>
+
+    @if (authService.currentUser(); as user) {
+      <!-- 1. HERO PROFILE BANNER -->
+      <section class="profile-hero-card">
+        <div class="hero-left-info">
+          <div class="avatar-circle" aria-hidden="true">
+            {{ userInitials() }}
+          </div>
+
+          <div class="hero-user-text">
+            <div class="tier-pill-row">
+              <span class="badge badge-ivory tier-badge">✦ {{ user.memberTier }}</span>
+              <span class="member-since">Member Since {{ user.memberSince }}</span>
+            </div>
+            <h1 class="profile-user-name">{{ user.fullName }}</h1>
+            <p class="profile-user-email">{{ user.email }} &bull; {{ user.phone }}</p>
+          </div>
+        </div>
+
+        <div class="hero-actions-col">
+          @if (!isEditMode()) {
+            <button type="button" class="btn btn-terracotta btn-md" (click)="enableEdit()">
+              <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon-svg" aria-hidden="true">
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
+              <span>Edit Profile</span>
+            </button>
+          }
+          <button type="button" class="btn btn-outline btn-md sign-out-btn" (click)="logout()">
+            <span>Log Out</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 2. METRIC STATS ROW -->
+      <section class="profile-stats-grid" aria-label="Membership Statistics">
+        <a routerLink="/bookings" class="stat-card linkable-stat">
+          <div class="stat-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <strong class="stat-num">{{ upcomingBookingsCount() }}</strong>
+            <span class="stat-label">Active Reservations</span>
+          </div>
+          <span class="stat-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <div class="stat-card">
+          <div class="stat-icon-wrap completed-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <strong class="stat-num">{{ user.reservationsCompleted }}</strong>
+            <span class="stat-label">Completed Tastings</span>
+          </div>
+        </div>
+
+        <a routerLink="/wishlist" class="stat-card linkable-stat">
+          <div class="stat-icon-wrap wishlist-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <strong class="stat-num">{{ wishlistCount() }}</strong>
+            <span class="stat-label">Saved Sanctuaries</span>
+          </div>
+          <span class="stat-arrow" aria-hidden="true">→</span>
+        </a>
+      </section>
+
+      <!-- 3. DEMO SIMULATION NOTICE -->
+      <div class="demo-mock-notice-banner" role="status">
+        <div class="notice-icon-circle">✦</div>
+        <div class="notice-text-content">
+          <strong>Demonstration Profile Environment:</strong>
+          <span>
+            Profile edits are updated reactively in your active browser session. No records are written to a production database.
+          </span>
+        </div>
+      </div>
+
+      <!-- 4. VIEW / EDIT MODES -->
+      @if (!isEditMode()) {
+        <!-- VIEW MODE -->
+        <div class="profile-details-grid">
+          <!-- Personal Info Card -->
+          <section class="details-section-card">
+            <div class="section-card-header">
+              <h2 class="section-card-title">Personal Information</h2>
+              <button type="button" class="btn-text-edit" (click)="enableEdit()">Edit Details</button>
+            </div>
+
+            <div class="profile-lines-list">
+              <div class="profile-row">
+                <span class="row-label">Full Name</span>
+                <span class="row-val">{{ user.fullName }}</span>
+              </div>
+              <div class="profile-row">
+                <span class="row-label">Email Address</span>
+                <span class="row-val">{{ user.email }}</span>
+              </div>
+              <div class="profile-row">
+                <span class="row-label">Phone Number</span>
+                <span class="row-val">{{ user.phone }}</span>
+              </div>
+              <div class="profile-row">
+                <span class="row-label">Primary Dining City</span>
+                <span class="row-val">{{ user.preferredCity }}</span>
+              </div>
+              <div class="profile-row">
+                <span class="row-label">Member Tier</span>
+                <span class="row-val tier-highlight">{{ user.memberTier }}</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Dining Preferences Card -->
+          <section class="details-section-card">
+            <div class="section-card-header">
+              <h2 class="section-card-title">Gastronomic Preferences</h2>
+              <button type="button" class="btn-text-edit" (click)="enableEdit()">Edit Preferences</button>
+            </div>
+
+            <div class="profile-lines-list">
+              <div class="profile-row">
+                <span class="row-label">Preferred Seating Zone</span>
+                <span class="row-val">{{ user.preferredSeating }}</span>
+              </div>
+
+              <!-- Dietary Restrictions -->
+              <div class="profile-block-row">
+                <span class="row-label">Dietary Accommodations:</span>
+                <div class="tags-cluster">
+                  @if (user.dietaryPreferences && user.dietaryPreferences.length > 0) {
+                    @for (diet of user.dietaryPreferences; track diet) {
+                      <span class="pref-pill">{{ diet }}</span>
+                    }
+                  } @else {
+                    <span class="empty-pref-text">No specific dietary restrictions designated.</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Favorite Cuisines -->
+              <div class="profile-block-row">
+                <span class="row-label">Favored Cuisines:</span>
+                <div class="tags-cluster">
+                  @if (user.favoriteCuisines && user.favoriteCuisines.length > 0) {
+                    @for (cuisine of user.favoriteCuisines; track cuisine) {
+                      <span class="pref-pill cuisine-pill">{{ cuisine }}</span>
+                    }
+                  } @else {
+                    <span class="empty-pref-text">All fine dining cuisines favored.</span>
+                  }
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      } @else {
+        <!-- EDIT MODE FORM -->
+        <section class="edit-profile-card">
+          <div class="edit-card-header">
+            <div>
+              <span class="auth-eyebrow">Edit Profile</span>
+              <h2 class="edit-card-title">Update Member Preferences</h2>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" (click)="cancelEdit()">Cancel</button>
+          </div>
+
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="edit-form" novalidate>
+            <!-- Name & Email Grid -->
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="editFullName" class="form-label">
+                  <span>Full Legal Name</span>
+                  <span class="required-star">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="editFullName" 
+                  formControlName="fullName"
+                  class="styled-input"
+                  [class.form-input-error]="isFieldInvalid('fullName')"
+                />
+                @if (isFieldInvalid('fullName')) {
+                  <span class="error-hint">Full name is required (min 2 characters).</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="editEmail" class="form-label">
+                  <span>Email Address</span>
+                  <span class="required-star">*</span>
+                </label>
+                <input 
+                  type="email" 
+                  id="editEmail" 
+                  formControlName="email"
+                  class="styled-input"
+                  [class.form-input-error]="isFieldInvalid('email')"
+                />
+                @if (isFieldInvalid('email')) {
+                  <span class="error-hint">Please enter a valid email address.</span>
+                }
+              </div>
+            </div>
+
+            <!-- Phone & City Grid -->
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="editPhone" class="form-label">
+                  <span>Phone Number</span>
+                  <span class="required-star">*</span>
+                </label>
+                <input 
+                  type="tel" 
+                  id="editPhone" 
+                  formControlName="phone"
+                  class="styled-input"
+                  [class.form-input-error]="isFieldInvalid('phone')"
+                />
+                @if (isFieldInvalid('phone')) {
+                  <span class="error-hint">Please enter a valid telephone format.</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="editCity" class="form-label">
+                  <span>Primary Dining City</span>
+                  <span class="required-star">*</span>
+                </label>
+                <select id="editCity" formControlName="preferredCity" class="styled-select">
+                  @for (city of cityOptions; track city) {
+                    <option [value]="city">{{ city }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <!-- Seating Preference Dropdown -->
+            <div class="form-group">
+              <label for="editSeating" class="form-label">
+                <span>Preferred Seating Zone</span>
+                <span class="required-star">*</span>
+              </label>
+              <select id="editSeating" formControlName="preferredSeating" class="styled-select">
+                @for (seating of seatingOptions; track seating) {
+                  <option [value]="seating">{{ seating }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Dietary Accommodation Toggle Chips -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Dietary Accommodations</span>
+                <span class="label-hint">Select any that apply</span>
+              </label>
+              <div class="toggle-chips-row">
+                @for (diet of dietaryOptions; track diet) {
+                  <button 
+                    type="button" 
+                    class="chip-toggle-btn"
+                    [class.active]="selectedDietary().includes(diet)"
+                    (click)="toggleDietary(diet)">
+                    {{ diet }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Favorite Cuisines Toggle Chips -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Favored Cuisines</span>
+                <span class="label-hint">Click to toggle preferences</span>
+              </label>
+              <div class="toggle-chips-row">
+                @for (cuisine of cuisineOptions; track cuisine) {
+                  <button 
+                    type="button" 
+                    class="chip-toggle-btn cuisine-chip"
+                    [class.active]="selectedCuisines().includes(cuisine)"
+                    (click)="toggleCuisine(cuisine)">
+                    {{ cuisine }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Form Actions Row -->
+            <div class="form-actions-row">
+              <button 
+                type="submit" 
+                [disabled]="isSaving()"
+                class="btn btn-terracotta btn-lg save-btn">
+                @if (!isSaving()) {
+                  <span>Save Profile Changes</span>
+                } @else {
+                  <span class="spinner" aria-hidden="true"></span>
+                  <span>Saving Updates...</span>
+                }
+              </button>
+              <button type="button" class="btn btn-outline btn-lg" (click)="cancelEdit()">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </section>
+      }
+    } @else {
+      <!-- Not Authenticated State -->
+      <div class="not-auth-card">
+        <h2 class="not-auth-title">Please Sign In to Access Your Member Sanctuary</h2>
+        <p class="not-auth-desc">Log in or create a complimentary account to manage your table reservations and saved establishments.</p>
+        <div class="not-auth-actions">
+          <a routerLink="/login" class="btn btn-primary btn-lg">Sign In</a>
+          <a routerLink="/signup" class="btn btn-outline btn-lg">Create Account</a>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Toast Notification Feedback -->
+  @if (toastMessage()) {
+    <div class="toast-notification" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+</main>
+
+<app-footer></app-footer>

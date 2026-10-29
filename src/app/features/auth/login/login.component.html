@@ -1,0 +1,158 @@
+<app-navbar></app-navbar>
+
+<main class="auth-page" role="main">
+  <div class="container auth-container">
+    <div class="auth-card">
+      <!-- Brand & Header -->
+      <div class="auth-card-header">
+        <span class="auth-eyebrow">Member Sanctuary</span>
+        <h1 class="auth-title">Welcome Back</h1>
+        <p class="auth-subtitle">
+          Access your curated table reservations, gastronomic wishlist, and concierge privileges.
+        </p>
+      </div>
+
+      <!-- Demo Simulation Notice -->
+      <div class="demo-notice-pill" role="note">
+        <span class="notice-icon">✦</span>
+        <div class="notice-text">
+          <strong>Demo Authentication:</strong> Enter any email and password or click below to autofill our verified demo patron profile.
+        </div>
+      </div>
+
+      <!-- Quick Demo Credentials Chip -->
+      <button type="button" class="quick-autofill-btn" (click)="fillDemoCredentials()">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="chip-icon" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+        </svg>
+        <span>Autofill Demo Account (Alexander Wright)</span>
+      </button>
+
+      <!-- Feedback Alerts -->
+      @if (errorMessage()) {
+        <div class="alert-box alert-error" role="alert">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      @if (successMessage()) {
+        <div class="alert-box alert-success" role="status">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          <span>{{ successMessage() }}</span>
+        </div>
+      }
+
+      <!-- Login Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+        <!-- Email Field -->
+        <div class="form-group">
+          <label for="loginEmail" class="form-label">
+            <span>Email Address</span>
+            <span class="required-star">*</span>
+          </label>
+          <div class="input-wrapper" [class.input-invalid]="isFieldInvalid('email')">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
+              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+            </svg>
+            <input 
+              type="email" 
+              id="loginEmail" 
+              formControlName="email"
+              placeholder="e.g. alexander@epicuredining.com"
+              class="auth-input"
+              autocomplete="email"
+            />
+          </div>
+          @if (isFieldInvalid('email')) {
+            <span class="error-hint">Please enter a valid email address.</span>
+          }
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+          <div class="label-row">
+            <label for="loginPassword" class="form-label">
+              <span>Password</span>
+              <span class="required-star">*</span>
+            </label>
+            <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+          </div>
+
+          <div class="input-wrapper" [class.input-invalid]="isFieldInvalid('password')">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+            </svg>
+            <input 
+              [type]="isPasswordVisible() ? 'text' : 'password'" 
+              id="loginPassword" 
+              formControlName="password"
+              placeholder="Enter your member password"
+              class="auth-input has-toggle"
+              autocomplete="current-password"
+            />
+            <button 
+              type="button" 
+              class="password-toggle-btn"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="isPasswordVisible() ? 'Hide password' : 'Show password'">
+              @if (isPasswordVisible()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon" aria-hidden="true">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="eye-icon" aria-hidden="true">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              }
+            </button>
+          </div>
+          @if (isFieldInvalid('password')) {
+            <span class="error-hint">Password must contain at least 6 characters.</span>
+          }
+        </div>
+
+        <!-- Remember Me Checkbox -->
+        <div class="remember-row">
+          <label class="checkbox-container">
+            <input type="checkbox" formControlName="rememberMe" class="custom-checkbox" />
+            <span class="checkbox-label">Keep me signed in on this device</span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          [disabled]="isLoading()"
+          class="btn btn-terracotta btn-lg auth-submit-btn">
+          @if (!isLoading()) {
+            <span>Sign In to Member Account</span>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          } @else {
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Verifying Member Credentials...</span>
+          }
+        </button>
+      </form>
+
+      <!-- Bottom Card Switcher -->
+      <div class="auth-card-footer">
+        <p class="footer-text">
+          <span>New to Dinevia's Curated Table Network?</span>
+          <a routerLink="/signup" class="footer-action-link">Create Account</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

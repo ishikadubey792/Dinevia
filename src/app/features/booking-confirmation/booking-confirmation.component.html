@@ -1,0 +1,289 @@
+<app-navbar></app-navbar>
+
+<main class="confirmation-page" role="main">
+  <div class="container">
+    <!-- Breadcrumbs -->
+    <nav class="confirm-breadcrumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a routerLink="/" class="crumb-anchor">Home</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        <li><a routerLink="/explore" class="crumb-anchor">Explore</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        @if (booking(); as b) {
+          <li><a [routerLink]="['/restaurants', b.restaurantId]" class="crumb-anchor">{{ b.restaurantName }}</a></li>
+          <li class="crumb-sep" aria-hidden="true">/</li>
+        }
+        <li class="crumb-active" aria-current="page">Confirmation</li>
+      </ol>
+    </nav>
+
+    <!-- NO ACTIVE BOOKING FOUND (Direct Access Guard) -->
+    @if (noBookingFound() || !booking()) {
+      <div class="no-booking-card" role="region" aria-label="No reservation found">
+        <div class="no-booking-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h1 class="no-booking-title">No Active Table Reservation Found</h1>
+        <p class="no-booking-desc">
+          You do not have an active dining reservation in this browser session. If you recently booked a table, please check your reference email or reserve a table at one of our world-class dining destinations.
+        </p>
+        <div class="no-booking-actions">
+          <a routerLink="/explore" class="btn btn-primary btn-lg">
+            <span>Explore Restaurants</span>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </a>
+          <a routerLink="/" class="btn btn-outline btn-lg">Return to Home</a>
+        </div>
+      </div>
+    }
+
+    <!-- VALID CONFIRMED RESERVATION -->
+    @if (booking(); as b) {
+      <!-- 1. HERO SUCCESS BANNER -->
+      <header class="confirm-hero-card">
+        <div class="success-badge-glow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+
+        <span class="eyebrow">Reservation Verified</span>
+        <h1 class="confirm-hero-title">Table Reservation Confirmed</h1>
+        <p class="confirm-hero-subtitle">
+          We look forward to welcoming you at <strong>{{ b.restaurantName }}</strong>. The kitchen and maître d' have been notified.
+        </p>
+
+        <!-- Reference Code Display Box -->
+        <div class="reference-code-box">
+          <div class="ref-text-col">
+            <span class="ref-label">Booking Reference Number</span>
+            <strong class="ref-code-value">{{ b.bookingRef }}</strong>
+          </div>
+
+          <button 
+            type="button" 
+            class="copy-ref-btn" 
+            (click)="copyReference()" 
+            [attr.aria-label]="'Copy reference code ' + b.bookingRef">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="copy-icon" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>{{ copiedToClipboard() ? 'Copied!' : 'Copy Code' }}</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 2. DEMO NOTICE DISCLAIMER -->
+      <div class="demo-mock-notice-banner" role="status">
+        <div class="notice-icon-circle">✦</div>
+        <div class="notice-text-content">
+          <strong>Demonstration Reservation:</strong>
+          <span>
+            This reservation is a simulation generated for frontend user experience evaluation. No real database records or credit card charges have been processed. In production, this directly coordinates with the Dinevia RestaurantBookingAPI.
+          </span>
+        </div>
+      </div>
+
+      <!-- 3. MAIN SPLIT ITINERARY LAYOUT -->
+      <div class="itinerary-split-grid">
+        <!-- LEFT: Reservation Itinerary Details -->
+        <div class="itinerary-left-col">
+          <!-- Reservation Spec Card -->
+          <section class="itinerary-card">
+            <h2 class="itinerary-card-title">Reservation Details</h2>
+
+            <div class="itinerary-lines-list">
+              <!-- Date & Day -->
+              <div class="itinerary-row">
+                <span class="itinerary-label">Dining Date</span>
+                <span class="itinerary-value">{{ formattedBookingDate() }}</span>
+              </div>
+
+              <!-- Seating Time -->
+              <div class="itinerary-row">
+                <span class="itinerary-label">Seating Time</span>
+                <span class="itinerary-value time-highlight">{{ b.time }}</span>
+              </div>
+
+              <!-- Guests -->
+              <div class="itinerary-row">
+                <span class="itinerary-label">Party Size</span>
+                <span class="itinerary-value">{{ b.guests }} {{ b.guests === 1 ? 'Guest' : 'Guests' }}</span>
+              </div>
+
+              <!-- Seating Area -->
+              <div class="itinerary-row">
+                <span class="itinerary-label">Seating Area</span>
+                <span class="itinerary-value">{{ b.seatingArea || "Chef-Curated Table" }}</span>
+              </div>
+
+              <!-- Occasion -->
+              @if (b.customer.occasion) {
+                <div class="itinerary-row">
+                  <span class="itinerary-label">Occasion</span>
+                  <span class="itinerary-value">{{ b.customer.occasion }}</span>
+                </div>
+              }
+
+              <!-- Booking Status -->
+              <div class="itinerary-row">
+                <span class="itinerary-label">Reservation Status</span>
+                <span class="itinerary-value status-confirmed">✓ Guaranteed Seating</span>
+              </div>
+            </div>
+
+            <!-- Dietary Preferences -->
+            @if (b.customer.dietaryPreferences && b.customer.dietaryPreferences.length > 0) {
+              <div class="dietary-noted-section">
+                <span class="dietary-noted-label">Dietary Accommodations Noted:</span>
+                <div class="dietary-pills-row">
+                  @for (tag of b.customer.dietaryPreferences; track tag) {
+                    <span class="diet-pill">{{ tag }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Special Requests -->
+            @if (b.customer.specialRequests) {
+              <div class="special-notes-box">
+                <span class="notes-heading">Special Requests & Sommelier Notes:</span>
+                <p class="notes-quote">"{{ b.customer.specialRequests }}"</p>
+              </div>
+            }
+          </section>
+
+          <!-- Customer Lead Details Card -->
+          <section class="itinerary-card">
+            <h2 class="itinerary-card-title">Guest Contact Details</h2>
+
+            <div class="itinerary-lines-list">
+              <div class="itinerary-row">
+                <span class="itinerary-label">Primary Guest</span>
+                <span class="itinerary-value">{{ b.customer.fullName }}</span>
+              </div>
+
+              <div class="itinerary-row">
+                <span class="itinerary-label">Confirmation Email</span>
+                <span class="itinerary-value">{{ b.customer.email }}</span>
+              </div>
+
+              <div class="itinerary-row">
+                <span class="itinerary-label">Contact Phone</span>
+                <span class="itinerary-value">{{ b.customer.phone }}</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Hospitality Guidelines Card -->
+          <section class="itinerary-card guidelines-card">
+            <h2 class="itinerary-card-title">Arrival & Hospitality Guidelines</h2>
+
+            <div class="guidelines-bullets-list">
+              <div class="guide-bullet">
+                <span class="bullet-icon">⏳</span>
+                <div class="bullet-text">
+                  <strong>15-Minute Grace Period</strong>
+                  <p>Your table will be held for up to 15 minutes past your scheduled reservation time.</p>
+                </div>
+              </div>
+
+              <div class="guide-bullet">
+                <span class="bullet-icon">👔</span>
+                <div class="bullet-text">
+                  <strong>Dress Code</strong>
+                  <p>Smart Elegant. We kindly request formal or sophisticated casual attire. No athletic wear.</p>
+                </div>
+              </div>
+
+              <div class="guide-bullet">
+                <span class="bullet-icon">🛎️</span>
+                <div class="bullet-text">
+                  <strong>Maître d'hôtel Check-In</strong>
+                  <p>Upon arrival, present reference number <strong>{{ b.bookingRef }}</strong> to the host desk for priority escort.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- RIGHT: Restaurant Sanctuary Card & Navigation Actions -->
+        <aside class="itinerary-sidebar-col" aria-label="Restaurant information and actions">
+          <!-- Restaurant Preview Card -->
+          <div class="sidebar-restaurant-card">
+            <div class="sidebar-img-wrapper">
+              <img [src]="b.restaurantImage" [alt]="b.restaurantName + ' fine dining'" class="sidebar-img" />
+            </div>
+
+            <div class="sidebar-content">
+              <span class="badge badge-ivory">{{ b.restaurantCuisine }}</span>
+              <h3 class="sidebar-rest-title">{{ b.restaurantName }}</h3>
+              <p class="sidebar-rest-loc">{{ b.restaurantAddress || b.restaurantLocation }}</p>
+
+              @if (b.restaurantPhone) {
+                <div class="sidebar-phone-row">
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="phone-icon" aria-hidden="true">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 4V3z" />
+                  </svg>
+                  <span>{{ b.restaurantPhone }}</span>
+                </div>
+              }
+
+              <!-- View Restaurant Details Button -->
+              <a [routerLink]="['/restaurants', b.restaurantId]" class="btn btn-outline btn-block view-rest-btn">
+                <span>View Restaurant Details</span>
+                <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Actions Stack -->
+          <div class="sidebar-actions-card">
+            <h4 class="actions-card-title">Next Steps</h4>
+
+            <a routerLink="/explore" class="btn btn-primary btn-block">
+              <span>Explore Other Restaurants</span>
+              <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </a>
+
+            <a routerLink="/" class="btn btn-outline btn-block">
+              <span>Return to Home Page</span>
+            </a>
+
+            <button type="button" class="btn btn-ghost btn-block print-btn" (click)="printConfirmation()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="print-icon" aria-hidden="true">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              <span>Print / Save Confirmation</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+    }
+  </div>
+
+  <!-- Toast Notification Feedback -->
+  @if (toastMessage()) {
+    <div class="toast-notification" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+</main>
+
+<app-footer></app-footer>

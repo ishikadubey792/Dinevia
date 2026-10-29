@@ -1,0 +1,793 @@
+<app-navbar></app-navbar>
+
+<main class="restaurant-detail-page" role="main">
+  <div class="container">
+    <!-- Top Action & Breadcrumbs Bar -->
+    <div class="top-nav-bar">
+      <!-- Back Link -->
+      <a routerLink="/explore" class="back-nav-btn">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="back-icon" aria-hidden="true">
+          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        <span>Back to Restaurants</span>
+      </a>
+
+      <!-- Breadcrumbs -->
+      <nav class="detail-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a routerLink="/" class="crumb-link">Home</a></li>
+          <li class="crumb-separator" aria-hidden="true">/</li>
+          <li><a routerLink="/explore" class="crumb-link">Explore</a></li>
+          <li class="crumb-separator" aria-hidden="true">/</li>
+          <li class="crumb-current" aria-current="page">{{ restaurant() ? restaurant()!.name : 'Restaurant' }}</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- NOT FOUND STATE -->
+    @if (isNotFound() || !restaurant()) {
+      <div class="not-found-card" role="region" aria-label="Restaurant not found">
+        <div class="not-found-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h1 class="not-found-title">Culinary Sanctuary Not Found</h1>
+        <p class="not-found-desc">
+          We could not locate this dining destination in our collection. The establishment may have relocated or is currently accessible exclusively through our private dining concierge.
+        </p>
+        <div class="not-found-actions">
+          <a routerLink="/explore" class="btn btn-primary btn-lg">
+            <span>Explore All Restaurants</span>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    }
+
+    <!-- RESTAURANT FOUND DETAIL CONTENT -->
+    @if (restaurant(); as rest) {
+      <!-- 1. HERO SHOWCASE & HEADER -->
+      <header class="detail-hero-header">
+        <div class="hero-header-top">
+          <div class="hero-info-col">
+            <!-- Badges Row -->
+            <div class="hero-badges-row">
+              @if (rest.badge) {
+                <span class="badge badge-ivory hero-accolade-badge">{{ rest.badge }}</span>
+              }
+              <span class="badge badge-terracotta">{{ rest.cuisine }}</span>
+              <span class="badge badge-sage">{{ rest.priceRange }} Tier</span>
+              <span class="live-status-pill">
+                <span class="live-dot" aria-hidden="true"></span>
+                <span>Today's Tables Open</span>
+              </span>
+            </div>
+
+            <!-- Title & Tagline -->
+            <h1 class="detail-name">{{ rest.name }}</h1>
+            <p class="detail-tagline">{{ rest.tagline }}</p>
+
+            <!-- Meta Information Bar -->
+            <div class="detail-meta-row">
+              <div class="meta-item rating-item">
+                <span class="star-icon">★</span>
+                <span class="score-number">{{ rest.rating.toFixed(2) }}</span>
+                <span class="review-tally">({{ rest.reviewCount }} verified reviews)</span>
+              </div>
+
+              <span class="meta-divider" aria-hidden="true">&bull;</span>
+
+              <div class="meta-item loc-item">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="meta-icon" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ rest.address || rest.location }}</span>
+              </div>
+
+              <span class="meta-divider" aria-hidden="true">&bull;</span>
+
+              <div class="meta-item phone-item">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="meta-icon" aria-hidden="true">
+                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 4V3z" />
+                </svg>
+                <span>{{ rest.phone || '+1 (212) 555-0198' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Action Buttons -->
+          <div class="hero-actions-col">
+            <a 
+              [routerLink]="['/book', rest.id]"
+              [queryParams]="{ date: bookingDate(), time: bookingTime(), guests: bookingPartySize() }"
+              class="btn btn-terracotta btn-lg hero-reserve-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-cal-icon" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>Reserve a Table</span>
+            </a>
+
+            <button 
+              type="button" 
+              class="btn btn-outline hero-wishlist-btn"
+              [class.saved]="isSaved()"
+              (click)="toggleWishlist()"
+              [attr.aria-label]="isSaved() ? 'Remove from saved wishlist' : 'Save to wishlist'"
+              [attr.aria-pressed]="isSaved()">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              <span>{{ isSaved() ? 'Saved to Wishlist' : 'Add to Wishlist' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. PHOTO GALLERY SHOWCASE -->
+        <div class="gallery-container">
+          <div class="main-image-viewport" (click)="openLightbox()" tabindex="0" role="button" aria-label="Click to enlarge photo in gallery">
+            <img 
+              [src]="imgErrorOccurred() ? fallbackImage : (galleryImages().length > activeImageIndex() ? galleryImages()[activeImageIndex()] : rest.imageUrl)" 
+              [alt]="rest.name + ' - Atmosphere photo ' + (activeImageIndex() + 1)"
+              (error)="onImageError()"
+              class="main-cover-img"
+            />
+            <div class="image-gradient-overlay"></div>
+
+            <div class="gallery-badge-box">
+              <span class="gallery-counter">Photo {{ activeImageIndex() + 1 }} of {{ galleryImages().length }}</span>
+              <span class="expand-hint">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                </svg>
+                <span>Enlarge</span>
+              </span>
+            </div>
+
+            @if (galleryImages().length > 1) {
+              <button 
+                type="button" 
+                class="gallery-arrow prev-arrow" 
+                (click)="prevImage(); $event.stopPropagation()" 
+                aria-label="Previous photo">
+                ‹
+              </button>
+              <button 
+                type="button" 
+                class="gallery-arrow next-arrow" 
+                (click)="nextImage(); $event.stopPropagation()" 
+                aria-label="Next photo">
+                ›
+              </button>
+            }
+          </div>
+
+          <!-- Thumbnails Strip -->
+          @if (galleryImages().length > 1) {
+            <div class="gallery-thumbnails-strip">
+              @for (img of galleryImages(); track img; let i = $index) {
+                <button 
+                  type="button" 
+                  class="thumb-pill" 
+                  [class.active]="activeImageIndex() === i"
+                  (click)="selectImage(i)"
+                  [attr.aria-label]="'Select photo ' + (i + 1)">
+                  <img [src]="img" [alt]="rest.name + ' thumbnail ' + (i + 1)" class="thumb-photo" />
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </header>
+
+      <!-- 3. TWO-COLUMN SPLIT: DETAILS CONTENT & RESERVATION SIDEBAR -->
+      <div class="detail-split-grid">
+        <!-- LEFT COLUMN: Deep Information -->
+        <div class="detail-main-col">
+          <!-- About Section -->
+          <section class="content-card about-card" id="aboutSection">
+            <span class="eyebrow">Culinary Identity</span>
+            <h2 class="card-title">About the Dining Sanctuary</h2>
+            <p class="about-paragraph">{{ rest.description }}</p>
+
+            <!-- Amenities Chips -->
+            <div class="amenities-wrapper">
+              <span class="sub-label">Curated Amenities & Dining Highlights:</span>
+              <div class="amenities-chips-row">
+                @for (h of rest.highlights; track h) {
+                  <span class="amenity-chip">
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="chip-check" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    {{ h }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <!-- Today's Live Availability Pill -->
+            <div class="live-availability-card">
+              <div class="avail-icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div class="avail-content">
+                <span class="avail-heading">Today's Real-Time Seating Availability</span>
+                <p class="avail-sub">
+                  Accepting table reservations. Available slots for dinner service:
+                </p>
+                <div class="avail-slots-row">
+                  @for (slot of rest.availableSlots; track slot) {
+                    <button type="button" class="avail-slot-pill" (click)="selectSlot(slot); scrollToReservation()">
+                      {{ slot }}
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Executive Chef Spotlight -->
+          @if (rest.chefName) {
+            <section class="content-card chef-card">
+              <div class="chef-badge-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"></path>
+                  <line x1="6" y1="17" x2="18" y2="17"></line>
+                </svg>
+              </div>
+              <div class="chef-narrative">
+                <span class="eyebrow">Culinary Mastermind</span>
+                <h3 class="chef-fullname">{{ rest.chefName }}</h3>
+                <blockquote class="chef-quote">
+                  "Every course presented at {{ rest.name }} is a celebration of heritage, pristine terroir, and honest human hospitality."
+                </blockquote>
+                <p class="chef-caption">Executive Chef & Culinary Director</p>
+              </div>
+            </section>
+          }
+
+          <!-- Opening Hours & Weekly Schedule Section -->
+          <section class="content-card hours-card" id="hoursSection">
+            <span class="eyebrow">Operating Hours</span>
+            <h2 class="card-title">Weekly Schedule & Service Times</h2>
+
+            <div class="hours-table-wrap">
+              <table class="hours-table" aria-label="Weekly opening hours schedule">
+                <thead>
+                  <tr>
+                    <th scope="col">Day</th>
+                    <th scope="col">Service Window</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of weeklySchedule(); track entry.day) {
+                    <tr [class.today-row]="entry.isToday">
+                      <td class="day-cell">
+                        <strong>{{ entry.day }}</strong>
+                        @if (entry.isToday) {
+                          <span class="today-tag">Today</span>
+                        }
+                      </td>
+                      <td class="time-cell">{{ entry.hours }}</td>
+                      <td class="status-cell">
+                        @if (entry.hours.toLowerCase().includes('closed')) {
+                          <span class="status-closed">Private Events</span>
+                        } @else {
+                          <span class="status-open">Open for Reservations</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="hours-notes-row">
+              <div class="note-item">
+                <span class="note-label">Grace Period:</span>
+                <span class="note-desc">Tables held for 15 minutes past reserved time.</span>
+              </div>
+              <div class="note-item">
+                <span class="note-label">Cancellation:</span>
+                <span class="note-desc">Complimentary cancellation up to 6 hours prior.</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Menu Categories & Sample Dishes Section -->
+          <section class="content-card menu-card" id="menuSection">
+            <div class="menu-card-header">
+              <div>
+                <span class="eyebrow">Gastronomic Selection</span>
+                <h2 class="card-title">Menu Highlights & Pairings</h2>
+              </div>
+              <span class="menu-season-pill">Seasonal Tasting Program</span>
+            </div>
+
+            <!-- Menu Category Navigation Tabs -->
+            <div class="menu-tabs-bar" role="tablist" aria-label="Menu category filters">
+              @for (tab of menuCategoryTabs; track tab.id) {
+                <button 
+                  type="button" 
+                  role="tab"
+                  class="menu-category-btn" 
+                  [class.active]="selectedMenuCategory() === tab.id"
+                  [attr.aria-selected]="selectedMenuCategory() === tab.id"
+                  (click)="setMenuCategory(tab.id)">
+                  {{ tab.label }}
+                </button>
+              }
+            </div>
+
+            <!-- Dishes Grid -->
+            <div class="dishes-list">
+              @for (dish of filteredMenu(); track dish.name) {
+                <article class="dish-card">
+                  <div class="dish-primary-row">
+                    <h3 class="dish-name">{{ dish.name }}</h3>
+                    <span class="dish-price">{{ dish.price }}</span>
+                  </div>
+                  <p class="dish-desc">{{ dish.description }}</p>
+                  <div class="dish-tags-row">
+                    @if (dish.tag) {
+                      <span class="badge badge-terracotta dish-tag">{{ dish.tag }}</span>
+                    }
+                    @if (dish.category) {
+                      <span class="badge badge-ivory dish-cat-tag">{{ dish.category | uppercase }}</span>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+
+            <p class="menu-disclaimer">
+              * Dishes are prepared fresh daily using artisanal seasonal provisions. Full tasting menus and bespoke wine flights are presented upon table arrival.
+            </p>
+          </section>
+
+          <!-- Customer Reviews & Ratings Section -->
+          <section class="content-card reviews-card" id="reviewsSection">
+            <div class="reviews-header">
+              <div>
+                <span class="eyebrow">Verified Guest Feedback</span>
+                <h2 class="card-title">Reviews & Culinary Memoirs</h2>
+              </div>
+              <div class="verified-badge-pill">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="badge-check" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <span>100% Verified Reservations</span>
+              </div>
+            </div>
+
+            <!-- Rating Scores Matrix -->
+            <div class="rating-matrix-card">
+              <div class="rating-matrix-left">
+                <span class="matrix-score">{{ reviewMetrics().overall }}</span>
+                <div class="matrix-stars">★★★★★</div>
+                <span class="matrix-count">Based on {{ rest.reviewCount }} verified visits</span>
+                <span class="matrix-rec">{{ reviewMetrics().recommendRate }} of diners recommend</span>
+              </div>
+
+              <div class="rating-matrix-right">
+                <div class="metric-bar-item">
+                  <div class="bar-labels">
+                    <span>Food Quality</span>
+                    <span>{{ reviewMetrics().food }} / 5.0</span>
+                  </div>
+                  <div class="bar-track"><div class="bar-fill" style="width: 98%;"></div></div>
+                </div>
+
+                <div class="metric-bar-item">
+                  <div class="bar-labels">
+                    <span>Hospitality & Service</span>
+                    <span>{{ reviewMetrics().service }} / 5.0</span>
+                  </div>
+                  <div class="bar-track"><div class="bar-fill" style="width: 100%;"></div></div>
+                </div>
+
+                <div class="metric-bar-item">
+                  <div class="bar-labels">
+                    <span>Atmosphere & Ambiance</span>
+                    <span>{{ reviewMetrics().ambiance }} / 5.0</span>
+                  </div>
+                  <div class="bar-track"><div class="bar-fill" style="width: 96%;"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reviews List -->
+            <div class="reviews-feed">
+              @for (rev of reviewsList(); track rev.id) {
+                <article class="review-entry-card">
+                  <div class="review-entry-top">
+                    <div class="reviewer-avatar-box">
+                      <span>{{ rev.author.charAt(0) }}</span>
+                    </div>
+
+                    <div class="reviewer-meta">
+                      <div class="rev-name-row">
+                        <h4 class="reviewer-name">{{ rev.author }}</h4>
+                        <span class="verified-tag">✓ Verified Patron</span>
+                      </div>
+                      <span class="review-date-str">{{ rev.date }} • {{ rev.visitType || 'Dining Memoir' }}</span>
+                    </div>
+
+                    <div class="entry-stars" aria-label="5 stars rating">
+                      @for (star of [1,2,3,4,5]; track star) {
+                        <span class="star-gold">★</span>
+                      }
+                    </div>
+                  </div>
+
+                  <h5 class="review-entry-title">"{{ rev.title }}"</h5>
+                  <p class="review-entry-comment">{{ rev.comment }}</p>
+                </article>
+              }
+            </div>
+          </section>
+
+          <!-- Dining Guidelines & Contact Section -->
+          <section class="content-card guidelines-card">
+            <span class="eyebrow">Practical Essentials</span>
+            <h2 class="card-title">Dining Guidelines & Venue Information</h2>
+
+            <div class="guidelines-tiles-grid">
+              <div class="guide-tile">
+                <span class="tile-icon-tag">👔</span>
+                <span class="tile-title">Dress Code</span>
+                <span class="tile-val">{{ rest.dressCode || 'Smart Casual' }}</span>
+                <span class="tile-sub">We kindly advise jackets for gentlemen; no athletic attire.</span>
+              </div>
+
+              <div class="guide-tile">
+                <span class="tile-icon-tag">📍</span>
+                <span class="tile-title">Physical Address</span>
+                <span class="tile-val">{{ rest.address || rest.location }}</span>
+                <span class="tile-sub">{{ rest.neighborhood }}, {{ rest.city }}</span>
+              </div>
+
+              <div class="guide-tile">
+                <span class="tile-icon-tag">📞</span>
+                <span class="tile-title">Hospitality Concierge</span>
+                <span class="tile-val">{{ rest.phone || '+1 (212) 555-0198' }}</span>
+                <span class="tile-sub">Direct line for inquiries & private salon buyouts</span>
+              </div>
+
+              <div class="guide-tile">
+                <span class="tile-icon-tag">🍷</span>
+                <span class="tile-title">Corkage Policy</span>
+                <span class="tile-val">$75 per 750ml</span>
+                <span class="tile-sub">Maximum two bottles not currently on the cellar list</span>
+              </div>
+            </div>
+
+            @if (rest.dietaryOptions && rest.dietaryOptions.length > 0) {
+              <div class="dietary-box">
+                <span class="diet-box-title">Dietary & Allergen Accommodations:</span>
+                <ul class="dietary-checklist">
+                  @for (item of rest.dietaryOptions; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </section>
+        </div>
+
+        <!-- RIGHT COLUMN: Sticky Interactive Table Booking Card -->
+        <aside class="detail-sidebar-col" aria-label="Table reservation widget">
+          <div class="sticky-booking-widget" id="reservationCard">
+            <div class="widget-header">
+              <span class="eyebrow">Instant Table Reservation</span>
+              <h3 class="widget-title">Reserve at {{ rest.name }}</h3>
+              <p class="widget-subtitle">Guaranteed seating confirmed instantly.</p>
+            </div>
+
+            @if (!bookingConfirmed()) {
+              <form (ngSubmit)="submitBooking()" class="table-reservation-form">
+                <!-- Date Picker -->
+                <div class="form-row">
+                  <label for="diningDateInput" class="form-label">
+                    <span>Dining Date</span>
+                    <span class="label-sub">Today onwards</span>
+                  </label>
+                  <input 
+                    type="date" 
+                    id="diningDateInput" 
+                    [ngModel]="bookingDate()" 
+                    (ngModelChange)="bookingDate.set($event)" 
+                    name="diningDate" 
+                    class="luxury-input" 
+                    required 
+                  />
+                </div>
+
+                <!-- Party Size -->
+                <div class="form-row">
+                  <label for="partySizeSelect" class="form-label">
+                    <span>Party Size</span>
+                    <span class="label-sub">Total Guests</span>
+                  </label>
+                  <select 
+                    id="partySizeSelect" 
+                    [ngModel]="bookingPartySize()" 
+                    (ngModelChange)="bookingPartySize.set(+$event)" 
+                    name="partySize" 
+                    class="luxury-select">
+                    @for (opt of partySizeOptions; track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                </div>
+
+                <!-- Seating Area Preference -->
+                <div class="form-row">
+                  <label for="seatingSelect" class="form-label">
+                    <span>Seating Preference</span>
+                    <span class="label-sub">Ambiance Area</span>
+                  </label>
+                  <select 
+                    id="seatingSelect" 
+                    [ngModel]="seatingPreference()" 
+                    (ngModelChange)="seatingPreference.set($event)" 
+                    name="seatingPref" 
+                    class="luxury-select">
+                    @for (area of seatingOptions; track area) {
+                      <option [value]="area">{{ area }}</option>
+                    }
+                  </select>
+                </div>
+
+                <!-- Time Slot Selector -->
+                <div class="form-row">
+                  <label class="form-label">
+                    <span>Available Seating Times</span>
+                    <span class="label-sub">Select preferred slot</span>
+                  </label>
+                  <div class="time-slots-container">
+                    @for (slot of rest.availableSlots; track slot) {
+                      <button 
+                        type="button" 
+                        class="slot-choice-btn" 
+                        [class.active]="bookingTime() === slot"
+                        (click)="selectSlot(slot)">
+                        {{ slot }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <!-- Guest Name -->
+                <div class="form-row">
+                  <label for="guestFullnameInput" class="form-label">Lead Guest Full Name</label>
+                  <input 
+                    type="text" 
+                    id="guestFullnameInput" 
+                    [ngModel]="guestName()" 
+                    (ngModelChange)="guestName.set($event)" 
+                    name="leadGuestName" 
+                    placeholder="e.g. Lorde Evelyn Wright" 
+                    class="luxury-input" 
+                    required 
+                  />
+                </div>
+
+                <!-- Guest Contact Details -->
+                <div class="form-grid-2">
+                  <div class="form-row">
+                    <label for="guestEmailInput" class="form-label">Email</label>
+                    <input 
+                      type="email" 
+                      id="guestEmailInput" 
+                      [ngModel]="guestEmail()" 
+                      (ngModelChange)="guestEmail.set($event)" 
+                      name="guestEmail" 
+                      class="luxury-input" 
+                      required 
+                    />
+                  </div>
+
+                  <div class="form-row">
+                    <label for="guestPhoneInput" class="form-label">Phone</label>
+                    <input 
+                      type="tel" 
+                      id="guestPhoneInput" 
+                      [ngModel]="guestPhone()" 
+                      (ngModelChange)="guestPhone.set($event)" 
+                      name="guestPhone" 
+                      class="luxury-input" 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                <!-- Special Requests -->
+                <div class="form-row">
+                  <label for="requestsInput" class="form-label">Special Requests (Optional)</label>
+                  <textarea 
+                    id="requestsInput" 
+                    [ngModel]="specialRequests()" 
+                    (ngModelChange)="specialRequests.set($event)" 
+                    name="requests" 
+                    rows="2"
+                    placeholder="Allergies, anniversary celebration, sommelier consultation..." 
+                    class="luxury-textarea">
+                  </textarea>
+                </div>
+
+                <!-- Primary CTA Button -->
+                <button type="submit" class="btn btn-terracotta btn-lg reserve-submit-btn">
+                  <span>Confirm Table Reservation for {{ bookingTime() }}</span>
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </form>
+            } @else {
+              <!-- Confirmed State Box -->
+              <div class="confirmed-box-card">
+                <div class="confirmed-check-badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+
+                <h4 class="conf-title">Reservation Confirmed</h4>
+                <p class="conf-ref-text">Reference: <strong class="ref-code">{{ bookingRefCode() }}</strong></p>
+
+                <div class="conf-summary-grid">
+                  <div class="conf-row">
+                    <span class="conf-label">Restaurant:</span>
+                    <span class="conf-val">{{ rest.name }}</span>
+                  </div>
+                  <div class="conf-row">
+                    <span class="conf-label">Date & Time:</span>
+                    <span class="conf-val">{{ bookingDate() }} at {{ bookingTime() }}</span>
+                  </div>
+                  <div class="conf-row">
+                    <span class="conf-label">Party Size:</span>
+                    <span class="conf-val">{{ bookingPartySize() }} Guests</span>
+                  </div>
+                  <div class="conf-row">
+                    <span class="conf-label">Seating:</span>
+                    <span class="conf-val">{{ seatingPreference() }}</span>
+                  </div>
+                  <div class="conf-row">
+                    <span class="conf-label">Lead Guest:</span>
+                    <span class="conf-val">{{ guestName() }}</span>
+                  </div>
+                </div>
+
+                <p class="conf-notice">
+                  A verification receipt has been dispatched to your member account. The maître d' has been notified of your reservation.
+                </p>
+
+                <div class="conf-actions-stack">
+                  <button type="button" class="btn btn-primary btn-block" (click)="goToConfirmation()">
+                    <span>View Official Confirmation Receipt</span>
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+
+                  <button type="button" class="btn btn-outline btn-sm btn-block" (click)="resetBooking()">
+                    Book Another Seating
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- Direct Concierge Help -->
+            <div class="widget-concierge-footer">
+              <span class="concierge-badge">Private Events & Group Inquiries</span>
+              <p class="concierge-text">
+                For buyout banquets or parties of 8+, connect directly with our hospitality desk at concierge&#64;dinevia.example.com
+              </p>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- 4. SIMILAR RESTAURANTS ("You May Also Savor") -->
+      @if (similarRestaurants().length > 0) {
+        <section class="similar-restaurants-section" aria-labelledby="similarHeading">
+          <div class="section-header text-left">
+            <span class="eyebrow">Gastronomic Recommendations</span>
+            <h2 id="similarHeading" class="section-title">You May Also Savor</h2>
+            <p class="section-subtitle">
+              Other world-class establishments sharing exceptional technique and hospitable warmth.
+            </p>
+          </div>
+
+          <div class="similar-cards-grid">
+            @for (sim of similarRestaurants(); track sim.id) {
+              <app-restaurant-card 
+                [restaurant]="sim"
+                (viewDetails)="onSimilarRestaurantClick($event)">
+              </app-restaurant-card>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Bottom Return Navigation -->
+      <div class="bottom-return-bar">
+        <a routerLink="/explore" class="btn btn-outline btn-lg">
+          <span>← Return to All Explore Restaurants</span>
+        </a>
+      </div>
+    }
+  </div>
+
+  <!-- Mobile Floating Sticky Bottom Booking Bar -->
+  @if (showStickyMobileBar() && restaurant(); as rest) {
+    <div class="mobile-sticky-bottom-bar" role="complementary" aria-label="Quick reservation bar">
+      <div class="mobile-bar-inner">
+        <div class="bar-rest-info">
+          <span class="bar-rest-name">{{ rest.name }}</span>
+          <span class="bar-rest-meta">{{ rest.cuisine }} &bull; {{ rest.priceRange }} &bull; {{ rest.rating.toFixed(1) }} ★</span>
+        </div>
+
+        <a 
+          [routerLink]="['/book', rest.id]" 
+          [queryParams]="{ date: bookingDate(), time: bookingTime(), guests: bookingPartySize() }"
+          class="btn btn-terracotta btn-sm bar-reserve-cta">
+          Reserve a Table
+        </a>
+      </div>
+    </div>
+  }
+
+  <!-- Photo Lightbox Modal -->
+  @if (isLightboxOpen() && restaurant(); as rest) {
+    <div class="lightbox-backdrop" (click)="closeLightbox()" role="dialog" aria-modal="true" aria-label="Photo gallery full screen preview">
+      <div class="lightbox-content" (click)="$event.stopPropagation()">
+        <button type="button" class="lightbox-close" (click)="closeLightbox()" aria-label="Close photo preview">
+          ✕
+        </button>
+
+        <div class="lightbox-image-wrapper">
+          <img 
+            [src]="imgErrorOccurred() ? fallbackImage : (galleryImages().length > activeImageIndex() ? galleryImages()[activeImageIndex()] : rest.imageUrl)" 
+            [alt]="rest.name + ' full size gallery view'"
+            class="lightbox-img"
+          />
+        </div>
+
+        <div class="lightbox-footer">
+          <span class="lightbox-caption">{{ rest.name }} &bull; Image {{ activeImageIndex() + 1 }} of {{ galleryImages().length }}</span>
+          @if (galleryImages().length > 1) {
+            <div class="lightbox-nav-btns">
+              <button type="button" class="lightbox-nav-btn" (click)="prevImage()">‹ Previous</button>
+              <button type="button" class="lightbox-nav-btn" (click)="nextImage()">Next ›</button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Toast Notification Feedback -->
+  @if (toastMessage()) {
+    <div class="toast-notification" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+</main>
+
+<app-footer></app-footer>

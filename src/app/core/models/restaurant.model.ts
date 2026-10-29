@@ -4,6 +4,32 @@ export interface TimeSlot {
   type?: 'indoor' | 'patio' | 'chef-counter' | 'private-room';
 }
 
+export interface MenuItem {
+  name: string;
+  description: string;
+  price: string;
+  category?: 'starter' | 'main' | 'dessert' | 'beverage';
+  tag?: string;
+  dietary?: string;
+}
+
+export interface DayHours {
+  day: string;
+  hours: string;
+  isToday?: boolean;
+}
+
+export interface RestaurantReview {
+  id: string;
+  author: string;
+  rating: number;
+  date: string;
+  title: string;
+  comment: string;
+  visitType?: string;
+  verified: boolean;
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -22,4 +48,13 @@ export interface Restaurant {
   availableSlots: string[]; // e.g. ['6:00 PM', '7:30 PM', '8:45 PM']
   highlights: string[];
   dressCode?: string;
+  galleryImages?: string[];
+  chefName?: string;
+  phone?: string;
+  address?: string;
+  hours?: string;
+  weeklyHours?: DayHours[];
+  menuHighlights?: MenuItem[];
+  dietaryOptions?: string[];
+  reviews?: RestaurantReview[];
 }

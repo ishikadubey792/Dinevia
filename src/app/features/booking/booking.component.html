@@ -1,0 +1,508 @@
+<app-navbar></app-navbar>
+
+<main class="booking-page" role="main">
+  <div class="container">
+    <!-- Top Navigation Bar -->
+    <div class="booking-top-bar">
+      @if (restaurant(); as rest) {
+        <a [routerLink]="['/restaurants', rest.id]" class="back-link-btn">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="back-arrow" aria-hidden="true">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+          </svg>
+          <span>Back to {{ rest.name }} Details</span>
+        </a>
+
+        <nav class="booking-breadcrumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a routerLink="/" class="crumb-anchor">Home</a></li>
+            <li class="crumb-sep" aria-hidden="true">/</li>
+            <li><a routerLink="/explore" class="crumb-anchor">Explore</a></li>
+            <li class="crumb-sep" aria-hidden="true">/</li>
+            <li><a [routerLink]="['/restaurants', rest.id]" class="crumb-anchor">{{ rest.name }}</a></li>
+            <li class="crumb-sep" aria-hidden="true">/</li>
+            <li class="crumb-active" aria-current="page">Table Reservation</li>
+          </ol>
+        </nav>
+      }
+    </div>
+
+    <!-- INVALID RESTAURANT STATE -->
+    @if (isNotFound() || !restaurant()) {
+      <div class="restaurant-not-found-card" role="region" aria-label="Restaurant not found">
+        <div class="error-badge-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h1 class="error-card-title">Restaurant Not Found</h1>
+        <p class="error-card-desc">
+          The dining destination you selected could not be retrieved. Please return to the restaurant listing to choose a verified partner venue.
+        </p>
+        <a routerLink="/explore" class="btn btn-primary btn-lg">
+          <span>Explore All Restaurants</span>
+          <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </a>
+      </div>
+    }
+
+    <!-- RESTAURANT FOUND: BOOKING FORM & SUMMARY SPLIT -->
+    @if (restaurant(); as rest) {
+      <div class="booking-layout-grid">
+        <!-- LEFT: Full Reservation Form -->
+        <div class="booking-form-col">
+          <div class="booking-header-card">
+            <span class="eyebrow">Table Reservation</span>
+            <h1 class="booking-page-title">Reserve at {{ rest.name }}</h1>
+            <p class="booking-page-subtitle">
+              Instant verified table reservation. No booking fee or deposit required.
+            </p>
+          </div>
+
+          <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" class="luxury-booking-form" novalidate>
+            <!-- 1. DATE, GUESTS & SEATING PREFERENCE -->
+            <section class="form-section-card">
+              <div class="section-badge-header">
+                <span class="step-num">1</span>
+                <div>
+                  <h2 class="section-heading">Date, Guests & Seating</h2>
+                  <p class="section-sub">Choose your dining party configuration</p>
+                </div>
+              </div>
+
+              <!-- Date Picker & Quick Selectors -->
+              <div class="form-field-group">
+                <label for="bookDateInput" class="field-label">
+                  <span>Dining Date</span>
+                  <span class="label-requirement">*Required</span>
+                </label>
+                <input 
+                  type="date" 
+                  id="bookDateInput" 
+                  formControlName="date"
+                  [min]="minDate()"
+                  [class.form-input-error]="isFieldInvalid('date')"
+                  class="styled-input"
+                />
+
+                @if (isFieldInvalid('date')) {
+                  <span class="field-error-msg">Please select a valid date (past dates are disabled).</span>
+                }
+
+                <!-- Quick Date Chips -->
+                <div class="quick-dates-row">
+                  <span class="quick-label">Quick select:</span>
+                  <button type="button" class="quick-chip" (click)="setQuickDate(0)">Today</button>
+                  <button type="button" class="quick-chip" (click)="setQuickDate(1)">Tomorrow</button>
+                  <button type="button" class="quick-chip" (click)="setQuickDate(2)">In 2 Days</button>
+                  <button type="button" class="quick-chip" (click)="setQuickDate(3)">In 3 Days</button>
+                </div>
+              </div>
+
+              <!-- Guests & Seating Area Grid -->
+              <div class="form-two-cols">
+                <!-- Guests -->
+                <div class="form-field-group">
+                  <label for="bookGuestsSelect" class="field-label">
+                    <span>Number of Guests</span>
+                    <span class="label-requirement">*Required</span>
+                  </label>
+                  <div class="styled-select-wrap">
+                    <select 
+                      id="bookGuestsSelect" 
+                      formControlName="guests" 
+                      class="styled-select"
+                      [class.form-input-error]="isFieldInvalid('guests')">
+                      @for (g of guestOptions; track g.count) {
+                        <option [value]="g.count">{{ g.label }}</option>
+                      }
+                    </select>
+                    <span class="select-arrow" aria-hidden="true">▾</span>
+                  </div>
+                </div>
+
+                <!-- Seating Area Preference -->
+                <div class="form-field-group">
+                  <label for="bookSeatingSelect" class="field-label">
+                    <span>Seating Area</span>
+                    <span class="label-hint">Preferred zone</span>
+                  </label>
+                  <div class="styled-select-wrap">
+                    <select 
+                      id="bookSeatingSelect" 
+                      formControlName="seatingArea" 
+                      class="styled-select">
+                      @for (area of seatingAreas; track area) {
+                        <option [value]="area">{{ area }}</option>
+                      }
+                    </select>
+                    <span class="select-arrow" aria-hidden="true">▾</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dining Occasion -->
+              <div class="form-field-group">
+                <label for="bookOccasionSelect" class="field-label">
+                  <span>Dining Occasion</span>
+                  <span class="label-hint">Optional</span>
+                </label>
+                <div class="styled-select-wrap">
+                  <select 
+                    id="bookOccasionSelect" 
+                    formControlName="occasion" 
+                    class="styled-select">
+                    @for (occ of occasions; track occ.value) {
+                      <option [value]="occ.value">{{ occ.label }}</option>
+                    }
+                  </select>
+                  <span class="select-arrow" aria-hidden="true">▾</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- 2. TIME SLOTS SELECTION -->
+            <section class="form-section-card">
+              <div class="section-badge-header">
+                <span class="step-num">2</span>
+                <div>
+                  <h2 class="section-heading">Available Seating Times</h2>
+                  <p class="section-sub">Select your seating slot for {{ formattedSelectedDate() }}</p>
+                </div>
+              </div>
+
+              <!-- Lunch Slots -->
+              @if (lunchSlots().length > 0) {
+                <div class="slots-period-group">
+                  <span class="period-title">Lunch & Afternoon Service</span>
+                  <div class="slots-buttons-grid">
+                    @for (slot of lunchSlots(); track slot.time) {
+                      <button 
+                        type="button" 
+                        class="slot-btn" 
+                        [class.active]="selectedTimeSlot() === slot.time && slot.available"
+                        [class.disabled-slot]="!slot.available"
+                        [disabled]="!slot.available"
+                        (click)="selectTimeSlot(slot)"
+                        [attr.aria-label]="slot.time + ' - ' + slot.statusText">
+                        <span class="slot-time-text">{{ slot.time }}</span>
+                        <span class="slot-status-tag" [class.booked-tag]="!slot.available">{{ slot.statusText }}</span>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Dinner Slots -->
+              <div class="slots-period-group">
+                <span class="period-title">Prime Dinner Service</span>
+                <div class="slots-buttons-grid">
+                  @for (slot of dinnerSlots(); track slot.time) {
+                    <button 
+                      type="button" 
+                      class="slot-btn" 
+                      [class.active]="selectedTimeSlot() === slot.time && slot.available"
+                      [class.disabled-slot]="!slot.available"
+                      [disabled]="!slot.available"
+                      (click)="selectTimeSlot(slot)"
+                      [attr.aria-label]="slot.time + ' - ' + slot.statusText">
+                      <span class="slot-time-text">{{ slot.time }}</span>
+                      <span class="slot-status-tag" [class.booked-tag]="!slot.available">{{ slot.statusText }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="slot-selection-notice">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="notice-icon" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                <span>Selected Time: <strong>{{ selectedTimeSlot() }}</strong>. Fully booked slots are disabled.</span>
+              </div>
+            </section>
+
+            <!-- 3. CUSTOMER INFORMATION -->
+            <section class="form-section-card">
+              <div class="section-badge-header">
+                <span class="step-num">3</span>
+                <div>
+                  <h2 class="section-heading">Lead Guest Information</h2>
+                  <p class="section-sub">Your reservation will be held under these details</p>
+                </div>
+              </div>
+
+              <!-- Full Name -->
+              <div class="form-field-group">
+                <label for="bookNameInput" class="field-label">
+                  <span>Full Legal Name</span>
+                  <span class="label-requirement">*Required</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="bookNameInput" 
+                  formControlName="fullName"
+                  placeholder="e.g. Lorde Evelyn Wright"
+                  [class.form-input-error]="isFieldInvalid('fullName')"
+                  class="styled-input"
+                />
+                @if (isFieldInvalid('fullName')) {
+                  <span class="field-error-msg">Please enter your full name (at least 2 characters).</span>
+                }
+              </div>
+
+              <!-- Email & Phone Grid -->
+              <div class="form-two-cols">
+                <!-- Email -->
+                <div class="form-field-group">
+                  <label for="bookEmailInput" class="field-label">
+                    <span>Email Address</span>
+                    <span class="label-requirement">*Required</span>
+                  </label>
+                  <input 
+                    type="email" 
+                    id="bookEmailInput" 
+                    formControlName="email"
+                    placeholder="e.g. evelyn@example.com"
+                    [class.form-input-error]="isFieldInvalid('email')"
+                    class="styled-input"
+                  />
+                  @if (isFieldInvalid('email')) {
+                    <span class="field-error-msg">Please enter a valid email address.</span>
+                  }
+                </div>
+
+                <!-- Phone -->
+                <div class="form-field-group">
+                  <label for="bookPhoneInput" class="field-label">
+                    <span>Phone Number</span>
+                    <span class="label-requirement">*Required</span>
+                  </label>
+                  <input 
+                    type="tel" 
+                    id="bookPhoneInput" 
+                    formControlName="phone"
+                    placeholder="e.g. +1 (555) 019-2831"
+                    [class.form-input-error]="isFieldInvalid('phone')"
+                    class="styled-input"
+                  />
+                  @if (isFieldInvalid('phone')) {
+                    <span class="field-error-msg">Please enter a valid phone number.</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Dietary Restrictions Chips -->
+              <div class="form-field-group">
+                <label class="field-label">
+                  <span>Dietary Accommodations</span>
+                  <span class="label-hint">Select any that apply</span>
+                </label>
+                <div class="dietary-selector-row">
+                  @for (tag of dietaryOptions; track tag) {
+                    <button 
+                      type="button" 
+                      class="dietary-toggle-btn"
+                      [class.active]="selectedDietary().includes(tag)"
+                      (click)="toggleDietary(tag)">
+                      {{ tag }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Special Requests Textarea -->
+              <div class="form-field-group">
+                <label for="bookRequestsText" class="field-label">
+                  <span>Special Requests or Notes for Maître d'</span>
+                  <span class="label-hint">Optional</span>
+                </label>
+                <textarea 
+                  id="bookRequestsText" 
+                  formControlName="specialRequests"
+                  rows="3"
+                  placeholder="Anniversary notes, preferred sommelier consultations, accessibility preferences..."
+                  class="styled-textarea">
+                </textarea>
+              </div>
+
+              <!-- Terms & Grace Period Agreement -->
+              <div class="terms-row">
+                <label class="terms-checkbox-label">
+                  <input type="checkbox" formControlName="agreeTerms" class="styled-checkbox" />
+                  <span class="terms-text">
+                    I acknowledge that tables are graciously held for 15 minutes past reserved time and complimentary cancellation is available up to 6 hours prior to seating.
+                  </span>
+                </label>
+                @if (isFieldInvalid('agreeTerms')) {
+                  <span class="field-error-msg">You must accept the reservation policy to proceed.</span>
+                }
+              </div>
+
+              <!-- Submission Error Message Alert -->
+              @if (submissionError()) {
+                <div class="submission-error-alert" role="alert">
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                  <span>{{ submissionError() }}</span>
+                </div>
+              }
+
+              <!-- Submit Button -->
+              <div class="form-submit-row">
+                <button 
+                  type="submit" 
+                  [disabled]="isSubmitting()"
+                  class="btn btn-terracotta btn-lg book-now-submit-btn">
+                  @if (!isSubmitting()) {
+                    <span>Confirm Table Reservation for {{ selectedTimeSlot() }}</span>
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  } @else {
+                    <span class="loading-spinner" aria-hidden="true"></span>
+                    <span>Securing Your Table Reservation...</span>
+                  }
+                </button>
+              </div>
+            </section>
+          </form>
+        </div>
+
+        <!-- RIGHT: Live Booking Summary Sidebar -->
+        <aside class="booking-sidebar-col" aria-label="Live reservation summary">
+          <div class="sticky-summary-box">
+            <!-- Restaurant Mini Card -->
+            <div class="summary-restaurant-card">
+              <div class="summary-thumb-frame">
+                <img 
+                  [src]="rest.imageUrl || fallbackImage" 
+                  [alt]="rest.name + ' fine dining atmosphere'" 
+                  class="summary-thumb-img"
+                />
+              </div>
+
+              <div class="summary-rest-text">
+                <div class="rest-badge-pill">
+                  <span class="badge badge-ivory">{{ rest.cuisine }}</span>
+                  <span class="badge badge-sage">{{ rest.priceRange }}</span>
+                </div>
+                <h3 class="summary-rest-name">{{ rest.name }}</h3>
+                <p class="summary-rest-loc">{{ rest.address || rest.location }}</p>
+                <div class="summary-rest-rating">
+                  <span class="star-icon">★</span>
+                  <span class="score-text">{{ rest.rating.toFixed(2) }}</span>
+                  <span class="reviews-count">({{ rest.reviewCount }} reviews)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Booking Details Breakdown -->
+            <div class="summary-breakdown-card">
+              <h4 class="summary-breakdown-title">Reservation Summary</h4>
+
+              <div class="summary-line-item">
+                <div class="line-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </div>
+                <div class="line-content">
+                  <span class="line-label">Dining Date</span>
+                  <strong class="line-val">{{ formattedSelectedDate() }}</strong>
+                </div>
+              </div>
+
+              <div class="summary-line-item">
+                <div class="line-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <div class="line-content">
+                  <span class="line-label">Seating Time</span>
+                  <strong class="line-val">{{ selectedTimeSlot() }}</strong>
+                </div>
+              </div>
+
+              <div class="summary-line-item">
+                <div class="line-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
+                <div class="line-content">
+                  <span class="line-label">Party Size</span>
+                  <strong class="line-val">
+                    {{ bookingForm.get('guests')?.value }} 
+                    {{ bookingForm.get('guests')?.value === 1 ? 'Guest' : 'Guests' }}
+                  </strong>
+                </div>
+              </div>
+
+              <div class="summary-line-item">
+                <div class="line-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
+                </div>
+                <div class="line-content">
+                  <span class="line-label">Seating Area</span>
+                  <strong class="line-val">{{ bookingForm.get('seatingArea')?.value }}</strong>
+                </div>
+              </div>
+
+              <!-- Guest Name Preview -->
+              @if (bookingForm.get('fullName')?.value) {
+                <div class="summary-line-item">
+                  <div class="line-icon-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                  <div class="line-content">
+                    <span class="line-label">Primary Guest</span>
+                    <strong class="line-val">{{ bookingForm.get('fullName')?.value }}</strong>
+                  </div>
+                </div>
+              }
+
+              <!-- Pricing and Booking Fee Notice -->
+              <div class="summary-pricing-row">
+                <div class="pricing-badge">
+                  <span class="pricing-icon">✓</span>
+                  <span>No Booking Fees</span>
+                </div>
+                <span class="pricing-note">Complimentary Table Reservation</span>
+              </div>
+            </div>
+
+            <!-- Guarantee Box -->
+            <div class="summary-guarantee-card">
+              <span class="guarantee-title">Dinevia Hospitality Commitment</span>
+              <ul class="guarantee-list">
+                <li>Instant table reservation with the maître d'</li>
+                <li>15-minute grace period held for your party</li>
+                <li>Complimentary modification up to 6 hours prior</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    }
+  </div>
+</main>
+
+<app-footer></app-footer>

@@ -1,0 +1,143 @@
+<app-navbar></app-navbar>
+
+<main class="wishlist-page" role="main">
+  <div class="container">
+    <!-- Breadcrumbs -->
+    <nav class="wishlist-breadcrumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a routerLink="/" class="crumb-anchor">Home</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        <li class="crumb-active" aria-current="page">Saved Wishlist</li>
+      </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="wishlist-header">
+      <div class="header-text-col">
+        <span class="eyebrow">Personal Gastronomic Vault</span>
+        <h1 class="page-title">Saved Restaurants</h1>
+        <p class="page-subtitle">
+          Your curated collection of extraordinary dining destinations reserved for unforgettable moments.
+        </p>
+      </div>
+
+      <div class="saved-counter-pill">
+        <span class="counter-num">{{ savedList().length }}</span>
+        <span class="counter-label">{{ savedList().length === 1 ? 'Sanctuary Saved' : 'Sanctuaries Saved' }}</span>
+      </div>
+    </header>
+
+    <!-- RESTAURANTS GRID -->
+    @if (savedList().length > 0) {
+      <div class="wishlist-grid">
+        @for (rest of savedList(); track rest.id) {
+          <article class="wishlist-card" (click)="goToDetails(rest)">
+            <!-- Thumbnail Frame -->
+            <div class="card-thumb-frame">
+              <img [src]="rest.imageUrl" [alt]="rest.name" class="card-thumb-img" />
+
+              <div class="card-overlay-badges">
+                @if (rest.badge) {
+                  <span class="badge badge-ivory accolade-badge">{{ rest.badge }}</span>
+                }
+                <span class="badge badge-terracotta">{{ rest.cuisine }}</span>
+              </div>
+
+              <!-- Remove from Wishlist Button -->
+              <button 
+                type="button" 
+                class="remove-fav-btn"
+                (click)="removeRestaurant(rest, $event)"
+                [attr.aria-label]="'Remove ' + rest.name + ' from saved wishlist'">
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" class="heart-icon" aria-hidden="true">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Card Content -->
+            <div class="card-content">
+              <div class="card-title-row">
+                <h2 class="card-rest-name">{{ rest.name }}</h2>
+                <div class="rating-badge">
+                  <span class="star-icon">★</span>
+                  <span class="rating-num">{{ rest.rating.toFixed(1) }}</span>
+                </div>
+              </div>
+
+              <p class="card-tagline">{{ rest.tagline }}</p>
+
+              <div class="card-meta-line">
+                <span class="meta-item loc-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="meta-icon" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                  </svg>
+                  <span>{{ rest.neighborhood }}, {{ rest.city }}</span>
+                </span>
+                <span class="meta-dot">&bull;</span>
+                <span class="price-tier">{{ rest.priceRange }} Tier</span>
+              </div>
+
+              <!-- Available Highlights -->
+              <div class="highlights-row">
+                @for (h of rest.highlights.slice(0, 2); track h) {
+                  <span class="highlight-tag">{{ h }}</span>
+                }
+              </div>
+
+              <!-- Bottom Actions -->
+              <div class="card-footer-actions">
+                <button 
+                  type="button" 
+                  class="btn btn-terracotta btn-sm reserve-btn" 
+                  (click)="goToBooking(rest, $event)">
+                  <span>Reserve Table</span>
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+
+                <a [routerLink]="['/restaurants', rest.id]" class="btn btn-outline btn-sm details-link">
+                  View Menu & Details
+                </a>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <!-- EMPTY WISHLIST STATE -->
+      <div class="empty-wishlist-card" role="region" aria-label="No saved restaurants">
+        <div class="empty-icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </div>
+
+        <h2 class="empty-title">Your Dining Wishlist is Empty</h2>
+        <p class="empty-desc">
+          You haven't saved any restaurants yet. Explore our curated selection of premier dining destinations and click the bookmark icon to save favorites here.
+        </p>
+
+        <a routerLink="/explore" class="btn btn-primary btn-lg">
+          <span>Explore All Restaurants</span>
+          <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </a>
+      </div>
+    }
+  </div>
+
+  <!-- Toast Notification Feedback -->
+  @if (toastMessage()) {
+    <div class="toast-notification" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+</main>
+
+<app-footer></app-footer>

@@ -1,0 +1,405 @@
+<app-navbar></app-navbar>
+
+<main class="bookings-page" role="main">
+  <div class="container">
+    <!-- Breadcrumbs -->
+    <nav class="bookings-breadcrumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a routerLink="/" class="crumb-anchor">Home</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        <li class="crumb-active" aria-current="page">My Bookings</li>
+      </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="bookings-header">
+      <span class="eyebrow">Gastronomic Itinerary</span>
+      <h1 class="page-title">My Table Reservations</h1>
+      <p class="page-subtitle">
+        Review upcoming seatings, inspect sommelier and dietary notes, or manage your reservations.
+      </p>
+    </header>
+
+    <!-- Filter Tabs -->
+    <div class="tabs-nav-bar" role="tablist" aria-label="Reservation status filter">
+      <button 
+        type="button" 
+        role="tab"
+        class="tab-btn" 
+        [class.active]="activeTab() === 'all'"
+        [attr.aria-selected]="activeTab() === 'all'"
+        (click)="setTab('all')">
+        <span>All Reservations</span>
+        <span class="tab-count">{{ tabCounts().all }}</span>
+      </button>
+
+      <button 
+        type="button" 
+        role="tab"
+        class="tab-btn" 
+        [class.active]="activeTab() === 'upcoming'"
+        [attr.aria-selected]="activeTab() === 'upcoming'"
+        (click)="setTab('upcoming')">
+        <span>Upcoming</span>
+        <span class="tab-count active-count">{{ tabCounts().upcoming }}</span>
+      </button>
+
+      <button 
+        type="button" 
+        role="tab"
+        class="tab-btn" 
+        [class.active]="activeTab() === 'completed'"
+        [attr.aria-selected]="activeTab() === 'completed'"
+        (click)="setTab('completed')">
+        <span>Completed</span>
+        <span class="tab-count">{{ tabCounts().completed }}</span>
+      </button>
+
+      <button 
+        type="button" 
+        role="tab"
+        class="tab-btn" 
+        [class.active]="activeTab() === 'cancelled'"
+        [attr.aria-selected]="activeTab() === 'cancelled'"
+        (click)="setTab('cancelled')">
+        <span>Cancelled</span>
+        <span class="tab-count">{{ tabCounts().cancelled }}</span>
+      </button>
+    </div>
+
+    <!-- BOOKINGS LIST -->
+    @if (filteredBookings().length > 0) {
+      <div class="bookings-grid">
+        @for (b of filteredBookings(); track b.bookingRef) {
+          <article class="booking-card" [class.cancelled-card]="b.status === 'cancelled'">
+            <div class="card-thumb-frame">
+              <img [src]="b.restaurantImage" [alt]="b.restaurantName" class="card-thumb-img" />
+              <div class="thumb-cuisine-tag">
+                <span class="badge badge-ivory">{{ b.restaurantCuisine }}</span>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="card-top-row">
+                <h2 class="card-rest-name">
+                  <a [routerLink]="['/restaurants', b.restaurantId]" class="rest-link">
+                    {{ b.restaurantName }}
+                  </a>
+                </h2>
+
+                <!-- Status Badge -->
+                @if (b.status === 'confirmed') {
+                  <span class="status-badge badge-confirmed">
+                    <span class="status-dot"></span>
+                    <span>Confirmed</span>
+                  </span>
+                } @else if (b.status === 'completed') {
+                  <span class="status-badge badge-completed">
+                    <span>★ Completed</span>
+                  </span>
+                } @else if (b.status === 'cancelled') {
+                  <span class="status-badge badge-cancelled">
+                    <span>✕ Cancelled</span>
+                  </span>
+                }
+              </div>
+
+              <p class="card-location">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="loc-icon" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ b.restaurantAddress || b.restaurantLocation }}</span>
+              </p>
+
+              <!-- Booking Details Pills -->
+              <div class="details-chips-row">
+                <div class="chip-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chip-icon" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span>{{ formatDate(b.date) }}</span>
+                </div>
+
+                <div class="chip-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chip-icon" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>{{ b.time }}</span>
+                </div>
+
+                <div class="chip-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chip-icon" aria-hidden="true">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                  </svg>
+                  <span>{{ b.guests }} {{ b.guests === 1 ? 'Guest' : 'Guests' }}</span>
+                </div>
+
+                @if (b.seatingArea) {
+                  <div class="chip-item seating-chip">
+                    <span>{{ b.seatingArea }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Ref Code Row -->
+              <div class="card-ref-row">
+                <span class="ref-label">Booking Ref:</span>
+                <button 
+                  type="button" 
+                  class="copy-ref-pill" 
+                  (click)="copyRef(b.bookingRef)"
+                  [attr.aria-label]="'Copy reference code ' + b.bookingRef">
+                  <strong class="ref-value">{{ b.bookingRef }}</strong>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="copy-svg" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Cancellation Note if Cancelled -->
+              @if (b.status === 'cancelled' && b.cancelReason) {
+                <div class="cancel-reason-pill">
+                  <span>Cancellation reason noted: <em>{{ b.cancelReason }}</em></span>
+                </div>
+              }
+            </div>
+
+            <!-- Card Actions Column -->
+            <div class="card-actions-col">
+              <button 
+                type="button" 
+                class="btn btn-outline btn-md action-btn"
+                (click)="openDetails(b)">
+                <span>View Details</span>
+              </button>
+
+              @if (b.status === 'confirmed') {
+                <button 
+                  type="button" 
+                  class="btn btn-ghost btn-sm cancel-btn"
+                  (click)="openCancelModal(b)">
+                  <span>Cancel Reservation</span>
+                </button>
+              } @else if (b.status === 'cancelled' || b.status === 'completed') {
+                <a 
+                  [routerLink]="['/book', b.restaurantId]" 
+                  class="btn btn-terracotta btn-sm rebook-btn">
+                  <span>Book Again</span>
+                </a>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <!-- EMPTY STATE -->
+      <div class="empty-bookings-card" role="region" aria-label="No bookings found">
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+
+        <h2 class="empty-title">
+          @if (activeTab() === 'all') {
+            No Dining Reservations on Record
+          } @else if (activeTab() === 'upcoming') {
+            No Upcoming Table Reservations
+          } @else if (activeTab() === 'completed') {
+            No Completed Reservations Yet
+          } @else {
+            No Cancelled Reservations
+          }
+        </h2>
+
+        <p class="empty-desc">
+          Reserve your table at one of our curated Michelin-starred establishments, artisanal bistros, or chef-led counters.
+        </p>
+
+        <a routerLink="/explore" class="btn btn-primary btn-lg">
+          <span>Discover Restaurants</span>
+          <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </a>
+      </div>
+    }
+
+    <!-- MODAL 1: VIEW BOOKING DETAILS MODAL -->
+    @if (selectedBooking(); as b) {
+      <div class="modal-backdrop" (click)="closeDetails()" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+        <div class="modal-dialog" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <span class="eyebrow">Reservation Itinerary</span>
+              <h2 id="detailModalTitle" class="modal-title">{{ b.restaurantName }}</h2>
+            </div>
+            <button type="button" class="modal-close-btn" (click)="closeDetails()" aria-label="Close details">✕</button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Ref Header -->
+            <div class="modal-ref-banner">
+              <div>
+                <span class="ref-sub">Reference Code</span>
+                <strong class="ref-code">{{ b.bookingRef }}</strong>
+              </div>
+              <span class="modal-status-pill" [class]="'pill-' + b.status">
+                {{ b.status | uppercase }}
+              </span>
+            </div>
+
+            <!-- Lines List -->
+            <div class="modal-spec-list">
+              <div class="modal-row">
+                <span class="modal-label">Dining Date</span>
+                <span class="modal-val">{{ formatDate(b.date) }}</span>
+              </div>
+              <div class="modal-row">
+                <span class="modal-label">Seating Time</span>
+                <span class="modal-val highlight-val">{{ b.time }}</span>
+              </div>
+              <div class="modal-row">
+                <span class="modal-label">Party Size</span>
+                <span class="modal-val">{{ b.guests }} {{ b.guests === 1 ? 'Guest' : 'Guests' }}</span>
+              </div>
+              <div class="modal-row">
+                <span class="modal-label">Seating Zone</span>
+                <span class="modal-val">{{ b.seatingArea || "Chef's Counter" }}</span>
+              </div>
+              <div class="modal-row">
+                <span class="modal-label">Lead Guest</span>
+                <span class="modal-val">{{ b.customer.fullName }}</span>
+              </div>
+              <div class="modal-row">
+                <span class="modal-label">Guest Contact</span>
+                <span class="modal-val">{{ b.customer.email }} &bull; {{ b.customer.phone }}</span>
+              </div>
+              @if (b.customer.occasion) {
+                <div class="modal-row">
+                  <span class="modal-label">Occasion</span>
+                  <span class="modal-val">{{ b.customer.occasion }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Dietary Requirements -->
+            @if (b.customer.dietaryPreferences && b.customer.dietaryPreferences.length > 0) {
+              <div class="modal-block">
+                <span class="modal-label">Dietary Accommodations Noted:</span>
+                <div class="modal-tags-row">
+                  @for (tag of b.customer.dietaryPreferences; track tag) {
+                    <span class="diet-tag">{{ tag }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Special Requests -->
+            @if (b.customer.specialRequests) {
+              <div class="modal-block">
+                <span class="modal-label">Special Requests / Sommelier Notes:</span>
+                <p class="modal-quote">"{{ b.customer.specialRequests }}"</p>
+              </div>
+            }
+
+            <!-- Restaurant Contact info -->
+            <div class="modal-venue-info">
+              <span class="venue-title">Sanctuary Address & Inquiries</span>
+              <p class="venue-desc">{{ b.restaurantAddress || b.restaurantLocation }}</p>
+              <p class="venue-phone">{{ b.restaurantPhone || '+1 (212) 555-0198' }}</p>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <a [routerLink]="['/restaurants', b.restaurantId]" class="btn btn-outline" (click)="closeDetails()">
+              View Restaurant Page
+            </a>
+            <button type="button" class="btn btn-primary" (click)="closeDetails()">
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MODAL 2: CANCEL BOOKING CONFIRMATION DIALOG -->
+    @if (bookingToCancel(); as target) {
+      <div class="modal-backdrop" (click)="closeCancelModal()" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
+        <div class="modal-dialog cancel-dialog" (click)="$event.stopPropagation()">
+          <div class="cancel-dialog-header">
+            <div class="cancel-warning-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <h2 id="cancelModalTitle" class="cancel-dialog-title">Cancel Table Reservation?</h2>
+            <p class="cancel-dialog-sub">
+              Are you sure you wish to release your table at <strong>{{ target.restaurantName }}</strong> on <strong>{{ formatDate(target.date) }} at {{ target.time }}</strong>?
+            </p>
+          </div>
+
+          <div class="cancel-dialog-body">
+            <div class="form-group">
+              <label for="cancelReasonSelect" class="form-label">Reason for Cancellation</label>
+              <select 
+                id="cancelReasonSelect" 
+                [ngModel]="cancelReason()" 
+                (ngModelChange)="cancelReason.set($event)" 
+                class="styled-select">
+                @for (reason of cancellationReasons; track reason) {
+                  <option [value]="reason">{{ reason }}</option>
+                }
+              </select>
+            </div>
+
+            <p class="cancel-policy-hint">
+              ✦ Per Dinevia hospitality policy, complimentary cancellation is granted without fee or penalty. The maître d' will immediately be updated.
+            </p>
+          </div>
+
+          <div class="cancel-dialog-footer">
+            <button type="button" class="btn btn-outline" (click)="closeCancelModal()">
+              Keep My Reservation
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-terracotta confirm-cancel-btn"
+              [disabled]="isCancelling()"
+              (click)="confirmCancellation()">
+              @if (!isCancelling()) {
+                <span>Confirm Cancellation</span>
+              } @else {
+                <span class="spinner" aria-hidden="true"></span>
+                <span>Releasing Table...</span>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Toast Notification Feedback -->
+  @if (toastMessage()) {
+    <div class="toast-notification" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+</main>
+
+<app-footer></app-footer>

@@ -1,0 +1,606 @@
+<app-navbar></app-navbar>
+
+<main class="explore-page" role="main">
+  <!-- 1. EXPLORE HERO & SEARCH HEADER -->
+  <header class="explore-hero">
+    <div class="container">
+      <!-- Breadcrumb -->
+      <nav class="explore-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a routerLink="/" class="crumb-link">Home</a></li>
+          <li class="crumb-separator" aria-hidden="true">/</li>
+          <li class="crumb-current" aria-current="page">Explore Restaurants</li>
+        </ol>
+      </nav>
+
+      <div class="hero-text-block">
+        <span class="eyebrow">The Dinevia Collection</span>
+        <h1 class="explore-title">Explore Restaurants</h1>
+        <p class="explore-subtitle">
+          Immerse yourself in world-class gastronomy. Reserve tables at Michelin-starred sanctums, heritage chef counters, and beloved neighborhood dining icons.
+        </p>
+      </div>
+
+      <!-- Prominent Search Bar -->
+      <div class="search-bar-wrapper">
+        <div class="luxury-search-box" [class.has-query]="searchQuery().length > 0">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+
+          <input 
+            type="text" 
+            id="restaurantSearchInput"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Search by restaurant name, cuisine, city, or neighborhood..."
+            aria-label="Search restaurants by name, cuisine, or location"
+            class="search-input"
+          />
+
+          @if (searchQuery().length > 0) {
+            <button 
+              type="button" 
+              class="clear-search-btn" 
+              (click)="clearSearch()" 
+              aria-label="Clear search query">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          }
+        </div>
+
+        <!-- Quick Search Suggestion Tags -->
+        <div class="quick-suggest-row">
+          <span class="suggest-label">Trending Searches:</span>
+          <div class="suggest-pills">
+            <button type="button" class="suggest-pill" (click)="onSearchChange('Truffle')">Truffle Pasta</button>
+            <button type="button" class="suggest-pill" (click)="onSearchChange('Omakase')">Omakase</button>
+            <button type="button" class="suggest-pill" (click)="onSearchChange('Michelin')">Michelin</button>
+            <button type="button" class="suggest-pill" (click)="onSearchChange('SoHo')">SoHo</button>
+            <button type="button" class="suggest-pill" (click)="onSearchChange('Mayfair')">Mayfair London</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. CUISINE NAVIGATION PILLS -->
+  <section class="cuisine-bar-section" aria-label="Filter by cuisine">
+    <div class="container">
+      <div class="cuisine-scroll-container">
+        <button 
+          type="button" 
+          class="cuisine-pill" 
+          [class.active]="selectedCuisine() === 'all'"
+          (click)="setCuisine('all')">
+          <span class="pill-title">All Cuisines</span>
+          <span class="pill-badge">{{ allRestaurants().length }}</span>
+        </button>
+
+        @for (c of allCuisines(); track c.id) {
+          <button 
+            type="button" 
+            class="cuisine-pill" 
+            [class.active]="selectedCuisine() === c.slug"
+            (click)="setCuisine(c.slug)">
+            <span class="pill-title">{{ c.name }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. MAIN FILTER & LISTING CONTAINER -->
+  <section class="listing-section">
+    <div class="container">
+      <!-- Controls Toolbar -->
+      <div class="filter-toolbar">
+        <!-- Desktop Filter Group -->
+        <div class="desktop-filters">
+          <!-- Price Range Pills -->
+          <div class="filter-field">
+            <span class="filter-field-label">Price:</span>
+            <div class="price-toggle-group" role="group" aria-label="Filter by price">
+              @for (p of priceOptions; track p.value) {
+                <button 
+                  type="button" 
+                  class="price-btn" 
+                  [class.active]="selectedPrice() === p.value"
+                  (click)="setPrice(p.value)">
+                  {{ p.value === 'all' ? 'All' : p.value }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Minimum Rating Dropdown -->
+          <div class="filter-field">
+            <label for="ratingSelect" class="filter-field-label">Rating:</label>
+            <div class="select-wrapper">
+              <select 
+                id="ratingSelect" 
+                [ngModel]="selectedRating()" 
+                (ngModelChange)="setRating(+$event)"
+                class="filter-select">
+                @for (r of ratingOptions; track r.value) {
+                  <option [value]="r.value">{{ r.label }}</option>
+                }
+              </select>
+              <span class="select-chevron" aria-hidden="true">▾</span>
+            </div>
+          </div>
+
+          <!-- City Dropdown -->
+          <div class="filter-field">
+            <label for="citySelect" class="filter-field-label">Destination:</label>
+            <div class="select-wrapper">
+              <select 
+                id="citySelect" 
+                [ngModel]="selectedCity()" 
+                (ngModelChange)="setCity($event)"
+                class="filter-select">
+                <option value="all">All Cities</option>
+                @for (city of availableCities(); track city) {
+                  <option [value]="city">{{ city }}</option>
+                }
+              </select>
+              <span class="select-chevron" aria-hidden="true">▾</span>
+            </div>
+          </div>
+
+          <!-- Ambience / Badge Dropdown -->
+          <div class="filter-field">
+            <label for="badgeSelect" class="filter-field-label">Curations:</label>
+            <div class="select-wrapper">
+              <select 
+                id="badgeSelect" 
+                [ngModel]="selectedBadge()" 
+                (ngModelChange)="setBadge($event)"
+                class="filter-select">
+                @for (b of badgeOptions; track b.value) {
+                  <option [value]="b.value">{{ b.label }}</option>
+                }
+              </select>
+              <span class="select-chevron" aria-hidden="true">▾</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile Filter Toggle Button -->
+        <button 
+          type="button" 
+          class="btn btn-outline mobile-filter-btn" 
+          (click)="toggleMobileFilters()" 
+          aria-label="Open filter options">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="filter-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+          </svg>
+          <span>Filters</span>
+          @if (activeFilterCount() > 0) {
+            <span class="filter-count-badge">{{ activeFilterCount() }}</span>
+          }
+        </button>
+
+        <!-- Right Side: Sort & View Mode -->
+        <div class="toolbar-right">
+          <!-- Sort Dropdown -->
+          <div class="sort-field">
+            <label for="sortSelect" class="sort-label">Sort by:</label>
+            <div class="select-wrapper">
+              <select 
+                id="sortSelect" 
+                [ngModel]="sortBy()" 
+                (ngModelChange)="setSort($event)"
+                class="filter-select sort-select">
+                @for (s of sortOptions; track s.value) {
+                  <option [value]="s.value">{{ s.label }}</option>
+                }
+              </select>
+              <span class="select-chevron" aria-hidden="true">▾</span>
+            </div>
+          </div>
+
+          <!-- View Mode Switch -->
+          <div class="view-switch" role="group" aria-label="Display view mode">
+            <button 
+              type="button" 
+              class="view-btn" 
+              [class.active]="viewMode() === 'grid'"
+              (click)="setViewMode('grid')"
+              title="Grid View"
+              aria-label="Grid View">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </button>
+            <button 
+              type="button" 
+              class="view-btn" 
+              [class.active]="viewMode() === 'compact'"
+              (click)="setViewMode('compact')"
+              title="Compact List View"
+              aria-label="Compact List View">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Filter Chips Row -->
+      @if (activeFilterCount() > 0) {
+        <div class="active-chips-bar" aria-label="Active filters">
+          <span class="active-label">Active Filters:</span>
+          <div class="chips-list">
+            @if (searchQuery().trim().length > 0) {
+              <span class="chip">
+                <span>"{{ searchQuery() }}"</span>
+                <button type="button" class="chip-remove" (click)="clearSearch()" aria-label="Remove search filter">×</button>
+              </span>
+            }
+
+            @if (selectedCuisine() !== 'all') {
+              <span class="chip">
+                <span>Cuisine: {{ selectedCuisine() }}</span>
+                <button type="button" class="chip-remove" (click)="setCuisine('all')" aria-label="Remove cuisine filter">×</button>
+              </span>
+            }
+
+            @if (selectedPrice() !== 'all') {
+              <span class="chip">
+                <span>Price: {{ selectedPrice() }}</span>
+                <button type="button" class="chip-remove" (click)="setPrice('all')" aria-label="Remove price filter">×</button>
+              </span>
+            }
+
+            @if (selectedRating() > 0) {
+              <span class="chip">
+                <span>Rating: {{ selectedRating() }}+ ★</span>
+                <button type="button" class="chip-remove" (click)="setRating(0)" aria-label="Remove rating filter">×</button>
+              </span>
+            }
+
+            @if (selectedCity() !== 'all') {
+              <span class="chip">
+                <span>City: {{ selectedCity() }}</span>
+                <button type="button" class="chip-remove" (click)="setCity('all')" aria-label="Remove city filter">×</button>
+              </span>
+            }
+
+            @if (selectedBadge() !== 'all') {
+              <span class="chip">
+                <span>Curation: {{ selectedBadge() }}</span>
+                <button type="button" class="chip-remove" (click)="setBadge('all')" aria-label="Remove badge filter">×</button>
+              </span>
+            }
+
+            <!-- Clear All Action -->
+            <button type="button" class="clear-all-chips-btn" (click)="resetAllFilters()">
+              <span>Clear All</span>
+              <svg viewBox="0 0 20 20" fill="currentColor" class="chip-trash-icon" aria-hidden="true">
+                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Results Count Status -->
+      <div class="results-meta-bar">
+        <p class="results-count-text">
+          Showing <strong>{{ filteredRestaurants().length }}</strong>
+          {{ filteredRestaurants().length === 1 ? 'culinary destination' : 'culinary destinations' }}
+          @if (selectedCuisine() !== 'all') {
+            for <span class="highlight-text">{{ selectedCuisine() }}</span>
+          }
+          @if (selectedCity() !== 'all') {
+            in <span class="highlight-text">{{ selectedCity() }}</span>
+          }
+        </p>
+
+        @if (filteredRestaurants().length > 0 && activeFilterCount() === 0) {
+          <span class="collection-badge">Curated Reserve List</span>
+        }
+      </div>
+
+      <!-- 4. RESTAURANT CARDS GRID / SKELETON LOADING -->
+      @if (isLoading()) {
+        <!-- Skeleton Loading State -->
+        <div class="skeleton-grid" [class.compact-mode]="viewMode() === 'compact'">
+          @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+            <div class="skeleton-card">
+              <div class="skeleton-img pulse-anim"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line skeleton-meta pulse-anim"></div>
+                <div class="skeleton-line skeleton-title pulse-anim"></div>
+                <div class="skeleton-line skeleton-sub pulse-anim"></div>
+                <div class="skeleton-line skeleton-slots pulse-anim"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- Valid Matching Results -->
+        @if (filteredRestaurants().length > 0) {
+          <div class="explore-restaurants-grid" [class.compact-mode]="viewMode() === 'compact'">
+            @for (restaurant of filteredRestaurants(); track restaurant.id) {
+              <app-restaurant-card 
+                [restaurant]="restaurant"
+                (viewDetails)="onViewDetails($event)"
+                (reserveSlot)="onReserveSlot($event)">
+              </app-restaurant-card>
+            }
+          </div>
+        } @else {
+          <!-- Empty Results / No-Match State -->
+          <div class="no-results-card" role="region" aria-label="No results found">
+            <div class="empty-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+              </svg>
+            </div>
+            <h2 class="empty-heading">No tables match your precise criteria</h2>
+            <p class="empty-message">
+              We couldn't find any dining sanctums matching your current search and filter selections. Try broadening your criteria or selecting a different cuisine.
+            </p>
+            <div class="empty-actions">
+              <button type="button" class="btn btn-primary" (click)="resetAllFilters()">
+                <span>Clear All Filters</span>
+                <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Quick recovery options -->
+            <div class="empty-suggestions">
+              <span class="sugg-title">Or browse celebrated collections:</span>
+              <div class="sugg-links">
+                <button type="button" class="sugg-btn" (click)="setCuisine('italian')">Italian Heritage</button>
+                <button type="button" class="sugg-btn" (click)="setCuisine('japanese')">Japanese Omakase</button>
+                <button type="button" class="sugg-btn" (click)="setBadge('michelin')">Michelin Starred</button>
+                <button type="button" class="sugg-btn" (click)="setPrice('$$')">Casual Fine ($$)</button>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </section>
+
+  <!-- 5. MOBILE FILTER DRAWER & BACKDROP -->
+  @if (isMobileFilterOpen()) {
+    <div class="mobile-drawer-backdrop" (click)="closeMobileFilters()" aria-hidden="true"></div>
+    <div class="mobile-filter-drawer" role="dialog" aria-modal="true" aria-label="Restaurant Filters">
+      <div class="drawer-header">
+        <h3 class="drawer-title">Filter Restaurants</h3>
+        <button type="button" class="drawer-close-btn" (click)="closeMobileFilters()" aria-label="Close filters">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Cuisine selection -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">Cuisine</h4>
+          <div class="drawer-pill-grid">
+            <button 
+              type="button" 
+              class="drawer-pill" 
+              [class.active]="selectedCuisine() === 'all'"
+              (click)="setCuisine('all')">
+              All Cuisines
+            </button>
+            @for (c of allCuisines(); track c.id) {
+              <button 
+                type="button" 
+                class="drawer-pill" 
+                [class.active]="selectedCuisine() === c.slug"
+                (click)="setCuisine(c.slug)">
+                {{ c.name }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Price Range -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">Price Range</h4>
+          <div class="drawer-pill-grid">
+            @for (p of priceOptions; track p.value) {
+              <button 
+                type="button" 
+                class="drawer-pill" 
+                [class.active]="selectedPrice() === p.value"
+                (click)="setPrice(p.value)">
+                {{ p.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Minimum Rating -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">Minimum Rating</h4>
+          <div class="drawer-pill-grid">
+            @for (r of ratingOptions; track r.value) {
+              <button 
+                type="button" 
+                class="drawer-pill" 
+                [class.active]="selectedRating() === r.value"
+                (click)="setRating(r.value)">
+                {{ r.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- City destination -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">Destination City</h4>
+          <div class="drawer-pill-grid">
+            <button 
+              type="button" 
+              class="drawer-pill" 
+              [class.active]="selectedCity() === 'all'"
+              (click)="setCity('all')">
+              All Cities
+            </button>
+            @for (city of availableCities(); track city) {
+              <button 
+                type="button" 
+                class="drawer-pill" 
+                [class.active]="selectedCity() === city"
+                (click)="setCity(city)">
+                {{ city }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Curations -->
+        <div class="drawer-section">
+          <h4 class="drawer-section-title">Curated Accolades</h4>
+          <div class="drawer-pill-grid">
+            @for (b of badgeOptions; track b.value) {
+              <button 
+                type="button" 
+                class="drawer-pill" 
+                [class.active]="selectedBadge() === b.value"
+                (click)="setBadge(b.value)">
+                {{ b.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button type="button" class="btn btn-outline drawer-btn" (click)="resetAllFilters()">Reset All</button>
+        <button type="button" class="btn btn-primary drawer-btn" (click)="closeMobileFilters()">
+          Show Results ({{ filteredRestaurants().length }})
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- 6. QUICK TABLE RESERVATION MODAL -->
+  @if (isBookingModalOpen() && selectedRestaurant()) {
+    <div class="modal-backdrop" (click)="closeModal()" aria-hidden="true"></div>
+    <div class="reservation-modal" role="dialog" aria-modal="true" [attr.aria-labelledby]="'modal-title-' + selectedRestaurant()!.id">
+      @if (!bookingConfirmed()) {
+        <div class="modal-header">
+          <div>
+            <span class="badge badge-terracotta">Table Reservation</span>
+            <h3 class="modal-restaurant-name" [id]="'modal-title-' + selectedRestaurant()!.id">{{ selectedRestaurant()!.name }}</h3>
+            <p class="modal-location">{{ selectedRestaurant()!.neighborhood }}, {{ selectedRestaurant()!.city }}</p>
+          </div>
+          <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close reservation dialog">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <p class="modal-summary">
+          Experience world-class culinary artistry. Choose your party details below to secure your dining reservation.
+        </p>
+
+        <form (ngSubmit)="submitReservation()">
+          <div class="modal-field-grid">
+            <div class="modal-field">
+              <label for="expPartySize">Party Size</label>
+              <select id="expPartySize" [ngModel]="bookingPartySize()" (ngModelChange)="bookingPartySize.set(+$event)" name="partySize" class="form-select">
+                <option [value]="1">1 Guest</option>
+                <option [value]="2">2 Guests (Couple)</option>
+                <option [value]="3">3 Guests</option>
+                <option [value]="4">4 Guests</option>
+                <option [value]="6">6 Guests (Party)</option>
+                <option [value]="8">8+ Guests (Vault)</option>
+              </select>
+            </div>
+
+            <div class="modal-field">
+              <label for="expBookingDate">Reservation Date</label>
+              <input type="date" id="expBookingDate" [ngModel]="bookingDate()" (ngModelChange)="bookingDate.set($event)" name="date" class="form-input" required />
+            </div>
+          </div>
+
+          <div class="modal-field">
+            <label for="expBookingTime">Seating Time</label>
+            <select id="expBookingTime" [ngModel]="bookingTime()" (ngModelChange)="bookingTime.set($event)" name="time" class="form-select">
+              @for (slot of selectedRestaurant()!.availableSlots; track slot) {
+                <option [value]="slot">{{ slot }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="modal-field">
+            <label for="expGuestName">Guest Full Name</label>
+            <input type="text" id="expGuestName" [ngModel]="guestName()" (ngModelChange)="guestName.set($event)" name="guestName" class="form-input" placeholder="e.g. Lorde Evelyn Wright" required />
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-terracotta">Confirm Table Reservation</button>
+          </div>
+        </form>
+      } @else {
+        <!-- Booking Confirmation State -->
+        <div class="confirmation-success">
+          <div class="success-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h3 class="conf-title">Reservation Confirmed</h3>
+          <p class="conf-ref">Reference Code: <strong>{{ bookingRefCode() }}</strong></p>
+
+          <div class="conf-details-box">
+            <p><strong>Restaurant:</strong> {{ selectedRestaurant()!.name }}</p>
+            <p><strong>Location:</strong> {{ selectedRestaurant()!.location }}</p>
+            <p><strong>Date & Time:</strong> {{ bookingDate() }} at {{ bookingTime() }}</p>
+            <p><strong>Party Size:</strong> {{ bookingPartySize() }} {{ bookingPartySize() === 1 ? 'Guest' : 'Guests' }}</p>
+            <p><strong>Guest:</strong> {{ guestName() }}</p>
+          </div>
+
+          <p class="conf-note">A luxury booking verification has been dispatched to your membership account.</p>
+
+          <button type="button" class="btn btn-primary" (click)="closeModal()">Done</button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- 7. TOAST NOTIFICATION -->
+  @if (toastMessage()) {
+    <div class="toast-notification" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+</main>
+
+<app-footer></app-footer>
