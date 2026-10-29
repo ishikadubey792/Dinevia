@@ -1,0 +1,132 @@
+<footer class="footer-root" role="contentinfo">
+  <div class="container footer-content">
+    <div class="footer-top-grid">
+      <!-- Brand & Mission Column -->
+      <div class="footer-col brand-col">
+        <a routerLink="/" class="footer-brand" aria-label="Dinevia Home">
+          <span class="footer-brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
+              <path d="M6 2v20"></path>
+              <path d="M3 6h6"></path>
+              <path d="M3 10h6"></path>
+            </svg>
+          </span>
+          <span class="footer-brand-text">
+            <span class="brand-name">Dinevia</span>
+            <span class="brand-tag">RESERVE</span>
+          </span>
+        </a>
+        <p class="footer-tagline-quote">Discover. Reserve. Dine.</p>
+        <p class="footer-description">
+          Dinevia curates access to the world's finest culinary institutions, intimate chef counters, and beloved neighborhood sanctuaries.
+        </p>
+
+        <!-- Social Media Placeholders -->
+        <div class="social-links" aria-label="Social media channels">
+          <a href="javascript:void(0)" class="social-btn" aria-label="Instagram (Coming soon)" title="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+          </a>
+          <a href="javascript:void(0)" class="social-btn" aria-label="X Twitter (Coming soon)" title="X">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 4l11.733 16h4.267l-11.733 -16z"></path>
+              <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path>
+            </svg>
+          </a>
+          <a href="javascript:void(0)" class="social-btn" aria-label="LinkedIn (Coming soon)" title="LinkedIn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+              <rect x="2" y="9" width="4" height="12"></rect>
+              <circle cx="4" cy="4" r="2"></circle>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="footer-col">
+        <h4 class="footer-heading">Navigation</h4>
+        <ul class="footer-nav">
+          <li><a routerLink="/" class="footer-link">Home</a></li>
+          <li><a routerLink="/explore" class="footer-link">Explore Restaurants</a></li>
+          <li><a routerLink="/bookings" class="footer-link">My Bookings</a></li>
+          <li><a routerLink="/about" class="footer-link">About Dinevia</a></li>
+          <li><a routerLink="/login" class="footer-link">Member Portal</a></li>
+        </ul>
+      </div>
+
+      <!-- Discover Categories -->
+      <div class="footer-col">
+        <h4 class="footer-heading">Cuisines & Dining</h4>
+        <ul class="footer-nav">
+          <li><a routerLink="/explore" class="footer-link">Tuscan Italian</a></li>
+          <li><a routerLink="/explore" class="footer-link">Edomae Japanese</a></li>
+          <li><a routerLink="/explore" class="footer-link">Haute French</a></li>
+          <li><a routerLink="/explore" class="footer-link">Awadhi Indian</a></li>
+          <li><a routerLink="/explore" class="footer-link">Oaxacan Mexican</a></li>
+          <li><a routerLink="/explore" class="footer-link">Private Wine Vaults</a></li>
+        </ul>
+      </div>
+
+      <!-- Concierge & Newsletter -->
+      <div class="footer-col newsletter-col">
+        <h4 class="footer-heading">The Epicurean Gazette</h4>
+        <p class="newsletter-desc">
+          Receive exclusive invitations to private tasting releases, secret table launches, and seasonal harvest menus.
+        </p>
+
+        @if (subscribed()) {
+          <div class="subscribed-alert" role="status">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            <span>Welcome to the Dinevia Circle.</span>
+          </div>
+        } @else {
+          <form class="newsletter-form" (ngSubmit)="onNewsletterSubmit()">
+            <div class="input-group">
+              <label for="newsletterEmail" class="sr-only">Email address</label>
+              <input 
+                id="newsletterEmail"
+                type="email" 
+                [(ngModel)]="newsletterEmail" 
+                name="newsletterEmail" 
+                placeholder="Enter your email" 
+                required 
+                class="newsletter-input" 
+              />
+              <button type="submit" class="newsletter-submit" aria-label="Subscribe to newsletter">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </form>
+        }
+
+        <div class="contact-placeholder">
+          <p class="contact-label">Concierge Inquiries:</p>
+          <p class="contact-val">concierge&#64;dinevia.example.com</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="footer-bottom">
+      <p class="copyright-text">
+        &copy; {{ currentYear }} Dinevia Hospitality Group. All rights reserved.
+      </p>
+      <div class="footer-legal-links">
+        <span class="legal-item">Privacy Policy</span>
+        <span class="legal-separator">&bull;</span>
+        <span class="legal-item">Terms of Reservation</span>
+        <span class="legal-separator">&bull;</span>
+        <span class="legal-item">Accessibility</span>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,117 @@
+.search-panel-container {
+  background-color: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem 1.75rem;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-border);
+  position: relative;
+  z-index: 10;
+}
+
+.search-form {
+  display: grid;
+  grid-template-columns: 1.2fr 1.1fr 1fr 0.9fr 1fr auto;
+  gap: 1.25rem;
+  align-items: flex-end;
+
+  @media (max-width: 1080px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-forest-dark);
+
+  .field-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    color: var(--color-terracotta);
+  }
+}
+
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .chevron-down {
+    position: absolute;
+    right: 0.85rem;
+    pointer-events: none;
+    color: var(--color-charcoal-light);
+    font-size: 0.75rem;
+  }
+}
+
+.form-select,
+.form-input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  background-color: var(--color-ivory-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  color: var(--color-charcoal);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  appearance: none;
+  -webkit-appearance: none;
+
+  &:hover {
+    border-color: var(--color-terracotta-light);
+  }
+
+  &:focus {
+    outline: none;
+    background-color: var(--color-white);
+    border-color: var(--color-terracotta);
+    box-shadow: 0 0 0 3px rgba(200, 121, 90, 0.15);
+  }
+}
+
+.date-input {
+  padding-right: 0.5rem;
+  cursor: pointer;
+}
+
+.form-action {
+  @media (max-width: 768px) {
+    grid-column: span 2;
+  }
+
+  @media (max-width: 520px) {
+    grid-column: span 1;
+  }
+}
+
+.search-submit-btn {
+  width: 100%;
+  padding: 0.85rem 1.6rem;
+  font-size: 0.95rem;
+
+  .search-btn-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+}

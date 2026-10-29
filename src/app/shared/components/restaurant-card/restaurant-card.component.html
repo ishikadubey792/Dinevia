@@ -1,0 +1,94 @@
+<article class="restaurant-card" (click)="onViewClick()" tabindex="0" role="button" [attr.aria-label]="restaurant.name + ', ' + restaurant.cuisine + ' restaurant in ' + restaurant.location">
+  <!-- Card Media -->
+  <div class="card-media">
+    <img 
+      [src]="imgError() ? fallbackImage : restaurant.imageUrl" 
+      [alt]="restaurant.name + ' interior and fine dining ambiance'"
+      loading="lazy"
+      (error)="onImageError()"
+      (load)="onImageLoad()"
+      class="card-img"
+      [class.loaded]="imgLoaded()"
+    />
+    <div class="media-overlay"></div>
+
+    <!-- Badge -->
+    @if (restaurant.badge) {
+      <div class="card-badge">
+        <span class="badge badge-ivory">{{ restaurant.badge }}</span>
+      </div>
+    }
+
+    <!-- Bookmark Action -->
+    <button 
+      type="button" 
+      class="bookmark-btn" 
+      [class.active]="isSaved()" 
+      (click)="toggleSave($event)" 
+      [attr.aria-label]="isSaved() ? 'Remove from saved restaurants' : 'Save to wishlist'"
+      [attr.aria-pressed]="isSaved()">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Card Body -->
+  <div class="card-body">
+    <!-- Meta Bar: Rating & Price -->
+    <div class="card-meta">
+      <div class="rating-box">
+        <span class="star-icon">★</span>
+        <span class="rating-score">{{ restaurant.rating.toFixed(1) }}</span>
+        <span class="review-count">({{ restaurant.reviewCount }})</span>
+      </div>
+      <div class="price-tier" [attr.aria-label]="'Price category: ' + restaurant.priceRange">
+        <span class="price-val">{{ restaurant.priceRange }}</span>
+      </div>
+    </div>
+
+    <!-- Title & Tagline -->
+    <h3 class="card-title">{{ restaurant.name }}</h3>
+    <p class="card-tagline">{{ restaurant.tagline }}</p>
+
+    <!-- Cuisine & Neighborhood -->
+    <div class="card-sub-info">
+      <span class="cuisine-tag">{{ restaurant.cuisine }}</span>
+      <span class="dot-separator">&bull;</span>
+      <span class="location-tag">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="loc-icon" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+        </svg>
+        {{ restaurant.neighborhood }}, {{ restaurant.city }}
+      </span>
+    </div>
+
+    <!-- Quick Seating Time Slots -->
+    @if (restaurant.availableSlots && restaurant.availableSlots.length > 0) {
+      <div class="seating-section">
+        <span class="seating-label">Available Today:</span>
+        <div class="slots-row">
+          @for (slot of restaurant.availableSlots.slice(0, 3); track slot) {
+            <button 
+              type="button" 
+              class="slot-pill" 
+              (click)="onSlotClick(slot, $event)"
+              [attr.aria-label]="'Reserve table at ' + slot">
+              {{ slot }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Card Footer Action -->
+    <div class="card-footer-action">
+      <button type="button" class="view-btn" (click)="onViewClick(); $event.stopPropagation()">
+        <span>View Restaurant</span>
+        <svg viewBox="0 0 20 20" fill="currentColor" class="arrow-icon" aria-hidden="true">
+          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</article>

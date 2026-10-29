@@ -1,0 +1,128 @@
+<header class="navbar-wrapper" [class.scrolled]="isScrolled()">
+  <div class="container navbar-inner">
+    <!-- Brand Wordmark -->
+    <a routerLink="/" class="brand-link" (click)="closeMobileMenu()" aria-label="Dinevia Home">
+      <span class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
+          <path d="M6 2v20"></path>
+          <path d="M3 6h6"></path>
+          <path d="M3 10h6"></path>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">Dinevia</span>
+        <span class="brand-tag">RESERVE</span>
+      </span>
+    </a>
+
+    <!-- Desktop Navigation Links -->
+    <nav class="desktop-nav" aria-label="Primary Navigation">
+      <ul class="nav-links">
+        <li>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">Home</a>
+        </li>
+        <li>
+          <a routerLink="/explore" routerLinkActive="active" class="nav-item">Explore Restaurants</a>
+        </li>
+        <li>
+          <a routerLink="/bookings" routerLinkActive="active" class="nav-item">My Bookings</a>
+        </li>
+        <li>
+          <a routerLink="/about" routerLinkActive="active" class="nav-item">About Us</a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Desktop Actions -->
+    <div class="navbar-actions">
+      <a routerLink="/login" class="nav-link-login">Log In</a>
+      <a routerLink="/explore" class="btn btn-primary btn-sm nav-btn-cta">
+        <span>Find a Table</span>
+        <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </a>
+
+      <!-- Mobile Hamburger Button -->
+      <button 
+        type="button" 
+        class="mobile-toggle" 
+        (click)="toggleMobileMenu()" 
+        [attr.aria-expanded]="isMobileMenuOpen()"
+        aria-label="Toggle navigation menu"
+        aria-controls="mobileMenu">
+        <span class="hamburger-box">
+          <span class="hamburger-inner" [class.open]="isMobileMenuOpen()"></span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Drawer Backdrop -->
+  @if (isMobileMenuOpen()) {
+    <div class="mobile-backdrop" (click)="closeMobileMenu()" aria-hidden="true"></div>
+  }
+
+  <!-- Mobile Navigation Menu Drawer -->
+  <div 
+    id="mobileMenu"
+    class="mobile-menu" 
+    [class.open]="isMobileMenuOpen()"
+    [attr.aria-hidden]="!isMobileMenuOpen()"
+    role="dialog"
+    aria-label="Mobile Navigation">
+    <div class="mobile-menu-header">
+      <div class="brand-link">
+        <span class="brand-icon small">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
+            <path d="M6 2v20"></path>
+            <path d="M3 6h6"></path>
+            <path d="M3 10h6"></path>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">Dinevia</span>
+        </span>
+      </div>
+      <button type="button" class="close-btn" (click)="closeMobileMenu()" aria-label="Close navigation menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <nav class="mobile-nav-links" aria-label="Mobile Menu Links">
+      <ul>
+        <li>
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileMenu()" class="mobile-nav-item">
+            <span>Home</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/explore" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
+            <span>Explore Restaurants</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/bookings" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
+            <span>My Bookings</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
+            <span>About Us</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="mobile-menu-footer">
+      <a routerLink="/login" (click)="closeMobileMenu()" class="btn btn-outline mobile-btn">Log In</a>
+      <a routerLink="/explore" (click)="closeMobileMenu()" class="btn btn-terracotta mobile-btn">Sign Up & Reserve</a>
+      <p class="mobile-tagline">Discover. Reserve. Dine.</p>
+    </div>
+  </div>
+</header>
