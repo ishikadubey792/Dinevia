@@ -123,92 +123,102 @@
       </button>
     </div>
   </div>
-
-  <!-- Mobile Drawer Backdrop -->
-  @if (isMobileMenuOpen()) {
-    <div class="mobile-backdrop" (click)="closeMobileMenu()" aria-hidden="true"></div>
-  }
-
-  <!-- Mobile Navigation Menu Drawer -->
-  <div 
-    id="mobileMenu"
-    class="mobile-menu" 
-    [class.open]="isMobileMenuOpen()"
-    [attr.aria-hidden]="!isMobileMenuOpen()"
-    role="dialog"
-    aria-label="Mobile Navigation">
-    <div class="mobile-menu-header">
-      <div class="brand-link">
-        <span class="brand-icon small">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
-            <path d="M6 2v20"></path>
-            <path d="M3 6h6"></path>
-            <path d="M3 10h6"></path>
-          </svg>
-        </span>
-        <span class="brand-text">
-          <span class="brand-name">Dinevia</span>
-        </span>
-      </div>
-      <button type="button" class="close-btn" (click)="closeMobileMenu()" aria-label="Close navigation menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
-    <nav class="mobile-nav-links" aria-label="Mobile Menu Links">
-      <ul>
-        <li>
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileMenu()" class="mobile-nav-item">
-            <span>Home</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/explore" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-            <span>Explore Restaurants</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/bookings" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-            <span>My Bookings</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/wishlist" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-            <span>Saved Wishlist</span>
-          </a>
-        </li>
-        @if (authService.currentUser()) {
-          <li>
-            <a routerLink="/profile" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-              <span>Member Profile</span>
-            </a>
-          </li>
-        }
-        <li>
-          <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-            <span>About Us</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
-
-    <div class="mobile-menu-footer">
-      @if (authService.currentUser(); as user) {
-        <a routerLink="/profile" (click)="closeMobileMenu()" class="btn btn-outline mobile-btn">
-          <span>{{ user.fullName }} (Profile)</span>
-        </a>
-        <button type="button" (click)="logout()" class="btn btn-ghost mobile-btn">
-          <span>Log Out</span>
-        </button>
-      } @else {
-        <a routerLink="/login" (click)="closeMobileMenu()" class="btn btn-outline mobile-btn">Log In</a>
-        <a routerLink="/signup" (click)="closeMobileMenu()" class="btn btn-terracotta mobile-btn">Sign Up & Reserve</a>
-      }
-      <p class="mobile-tagline">Discover. Reserve. Dine.</p>
-    </div>
-  </div>
 </header>
+
+<!-- Mobile Drawer Backdrop -->
+@if (isMobileMenuOpen()) {
+  <div 
+    class="mobile-backdrop" 
+    (click)="closeMobileMenu()" 
+    aria-hidden="true">
+  </div>
+}
+
+<!-- Mobile Navigation Menu Drawer -->
+<div 
+  id="mobileMenu"
+  class="mobile-menu" 
+  [class.open]="isMobileMenuOpen()"
+  [attr.aria-hidden]="!isMobileMenuOpen()"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Mobile Navigation">
+  <div class="mobile-menu-header">
+    <a routerLink="/" class="brand-link" (click)="closeMobileMenu()" aria-label="Dinevia Home">
+      <span class="brand-icon small">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
+          <path d="M6 2v20"></path>
+          <path d="M3 6h6"></path>
+          <path d="M3 10h6"></path>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">Dinevia</span>
+        <span class="brand-tag">RESERVE</span>
+      </span>
+    </a>
+    <button 
+      type="button" 
+      class="close-btn" 
+      (click)="closeMobileMenu()" 
+      aria-label="Close navigation menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <nav class="mobile-nav-links" aria-label="Mobile Menu Links">
+    <ul>
+      <li>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileMenu()" class="mobile-nav-item">
+          <span>Home</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/explore" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
+          <span>Explore Restaurants</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/bookings" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
+          <span>My Bookings</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/wishlist" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
+          <span>Saved</span>
+        </a>
+      </li>
+      @if (authService.currentUser()) {
+        <li>
+          <a routerLink="/profile" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
+            <span>Member Profile</span>
+          </a>
+        </li>
+      }
+      <li>
+        <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
+          <span>About Us</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="mobile-menu-footer">
+    @if (authService.currentUser(); as user) {
+      <a routerLink="/profile" (click)="closeMobileMenu()" class="btn btn-outline mobile-btn">
+        <span>{{ user.fullName }} (Profile)</span>
+      </a>
+      <button type="button" (click)="logout()" class="btn btn-ghost mobile-btn">
+        <span>Log Out</span>
+      </button>
+    } @else {
+      <a routerLink="/login" (click)="closeMobileMenu()" class="btn btn-outline mobile-btn">Log In</a>
+      <a routerLink="/signup" (click)="closeMobileMenu()" class="btn btn-terracotta mobile-btn">Sign Up</a>
+    }
+    <p class="mobile-tagline">Discover. Reserve. Dine.</p>
+  </div>
+</div>

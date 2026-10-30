@@ -1,6 +1,8 @@
-import { Component, signal, computed, HostListener, inject } from '@angular/core';
+import { Component, signal, computed, HostListener, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, NavigationEnd, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -10,9 +12,10 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnDestroy {
   readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly routerSub: Subscription;
 
   readonly isMobileMenuOpen = signal<boolean>(false);
   readonly isScrolled = signal<boolean>(false);
@@ -28,10 +31,26 @@ export class NavbarComponent {
     return user.fullName.substring(0, 2).toUpperCase();
   });
 
+  constructor() {
+    this.routerSub = this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.closeMobileMenu();
+        this.closeUserMenu();
+      });
+  }
+
   @HostListener('window:scroll')
   onWindowScroll(): void {
     if (typeof window !== 'undefined') {
       this.isScrolled.set(window.scrollY > 20);
+    }
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024 && this.isMobileMenuOpen()) {
+      this.closeMobileMenu();
     }
   }
 
@@ -74,6 +93,11 @@ export class NavbarComponent {
     this.router.navigate(['/']);
   }
 
+  ngOnDestroy(): void {
+    this.routerSub?.unsubscribe();
+    this.unlockBodyScroll();
+  }
+
   private syncBodyScroll(): void {
     if (typeof document !== 'undefined') {
       if (this.isMobileMenuOpen()) {
@@ -83,5 +107,10 @@ export class NavbarComponent {
       }
     }
   }
-}
 
+  private unlockBodyScroll(): void {
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+    }
+  }
+}
