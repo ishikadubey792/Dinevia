@@ -1,0 +1,69 @@
+<div class="placeholder-stage">
+  <!-- Top Breadcrumb Card -->
+  <div class="module-header-card">
+    <div class="header-left">
+      <div class="kicker-row">
+        <span class="kicker-tag">{{ config.kicker }}</span>
+        <span class="status-pill">{{ config.badge }}</span>
+      </div>
+      <h1 class="module-title">{{ config.title }}</h1>
+      <p class="module-desc">{{ config.description }}</p>
+    </div>
+
+    <div class="header-right">
+      <a routerLink="/admin/dashboard" class="btn btn-primary btn-sm">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon">
+          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Key Metrics Preview Strip -->
+  <div class="stats-preview-grid">
+    @for (stat of config.stats; track stat.label) {
+      <div class="stat-box">
+        <span class="stat-label">{{ stat.label }}</span>
+        <strong class="stat-value">{{ stat.value }}</strong>
+      </div>
+    }
+  </div>
+
+  <!-- Main Blueprint Showcase Card -->
+  <div class="blueprint-card">
+    <div class="blueprint-header">
+      <div class="badge-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+        </svg>
+      </div>
+      <div>
+        <h2 class="bp-title">Architectural Roadmap &amp; Feature Ledger</h2>
+        <p class="bp-subtitle">Scheduled for Phase II Gastronomic Operations Rollout</p>
+      </div>
+    </div>
+
+    <div class="features-grid">
+      @for (feat of config.upcomingFeatures; track feat) {
+        <div class="feature-item">
+          <span class="feature-check">✓</span>
+          <span class="feature-text">{{ feat }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="blueprint-footer">
+      <div class="note-box">
+        <strong>Notice:</strong> This module is linked into the active Admin Router and will integrate with the Dinevia management service in the next development cycle.
+      </div>
+
+      <div class="footer-actions">
+        <a routerLink="/admin/dashboard" class="btn btn-outline btn-sm">
+          <span>Explore Live Dashboard</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+

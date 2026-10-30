@@ -1,0 +1,517 @@
+<div class="dashboard-container">
+  <!-- Toast Message -->
+  @if (notificationToast()) {
+    <div class="admin-toast" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ notificationToast() }}</span>
+    </div>
+  }
+
+  <!-- SECTION 1: Welcome Header & Quick Actions -->
+  <section class="welcome-header">
+    <div class="welcome-text">
+      <div class="executive-pill">
+        <span class="sparkle-icon">✦</span>
+        <span>Executive Command Console</span>
+      </div>
+      <h1 class="welcome-title">Welcome back, <span class="highlight-serif">Elena.</span></h1>
+      <p class="welcome-desc">
+        Here is the real-time gastronomic overview across your 18 fine dining sanctuaries and 142 guests dining tonight.
+      </p>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="welcome-actions">
+      <button type="button" class="btn btn-primary btn-md add-btn" (click)="openAddRestaurantModal()">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
+          <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+        </svg>
+        <span>Add Restaurant</span>
+      </button>
+
+      <a routerLink="/admin/bookings" class="btn btn-outline btn-md">
+        <span>View All Bookings</span>
+      </a>
+
+      <button type="button" class="btn btn-ghost btn-md" (click)="triggerQuickAction('Monthly Gastronomic Report generated and sent to email.')">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
+          <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+        <span>Export Ledger</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- SECTION 2: 4 Primary Metric Cards -->
+  <section class="metrics-grid" aria-label="Key Performance Indicators">
+    @for (card of adminData.statCards; track card.title) {
+      <div class="metric-card">
+        <div class="card-top">
+          <span class="card-title">{{ card.title }}</span>
+          <div class="card-icon-badge" [class]="card.icon">
+            @switch (card.icon) {
+              @case ('restaurant') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
+                  <path d="M6 2v20"></path>
+                  <path d="M3 6h6"></path>
+                  <path d="M3 10h6"></path>
+                </svg>
+              }
+              @case ('booking') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              }
+              @case ('customer') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              }
+              @case ('revenue') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="card-value-row">
+          <span class="card-val">{{ card.value }}</span>
+          <span class="card-change" [class.positive]="card.isPositive">
+            {{ card.change }}
+          </span>
+        </div>
+
+        <div class="card-footer">
+          <span class="card-badge">{{ card.badge }}</span>
+          <span class="card-sub">{{ card.subtitle }}</span>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- SECTION 3: Main Dashboard Content Grid -->
+  <div class="dashboard-main-grid">
+    <!-- LEFT COLUMN: Charts & Recent Bookings -->
+    <div class="grid-primary-col">
+      <!-- 3A. Booking Trends Interactive Chart -->
+      <section class="panel-card chart-panel">
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">ANALYTICS & FORECASTING</span>
+            <h2 class="panel-title">Booking &amp; Reservation Trends</h2>
+          </div>
+
+          <!-- Timeframe Selector -->
+          <div class="view-toggles" role="tablist">
+            <button 
+              type="button" 
+              class="toggle-btn" 
+              [class.active]="trendView() === 'weekly'"
+              (click)="setTrendView('weekly')"
+              role="tab"
+              [attr.aria-selected]="trendView() === 'weekly'">
+              7 Days
+            </button>
+            <button 
+              type="button" 
+              class="toggle-btn" 
+              [class.active]="trendView() === 'monthly'"
+              (click)="setTrendView('monthly')"
+              role="tab"
+              [attr.aria-selected]="trendView() === 'monthly'">
+              6 Months
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Bar Chart -->
+        <div class="chart-stage">
+          <div class="chart-bars-container">
+            @for (pt of currentChartData(); track pt.period) {
+              <div class="chart-bar-group">
+                <div class="bar-tooltip">
+                  <span class="tt-bookings">{{ pt.bookings }} reservations</span>
+                  <span class="tt-revenue">${{ pt.revenue | number }}</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.height.%]="pt.percentageHeight"></div>
+                </div>
+                <span class="bar-label">{{ pt.period }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="chart-legend-row">
+          <div class="legend-item">
+            <span class="legend-bullet forest"></span>
+            <span>Table Reservations</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-bullet terracotta"></span>
+            <span>Peak Dinner Window (Fri &amp; Sat)</span>
+          </div>
+          <div class="legend-note">
+            <span>+14.8% growth compared to previous service cycle</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3B. Recent Bookings Table -->
+      <section class="panel-card bookings-panel">
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">REAL-TIME SERVICE</span>
+            <h2 class="panel-title">Recent Dining Bookings</h2>
+          </div>
+
+          <a routerLink="/admin/bookings" class="panel-link">View Full Ledger &rarr;</a>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="table-filter-pills">
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="bookingStatusFilter() === 'all'"
+            (click)="setBookingFilter('all')">
+            All ({{ adminData.recentBookings().length }})
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="bookingStatusFilter() === 'seated'"
+            (click)="setBookingFilter('seated')">
+            Seated Now
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="bookingStatusFilter() === 'confirmed'"
+            (click)="setBookingFilter('confirmed')">
+            Confirmed
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="bookingStatusFilter() === 'pending'"
+            (click)="setBookingFilter('pending')">
+            Pending
+          </button>
+        </div>
+
+        <!-- Bookings Data Table -->
+        <div class="table-responsive">
+          <table class="admin-data-table">
+            <thead>
+              <tr>
+                <th>Booking Ref</th>
+                <th>Guest</th>
+                <th>Dining Sanctuary</th>
+                <th>Date &amp; Time</th>
+                <th>Guests</th>
+                <th>Status</th>
+                <th class="text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (bk of filteredBookings(); track bk.id) {
+                <tr class="table-row">
+                  <td class="cell-ref">
+                    <code>{{ bk.bookingRef }}</code>
+                  </td>
+                  <td class="cell-guest">
+                    <strong class="guest-name">{{ bk.customerName }}</strong>
+                    <span class="guest-contact">{{ bk.customerEmail }}</span>
+                  </td>
+                  <td class="cell-restaurant">
+                    <span class="rest-name">{{ bk.restaurantName }}</span>
+                    <span class="rest-area">{{ bk.seatingArea }}</span>
+                  </td>
+                  <td class="cell-datetime">
+                    <span class="date">{{ bk.date }}</span>
+                    <span class="time">{{ bk.time }}</span>
+                  </td>
+                  <td class="cell-guests">
+                    <span class="party-pill">{{ bk.guests }} Guests</span>
+                  </td>
+                  <td class="cell-status">
+                    <span class="status-badge" [class]="'status-' + bk.status">
+                      {{ bk.status }}
+                    </span>
+                  </td>
+                  <td class="cell-action text-right">
+                    <button type="button" class="btn-inspect" (click)="viewBookingDetails(bk)" aria-label="View booking details">
+                      Inspect
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN: Service Pulse & Recent Restaurants -->
+    <div class="grid-secondary-col">
+      <!-- 3C. Today's Service Pulse & Status Summary -->
+      <section class="panel-card pulse-panel">
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">TONIGHT'S SERVICE PULSE</span>
+            <h2 class="panel-title">Service Capacity &amp; Status</h2>
+          </div>
+        </div>
+
+        <div class="pulse-metrics-banner">
+          <div class="pulse-stat">
+            <span class="pulse-val">{{ adminData.todaysPulse.bookingsToday }}</span>
+            <span class="pulse-label">Tables Tonight</span>
+          </div>
+          <div class="pulse-divider" aria-hidden="true"></div>
+          <div class="pulse-stat">
+            <span class="pulse-val">{{ adminData.todaysPulse.coversToday }}</span>
+            <span class="pulse-label">Total Covers</span>
+          </div>
+          <div class="pulse-divider" aria-hidden="true"></div>
+          <div class="pulse-stat">
+            <span class="pulse-val">{{ adminData.todaysPulse.avgRatingToday }}★</span>
+            <span class="pulse-label">Service Score</span>
+          </div>
+        </div>
+
+        <!-- Breakdown Progress Bars -->
+        <div class="status-breakdown-list">
+          @for (item of adminData.statusSummaries; track item.status) {
+            <div class="status-progress-row">
+              <div class="progress-info">
+                <span class="status-name">{{ item.status }}</span>
+                <span class="status-count">{{ item.count }} ({{ item.percentage }}%)</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-bar" [style.width.%]="item.percentage" [style.background-color]="item.color"></div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- 3D. Recently Added Sanctuaries -->
+      <section class="panel-card sanctuaries-panel">
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">CURATED DIRECTORY</span>
+            <h2 class="panel-title">Recent Sanctuary Additions</h2>
+          </div>
+
+          <a routerLink="/admin/restaurants" class="panel-link">Manage All &rarr;</a>
+        </div>
+
+        <div class="sanctuary-items">
+          @for (rest of adminData.recentRestaurants; track rest.id) {
+            <div class="sanctuary-item">
+              <img [src]="rest.imageUrl" [alt]="rest.name" class="sanctuary-img" loading="lazy" />
+              <div class="sanctuary-details">
+                <div class="sanctuary-top">
+                  <h3 class="sanctuary-name">{{ rest.name }}</h3>
+                  <span class="sanctuary-badge">{{ rest.badge }}</span>
+                </div>
+                <p class="sanctuary-cuisine">{{ rest.cuisine }} &bull; {{ rest.city }}</p>
+                <div class="sanctuary-foot">
+                  <span class="rating">★ {{ rest.rating }}</span>
+                  <span class="tables">{{ rest.tablesCount }} Tables</span>
+                  <span class="status-active">{{ rest.status }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- 3E. Admin Quick Navigation Shortcuts -->
+      <section class="panel-card shortcuts-panel">
+        <span class="panel-kicker">EXECUTIVE SHORTCUTS</span>
+        <div class="shortcut-grid">
+          <a routerLink="/admin/tables" class="shortcut-btn">
+            <span class="sc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="5" width="16" height="10" rx="2"></rect>
+                <line x1="8" y1="15" x2="8" y2="21"></line>
+                <line x1="16" y1="15" x2="16" y2="21"></line>
+              </svg>
+            </span>
+            <span class="sc-text">Floor Plan Matrix</span>
+          </a>
+
+          <a routerLink="/admin/menus" class="shortcut-btn">
+            <span class="sc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </span>
+            <span class="sc-text">Chef Specials</span>
+          </a>
+
+          <a routerLink="/admin/customers" class="shortcut-btn">
+            <span class="sc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <span class="sc-text">VIP Member Ledger</span>
+          </a>
+
+          <a routerLink="/admin/reports" class="shortcut-btn">
+            <span class="sc-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+            </span>
+            <span class="sc-text">Financial Analytics</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- DETAIL MODAL: Selected Booking Inspection -->
+  @if (selectedBooking(); as bk) {
+    <div class="modal-backdrop" (click)="closeBookingDetails()" aria-hidden="true"></div>
+    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">RESERVATION DOSSIER</span>
+          <h3 id="modal-title" class="modal-title">{{ bk.bookingRef }} — {{ bk.restaurantName }}</h3>
+        </div>
+        <button type="button" class="modal-close" (click)="closeBookingDetails()" aria-label="Close dossier">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-meta-grid">
+          <div class="meta-item">
+            <span class="label">Primary Patron</span>
+            <strong class="val">{{ bk.customerName }}</strong>
+            <span class="sub">{{ bk.customerEmail }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Date &amp; Service Time</span>
+            <strong class="val">{{ bk.date }} at {{ bk.time }}</strong>
+            <span class="sub">{{ bk.guests }} Guests &bull; {{ bk.seatingArea }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Deposit Ledger</span>
+            <strong class="val">${{ bk.depositAmount }} USD</strong>
+            <span class="sub">Guaranteed Reservation</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Current Status</span>
+            <span class="status-badge" [class]="'status-' + bk.status">{{ bk.status }}</span>
+          </div>
+        </div>
+
+        @if (bk.specialRequests) {
+          <div class="modal-notes-box">
+            <span class="notes-label">Maître D' &amp; Kitchen Notes:</span>
+            <p class="notes-text">{{ bk.specialRequests }}</p>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline btn-sm" (click)="closeBookingDetails()">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="triggerQuickAction('Table assignment updated for ' + bk.bookingRef); closeBookingDetails()">
+          Assign Table
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ADD RESTAURANT MODAL (Preview Mock) -->
+  @if (showAddModal()) {
+    <div class="modal-backdrop" (click)="closeAddRestaurantModal()" aria-hidden="true"></div>
+    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">SANCTUARY ONBOARDING</span>
+          <h3 id="add-modal-title" class="modal-title">Add Dining Sanctuary</h3>
+        </div>
+        <button type="button" class="modal-close" (click)="closeAddRestaurantModal()" aria-label="Close form">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Register a new fine dining sanctuary into the Dinevia Luxury Catalog. Full culinary configuration will be active in the dedicated Restaurants module.
+        </p>
+
+        <form class="mock-form" (submit)="$event.preventDefault(); triggerQuickAction('Sanctuary added to pending review queue.'); closeAddRestaurantModal()">
+          <div class="form-group">
+            <label class="form-label" for="rest-name-input">Establishment Name</label>
+            <input type="text" id="rest-name-input" class="form-input" placeholder="e.g. Maison de Haute Cuisine" value="L'Arpège Monceau" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="rest-cuisine-input">Cuisine Philosophy</label>
+              <input type="text" id="rest-cuisine-input" class="form-input" placeholder="e.g. French Contemporary" value="Contemporary French" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="rest-city-input">City / Location</label>
+              <input type="text" id="rest-city-input" class="form-input" placeholder="e.g. Paris" value="Paris, France" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="rest-michelin-input">Accreditation / Badge</label>
+              <select id="rest-michelin-input" class="form-input">
+                <option>3 Michelin Stars</option>
+                <option>2 Michelin Stars</option>
+                <option>1 Michelin Star</option>
+                <option>Chef's Table Curated</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="rest-tables-input">Total Seating Capacity</label>
+              <input type="number" id="rest-tables-input" class="form-input" value="16" />
+            </div>
+          </div>
+
+          <div class="modal-footer" style="padding: 1rem 0 0; border: none;">
+            <button type="button" class="btn btn-outline btn-sm" (click)="closeAddRestaurantModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save Sanctuary</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
+

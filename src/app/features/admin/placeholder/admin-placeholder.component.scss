@@ -1,0 +1,217 @@
+:host {
+  display: block;
+}
+
+.placeholder-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.module-header-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  box-shadow: 0 4px 16px rgba(38, 40, 36, 0.03);
+  flex-wrap: wrap;
+
+  .header-left {
+    max-width: 720px;
+  }
+
+  .kicker-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .kicker-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-terracotta);
+  }
+
+  .status-pill {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.6rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-sage-light);
+    color: var(--color-forest-dark);
+  }
+
+  .module-title {
+    font-family: var(--font-serif);
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: var(--color-forest-dark);
+    margin: 0 0 0.5rem;
+    line-height: 1.2;
+  }
+
+  .module-desc {
+    font-size: 0.92rem;
+    color: var(--color-charcoal-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+
+    .btn-icon {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+}
+
+.stats-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-box {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    .stat-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-charcoal-light);
+    }
+
+    .stat-value {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--color-forest-dark);
+      line-height: 1.1;
+    }
+  }
+}
+
+.blueprint-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  box-shadow: 0 4px 16px rgba(38, 40, 36, 0.03);
+
+  .blueprint-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(35, 70, 55, 0.08);
+    margin-bottom: 1.5rem;
+
+    .badge-icon-wrap {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: var(--radius-sm);
+      background: var(--color-sage-light);
+      color: var(--color-forest);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      svg {
+        width: 1.4rem;
+        height: 1.4rem;
+      }
+    }
+
+    .bp-title {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-forest-dark);
+      margin: 0;
+    }
+
+    .bp-subtitle {
+      font-size: 0.8rem;
+      color: var(--color-charcoal-muted);
+      margin: 0.2rem 0 0;
+    }
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+
+    @media (max-width: 680px) {
+      grid-template-columns: 1fr;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: var(--color-ivory);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+
+      .feature-check {
+        color: #059669;
+        font-weight: 800;
+        font-size: 0.95rem;
+      }
+
+      .feature-text {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--color-charcoal);
+      }
+    }
+  }
+
+  .blueprint-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(35, 70, 55, 0.08);
+    flex-wrap: wrap;
+
+    .note-box {
+      font-size: 0.78rem;
+      color: var(--color-charcoal-muted);
+      max-width: 580px;
+      line-height: 1.5;
+
+      strong {
+        color: var(--color-forest-dark);
+      }
+    }
+  }
+}
+

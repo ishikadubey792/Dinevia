@@ -1,0 +1,46 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--color-ivory);
+}
+
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--color-ivory);
+  position: relative;
+}
+
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0; // Prevent flex child from overflowing
+  transition: margin-left var(--transition-base);
+
+  @media (min-width: 1024px) {
+    margin-left: 275px;
+  }
+
+  @media (max-width: 1023px) {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+.admin-content-stage {
+  flex: 1;
+  padding: 2rem 2.25rem 3.5rem;
+  background-color: var(--color-ivory);
+  overflow-y: auto;
+
+  @media (max-width: 860px) {
+    padding: 1.5rem 1.25rem 2.5rem;
+  }
+
+  @media (max-width: 540px) {
+    padding: 1.25rem 0.85rem 2rem;
+  }
+}
+
