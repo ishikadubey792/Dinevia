@@ -34,6 +34,12 @@
         <li>
           <a routerLink="/about" routerLinkActive="active" class="nav-item">About Us</a>
         </li>
+        <li>
+          <a routerLink="/partner-with-us" routerLinkActive="active" class="nav-item nav-item-partner">
+            <span class="partner-sparkle" aria-hidden="true">✦</span>
+            <span>For Restaurant Owners</span>
+          </a>
+        </li>
       </ul>
     </nav>
 
@@ -202,6 +208,12 @@
       <li>
         <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
           <span>About Us</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/partner-with-us" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item mobile-nav-partner">
+          <span class="partner-sparkle" aria-hidden="true">✦</span>
+          <span>For Restaurant Owners</span>
         </a>
       </li>
     </ul>

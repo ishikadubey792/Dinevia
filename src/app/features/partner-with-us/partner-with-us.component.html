@@ -1,0 +1,238 @@
+<!-- Customer Navigation Bar -->
+<app-navbar></app-navbar>
+
+<main id="main-content" class="partner-page">
+  <!-- 1. HERO SECTION -->
+  <section class="partner-hero" aria-labelledby="hero-title">
+    <div class="container hero-container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="badge-sparkle">✦</span>
+          <span>DINEVIA CULINARY PARTNER NETWORK</span>
+        </div>
+
+        <h1 id="hero-title" class="hero-title">
+          Grow Your Restaurant with <span class="highlight-serif">Dinevia.</span>
+        </h1>
+
+        <p class="hero-description">
+          Connect with the world's most discerning epicures. Dinevia pairs Michelin-starred institutions and premier dining sanctuaries with intelligent reservation management, guaranteed table deposits, and elevated discovery.
+        </p>
+
+        <!-- Primary Action Group -->
+        <div class="hero-actions">
+          <a routerLink="/admin/register" class="btn btn-primary btn-lg action-btn">
+            <span>Get Started</span>
+            <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </a>
+
+          <a routerLink="/admin/login" class="btn btn-outline btn-lg action-btn owner-login-btn">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="login-key-icon" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+            </svg>
+            <span>Restaurant Owner Login</span>
+          </a>
+        </div>
+
+        <p class="onboarding-note">
+          Immediate access &bull; Complimentary culinary profile curation &bull; No upfront integration fee
+        </p>
+      </div>
+
+      <!-- Hero Visual Showcase Card -->
+      <div class="hero-visual">
+        <div class="visual-card">
+          <div class="card-glass-header">
+            <span class="live-status-dot"></span>
+            <span class="header-label">Partner Command Console</span>
+            <span class="header-tag">Live Service</span>
+          </div>
+
+          <div class="mock-stats-row">
+            <div class="mock-stat">
+              <span class="stat-num">38</span>
+              <span class="stat-text">Covers Tonight</span>
+            </div>
+            <div class="mock-stat-divider"></div>
+            <div class="mock-stat">
+              <span class="stat-num">98.8%</span>
+              <span class="stat-text">Confirmed Rate</span>
+            </div>
+            <div class="mock-stat-divider"></div>
+            <div class="mock-stat">
+              <span class="stat-num">4.95★</span>
+              <span class="stat-text">Michelin Score</span>
+            </div>
+          </div>
+
+          <div class="mock-reservation-card">
+            <div class="m-avatar">LG</div>
+            <div class="m-info">
+              <strong class="m-name">Chef's Salon at Le Gabriel</strong>
+              <span class="m-sub">Imperial Window Table &bull; 6 Guests &bull; 7:30 PM</span>
+            </div>
+            <span class="m-badge">Guaranteed Deposit</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. PROVEN METRICS STRIP -->
+  <section class="metrics-strip" aria-label="Partner Performance Statistics">
+    <div class="container">
+      <div class="metrics-row">
+        @for (metric of metrics; track metric.label) {
+          <div class="metric-block">
+            <span class="metric-num">{{ metric.value }}</span>
+            <strong class="metric-label">{{ metric.label }}</strong>
+            <span class="metric-sub">{{ metric.sub }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. BENEFITS SECTION -->
+  <section class="benefits-section" aria-labelledby="benefits-title">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-kicker">WHY RESTAURANTS CHOOSE DINEVIA</span>
+        <h2 id="benefits-title" class="section-title">
+          Designed for the Demands of <span class="highlight-serif">Haute Gastronomy.</span>
+        </h2>
+        <p class="section-subtitle">
+          From boutique tasting counters to iconic multi-starred institutions, Dinevia equips you with precision management without disrupting your service rhythm.
+        </p>
+      </div>
+
+      <div class="benefits-grid">
+        @for (benefit of benefits; track benefit.title) {
+          <div class="benefit-card">
+            <div class="benefit-top">
+              <div class="benefit-icon-badge">
+                @switch (benefit.icon) {
+                  @case ('visibility') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path>
+                    </svg>
+                  }
+                  @case ('reservation') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                      <path d="m9 16 2 2 4-4"></path>
+                    </svg>
+                  }
+                  @case ('table') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="4" y="5" width="16" height="10" rx="2"></rect>
+                      <line x1="8" y1="15" x2="8" y2="21"></line>
+                      <line x1="16" y1="15" x2="16" y2="21"></line>
+                      <line x1="4" y1="9" x2="20" y2="9"></line>
+                    </svg>
+                  }
+                  @case ('customers') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  }
+                }
+              </div>
+              <span class="benefit-badge">{{ benefit.badge }}</span>
+            </div>
+
+            <h3 class="benefit-title">{{ benefit.title }}</h3>
+            <p class="benefit-desc">{{ benefit.description }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. ONBOARDING STEPS SECTION -->
+  <section class="onboarding-section" aria-labelledby="onboarding-title">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-kicker">SIMPLE &amp; TRANSPARENT ONBOARDING</span>
+        <h2 id="onboarding-title" class="section-title">
+          How Restaurant Onboarding Works
+        </h2>
+        <p class="section-subtitle">
+          We respect your time. Our onboarding concierge ensures your tables and tasting experiences are live within days.
+        </p>
+      </div>
+
+      <div class="steps-grid">
+        @for (step of onboardingSteps; track step.step) {
+          <div class="step-card">
+            <div class="step-number-wrap">
+              <span class="step-number">{{ step.step }}</span>
+            </div>
+            <div class="step-content">
+              <span class="step-timeline">{{ step.timeline }}</span>
+              <h3 class="step-title">{{ step.title }}</h3>
+              <p class="step-desc">{{ step.description }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. CHEF TESTIMONIAL QUOTE -->
+  <section class="testimonial-section">
+    <div class="container">
+      <div class="testimonial-card">
+        <span class="quote-mark" aria-hidden="true">&ldquo;</span>
+        <blockquote class="quote-text">
+          Dinevia understands the delicate tempo of fine dining. The patrons who arrive through Dinevia arrive prepared for our multi-course philosophy, and the guaranteed table deposits have completely eliminated no-shows from our books.
+        </blockquote>
+        <div class="quote-author">
+          <strong class="author-name">Chef Julien Laurent</strong>
+          <span class="author-title">Executive Chef &bull; Le Gabriel Paris (3 Michelin Stars)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. FINAL CALL TO ACTION -->
+  <section class="cta-banner-section">
+    <div class="container">
+      <div class="cta-card">
+        <div class="cta-content">
+          <span class="cta-kicker">JOIN OUR GASTRONOMIC NETWORK</span>
+          <h2 class="cta-title">Ready to Welcome More Discerning Diners?</h2>
+          <p class="cta-desc">
+            Partner with Dinevia today to elevate your online discovery, protect your prime covers, and manage bookings with complete ease.
+          </p>
+
+          <div class="cta-actions">
+            <a routerLink="/admin/register" class="btn btn-primary btn-lg">
+              <span>Get Started &bull; List Your Restaurant</span>
+              <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </a>
+
+            <a routerLink="/admin/login" class="btn btn-outline btn-lg cta-login-btn">
+              <span>Restaurant Owner Login</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Customer Footer -->
+<app-footer></app-footer>
+

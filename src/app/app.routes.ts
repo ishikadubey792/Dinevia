@@ -11,6 +11,7 @@ import { ProfileComponent } from './features/profile/profile.component';
 import { BookingsComponent } from './features/bookings/bookings.component';
 import { WishlistComponent } from './features/wishlist/wishlist.component';
 import { PlaceholderComponent } from './features/placeholder/placeholder.component';
+import { PartnerWithUsComponent } from './features/partner-with-us/partner-with-us.component';
 
 export const routes: Routes = [
   {
@@ -96,6 +97,11 @@ export const routes: Routes = [
     path: 'about',
     component: PlaceholderComponent,
     title: 'About Dinevia — Our Philosophy'
+  },
+  {
+    path: 'partner-with-us',
+    component: PartnerWithUsComponent,
+    title: 'Partner With Dinevia — Grow Your Restaurant | Curated Reservations'
   },
   {
     path: 'admin',

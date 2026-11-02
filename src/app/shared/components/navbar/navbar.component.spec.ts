@@ -18,6 +18,7 @@ describe('NavbarComponent Responsive Navigation', () => {
           { path: 'bookings', component: NavbarComponent },
           { path: 'wishlist', component: NavbarComponent },
           { path: 'about', component: NavbarComponent },
+          { path: 'partner-with-us', component: NavbarComponent },
           { path: 'login', component: NavbarComponent },
           { path: 'signup', component: NavbarComponent }
         ]),
@@ -191,7 +192,7 @@ describe('NavbarComponent Responsive Navigation', () => {
 
   it('should render desktop navigation links', () => {
     const desktopLinks = fixture.nativeElement.querySelectorAll('.desktop-nav .nav-item');
-    expect(desktopLinks.length).toBe(5);
+    expect(desktopLinks.length).toBe(6);
 
     const linkTexts = Array.from(desktopLinks).map((el: any) => el.textContent.trim());
     expect(linkTexts).toContain('Home');
@@ -199,11 +200,12 @@ describe('NavbarComponent Responsive Navigation', () => {
     expect(linkTexts).toContain('My Bookings');
     expect(linkTexts).toContain('Saved');
     expect(linkTexts).toContain('About Us');
+    expect(linkTexts.some((t: string) => t.includes('For Restaurant Owners'))).toBe(true);
   });
 
   it('should render mobile drawer navigation links and buttons', () => {
     const mobileLinks = fixture.nativeElement.querySelectorAll('.mobile-nav-links .mobile-nav-item');
-    expect(mobileLinks.length).toBe(5);
+    expect(mobileLinks.length).toBe(6);
 
     const mobileLinkTexts = Array.from(mobileLinks).map((el: any) => el.textContent.trim());
     expect(mobileLinkTexts).toContain('Home');
@@ -211,6 +213,7 @@ describe('NavbarComponent Responsive Navigation', () => {
     expect(mobileLinkTexts).toContain('My Bookings');
     expect(mobileLinkTexts).toContain('Saved');
     expect(mobileLinkTexts).toContain('About Us');
+    expect(mobileLinkTexts.some((t: string) => t.includes('For Restaurant Owners'))).toBe(true);
 
     const loginBtn = fixture.nativeElement.querySelector('.mobile-menu-footer a[routerLink="/login"]');
     const signupBtn = fixture.nativeElement.querySelector('.mobile-menu-footer a[routerLink="/signup"]');

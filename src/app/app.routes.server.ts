@@ -64,6 +64,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    path: 'partner-with-us',
+    renderMode: RenderMode.Prerender
+  },
+  {
     path: 'admin',
     renderMode: RenderMode.Client
   },

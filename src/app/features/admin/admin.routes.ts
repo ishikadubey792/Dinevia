@@ -2,8 +2,20 @@ import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './layout/admin-layout.component';
 import { AdminDashboardComponent } from './dashboard/admin-dashboard.component';
 import { AdminPlaceholderComponent } from './placeholder/admin-placeholder.component';
+import { AdminLoginComponent } from './auth/admin-login/admin-login.component';
+import { AdminRegisterComponent } from './auth/admin-register/admin-register.component';
 
 export const ADMIN_ROUTES: Routes = [
+  {
+    path: 'login',
+    component: AdminLoginComponent,
+    title: 'Restaurant Owner Login — Dinevia Admin'
+  },
+  {
+    path: 'register',
+    component: AdminRegisterComponent,
+    title: 'List Your Restaurant — Dinevia Partner Registration'
+  },
   {
     path: '',
     component: AdminLayoutComponent,
