@@ -1,4 +1,4 @@
-import { Component, inject, HostListener } from '@angular/core';
+import { Component, inject, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -32,73 +32,36 @@ export class AdminSidebarComponent {
   private readonly authService = inject(AuthService);
   private readonly routerSub: Subscription;
 
+  readonly ownerName = computed(() => this.authService.currentUser()?.fullName || 'Chef Julien Laurent');
+  readonly ownerInitials = computed(() => {
+    const name = this.ownerName();
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  });
+
   readonly navSections: NavSection[] = [
     {
-      title: 'Executive Overview',
+      title: 'Restaurant Operations',
       items: [
         {
           label: 'Dashboard',
           route: '/admin/dashboard',
           icon: 'dashboard'
-        }
-      ]
-    },
-    {
-      title: 'Sanctuary Management',
-      items: [
+        },
         {
-          label: 'Restaurants',
+          label: 'My Restaurants',
           route: '/admin/restaurants',
-          icon: 'restaurants',
-          badge: '18 Live'
+          icon: 'restaurants'
         },
-        {
-          label: 'Menu Management',
-          route: '/admin/menus',
-          icon: 'menu'
-        },
-        {
-          label: 'Tables & Seating',
-          route: '/admin/tables',
-          icon: 'tables'
-        }
-      ]
-    },
-    {
-      title: 'Guest Operations',
-      items: [
         {
           label: 'Bookings',
           route: '/admin/bookings',
           icon: 'bookings',
-          badge: '38 Today',
-          badgeType: 'gold'
-        },
-        {
-          label: 'Customers',
-          route: '/admin/customers',
-          icon: 'customers'
-        },
-        {
-          label: 'Reviews & Feedback',
-          route: '/admin/reviews',
-          icon: 'reviews',
-          badge: '4.9★'
-        }
-      ]
-    },
-    {
-      title: 'Platform Control',
-      items: [
-        {
-          label: 'Reports & Analytics',
-          route: '/admin/reports',
-          icon: 'reports'
-        },
-        {
-          label: 'Settings',
-          route: '/admin/settings',
-          icon: 'settings'
+          badge: 'Live',
+          badgeType: 'sage'
         }
       ]
     }

@@ -2,6 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminDataService } from '../../../core/services/admin-data.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { AdminBookingItem, BookingTrendPoint } from '../../../core/models/admin.model';
 
 @Component({
@@ -13,11 +14,12 @@ import { AdminBookingItem, BookingTrendPoint } from '../../../core/models/admin.
 })
 export class AdminDashboardComponent {
   readonly adminData = inject(AdminDataService);
+  private readonly authService = inject(AuthService);
 
+  readonly ownerName = computed(() => this.authService.currentUser()?.fullName || 'Restaurant Owner');
   readonly trendView = signal<'weekly' | 'monthly'>('weekly');
   readonly bookingStatusFilter = signal<string>('all');
   readonly selectedBooking = signal<AdminBookingItem | null>(null);
-  readonly showAddModal = signal<boolean>(false);
   readonly notificationToast = signal<string | null>(null);
 
   readonly currentChartData = computed<BookingTrendPoint[]>(() => {
@@ -47,14 +49,6 @@ export class AdminDashboardComponent {
 
   closeBookingDetails(): void {
     this.selectedBooking.set(null);
-  }
-
-  openAddRestaurantModal(): void {
-    this.showAddModal.set(true);
-  }
-
-  closeAddRestaurantModal(): void {
-    this.showAddModal.set(false);
   }
 
   triggerQuickAction(message: string): void {

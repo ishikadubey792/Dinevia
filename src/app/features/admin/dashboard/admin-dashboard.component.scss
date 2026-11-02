@@ -272,6 +272,11 @@
   grid-template-columns: 1.75fr 1.25fr;
   gap: 1.5rem;
 
+  &.single-column-grid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
   @media (max-width: 1080px) {
     grid-template-columns: 1fr;
   }

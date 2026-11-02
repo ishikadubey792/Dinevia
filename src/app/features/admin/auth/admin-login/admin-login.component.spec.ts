@@ -22,6 +22,7 @@ describe('AdminLoginComponent', () => {
           provide: AuthService,
           useValue: {
             currentUser: () => null,
+            login: () => ({ success: true }),
             logout: () => {}
           }
         }

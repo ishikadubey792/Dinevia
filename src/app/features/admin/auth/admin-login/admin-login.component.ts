@@ -28,6 +28,7 @@ export class AdminLoginComponent {
     // Simulate luxury authentication response
     setTimeout(() => {
       this.isLoading.set(false);
+      this.authService.login(this.email, this.password);
       this.router.navigate(['/admin/dashboard']);
     }, 600);
   }
@@ -38,7 +39,7 @@ export class AdminLoginComponent {
     } else if (account === 'arpege') {
       this.email = 'owner@arpege-paris.fr';
     } else {
-      this.email = 'elena.vance@dinevia.com';
+      this.email = 'marcus.sterling@dinevia.com';
     }
     this.password = 'DineviaPass2026!';
   }

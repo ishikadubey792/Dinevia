@@ -1,4 +1,4 @@
-import { Component, inject, signal, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AdminDataService } from '../../../../../core/services/admin-data.service';
@@ -19,6 +19,17 @@ export class AdminHeaderComponent {
   readonly isNotificationOpen = signal<boolean>(false);
   readonly isProfileMenuOpen = signal<boolean>(false);
   readonly searchQuery = signal<string>('');
+
+  readonly ownerName = computed(() => this.authService.currentUser()?.fullName || 'Chef Julien Laurent');
+  readonly ownerEmail = computed(() => this.authService.currentUser()?.email || 'owner@legabriel.fr');
+  readonly ownerInitials = computed(() => {
+    const name = this.ownerName();
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  });
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {

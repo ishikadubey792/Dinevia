@@ -4,12 +4,13 @@ import { AdminLayoutComponent } from './layout/admin-layout.component';
 import { AdminSidebarComponent } from './layout/components/admin-sidebar/admin-sidebar.component';
 import { AdminHeaderComponent } from './layout/components/admin-header/admin-header.component';
 import { AdminDashboardComponent } from './dashboard/admin-dashboard.component';
+import { AdminRestaurantsComponent } from './restaurants/admin-restaurants.component';
 import { AdminPlaceholderComponent } from './placeholder/admin-placeholder.component';
 import { AdminDataService } from '../../core/services/admin-data.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ADMIN_ROUTES } from './admin.routes';
 
-describe('Dinevia Admin Portal', () => {
+describe('Dinevia Restaurant Owner Portal', () => {
   let router: Router;
 
   beforeEach(async () => {
@@ -19,6 +20,7 @@ describe('Dinevia Admin Portal', () => {
         AdminSidebarComponent,
         AdminHeaderComponent,
         AdminDashboardComponent,
+        AdminRestaurantsComponent,
         AdminPlaceholderComponent
       ],
       providers: [
@@ -29,7 +31,7 @@ describe('Dinevia Admin Portal', () => {
         {
           provide: AuthService,
           useValue: {
-            currentUser: () => null,
+            currentUser: () => ({ fullName: 'Chef Julien Laurent', email: 'owner@legabriel.fr' }),
             logout: () => {}
           }
         },
@@ -74,37 +76,40 @@ describe('Dinevia Admin Portal', () => {
       fixture.detectChanges();
     });
 
-    it('should render Dinevia admin brand', () => {
+    it('should render Dinevia owner brand', () => {
       const brandName = fixture.nativeElement.querySelector('.brand-name');
       const brandBadge = fixture.nativeElement.querySelector('.brand-badge');
 
       expect(brandName.textContent.trim()).toBe('Dinevia');
-      expect(brandBadge.textContent.trim()).toBe('ADMIN PORTAL');
+      expect(brandBadge.textContent.trim()).toBe('OWNER PORTAL');
     });
 
-    it('should display all 9 core navigation destinations', () => {
+    it('should display the 3 core navigation destinations (Dashboard, My Restaurants, Bookings)', () => {
       const links = fixture.nativeElement.querySelectorAll('.nav-link');
       const labels = Array.from(links).map((l: any) => l.querySelector('.nav-label')?.textContent.trim());
 
+      expect(labels.length).toBe(3);
       expect(labels).toContain('Dashboard');
-      expect(labels).toContain('Restaurants');
-      expect(labels).toContain('Menu Management');
-      expect(labels).toContain('Tables & Seating');
+      expect(labels).toContain('My Restaurants');
       expect(labels).toContain('Bookings');
-      expect(labels).toContain('Customers');
-      expect(labels).toContain('Reviews & Feedback');
-      expect(labels).toContain('Reports & Analytics');
-      expect(labels).toContain('Settings');
+
+      // Ensure out-of-scope items are removed
+      expect(labels).not.toContain('Menu Management');
+      expect(labels).not.toContain('Tables & Seating');
+      expect(labels).not.toContain('Customers');
+      expect(labels).not.toContain('Reviews & Feedback');
+      expect(labels).not.toContain('Reports & Analytics');
+      expect(labels).not.toContain('Settings');
     });
 
-    it('should render customer portal switch and admin user profile', () => {
+    it('should render customer portal switch and owner user profile', () => {
       const portalLink = fixture.nativeElement.querySelector('.portal-switch-link');
       const profileName = fixture.nativeElement.querySelector('.profile-name');
       const profileRole = fixture.nativeElement.querySelector('.profile-role');
 
       expect(portalLink).toBeTruthy();
-      expect(profileName.textContent.trim()).toBe('Elena Vance');
-      expect(profileRole.textContent.trim()).toBe('Executive Admin');
+      expect(profileName.textContent.trim()).toBe('Chef Julien Laurent');
+      expect(profileRole.textContent.trim()).toBe('Restaurant Owner');
     });
 
     it('should handle mobile sidebar toggle and backdrop', () => {
@@ -147,11 +152,11 @@ describe('Dinevia Admin Portal', () => {
       fixture.detectChanges();
     });
 
-    it('should render breadcrumb title and live service indicator', () => {
+    it('should render owner breadcrumb title and live service indicator', () => {
       const title = fixture.nativeElement.querySelector('.page-title');
       const pulseText = fixture.nativeElement.querySelector('.pulse-text');
 
-      expect(title.textContent.trim()).toBe('Executive Command Sanctuary');
+      expect(title.textContent.trim()).toBe('Owner Command Console');
       expect(pulseText.textContent.trim()).toBe('Live Service');
     });
 
@@ -170,7 +175,7 @@ describe('Dinevia Admin Portal', () => {
       expect(component.isNotificationOpen()).toBe(false);
     });
 
-    it('should toggle profile menu dropdown', () => {
+    it('should toggle profile menu dropdown with owner info', () => {
       expect(component.isProfileMenuOpen()).toBe(false);
 
       component.toggleProfileMenu();
@@ -179,6 +184,8 @@ describe('Dinevia Admin Portal', () => {
       expect(component.isProfileMenuOpen()).toBe(true);
       const profilePopover = fixture.nativeElement.querySelector('.profile-popover');
       expect(profilePopover).toBeTruthy();
+      expect(profilePopover.textContent).toContain('Chef Julien Laurent');
+      expect(profilePopover.textContent).toContain('Restaurant Owner');
     });
 
     it('should toggle sidebar when mobile hamburger is clicked', () => {
@@ -202,20 +209,20 @@ describe('Dinevia Admin Portal', () => {
       fixture.detectChanges();
     });
 
-    it('should render executive greeting for Elena', () => {
+    it('should render greeting for restaurant owner', () => {
       const title = fixture.nativeElement.querySelector('.welcome-title');
-      expect(title.textContent).toContain('Elena');
+      expect(title.textContent).toContain('Chef Julien Laurent');
     });
 
-    it('should render 4 primary KPI metrics', () => {
+    it('should render 4 owner-focused KPI metrics', () => {
       const metricCards = fixture.nativeElement.querySelectorAll('.metric-card');
       expect(metricCards.length).toBe(4);
 
       const text = fixture.nativeElement.textContent;
-      expect(text).toContain('18'); // Total sanctuaries
-      expect(text).toContain('1,428'); // Total bookings
-      expect(text).toContain('3,890'); // Members
-      expect(text).toContain('$284,500'); // Revenue
+      expect(text).toContain('My Restaurants');
+      expect(text).toContain('Total Bookings');
+      expect(text).toContain("Today's Guests / Covers");
+      expect(text).toContain('Average Rating');
     });
 
     it('should toggle booking trend chart timeframe', () => {
@@ -258,20 +265,10 @@ describe('Dinevia Admin Portal', () => {
       expect(component.selectedBooking()).toBeNull();
     });
 
-    it('should open and close Add Restaurant modal', () => {
-      expect(component.showAddModal()).toBe(false);
-
-      component.openAddRestaurantModal();
-      fixture.detectChanges();
-
-      expect(component.showAddModal()).toBe(true);
-      const modal = fixture.nativeElement.querySelector('.admin-modal');
-      expect(modal).toBeTruthy();
-
-      component.closeAddRestaurantModal();
-      fixture.detectChanges();
-      expect(component.showAddModal()).toBe(false);
+    it('should provide direct link to Add Restaurant (/admin/register)', () => {
+      const addBtn = fixture.nativeElement.querySelector('.welcome-actions a[routerLink="/admin/register"]');
+      expect(addBtn).toBeTruthy();
+      expect(addBtn.textContent).toContain('Add Restaurant');
     });
   });
 });
-

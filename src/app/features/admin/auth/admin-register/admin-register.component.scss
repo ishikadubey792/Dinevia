@@ -201,6 +201,199 @@
     box-shadow: 0 0 0 3px rgba(35, 70, 55, 0.12);
     background: #ffffff;
   }
+
+  &.textarea-input {
+    resize: vertical;
+    min-height: 80px;
+  }
+}
+
+.section-divider-label {
+  padding: 0.5rem 0 0.25rem;
+  margin-top: 0.5rem;
+  border-bottom: 1.5px solid var(--color-border);
+
+  span {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-terracotta);
+  }
+}
+
+.cuisines-pills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+
+  .cuisine-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-border);
+    background: var(--color-ivory-light);
+    color: var(--color-charcoal-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    &.selected {
+      background: var(--color-forest);
+      color: var(--color-ivory);
+      border-color: var(--color-forest);
+    }
+
+    .check-icon {
+      width: 13px;
+      height: 13px;
+    }
+
+    &:hover:not(.selected) {
+      background: var(--color-sage-light);
+      border-color: var(--color-sage-border);
+      color: var(--color-forest-dark);
+    }
+  }
+}
+
+.field-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-terracotta);
+
+  .spinner-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-terracotta);
+    animation: pulse 1s infinite alternate;
+  }
+}
+
+.cuisine-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.35rem;
+
+  &.cuisine-warning {
+    background: rgba(200, 121, 90, 0.12);
+    border: 1px solid rgba(200, 121, 90, 0.35);
+    color: var(--color-terracotta);
+  }
+}
+
+.retry-btn {
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: inherit;
+  transition: all var(--transition-fast);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+
+.cuisine-empty-state {
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-ivory-light);
+  border: 1px dashed var(--color-border);
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-charcoal-light);
+
+  p {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.field-hint {
+  font-size: 0.74rem;
+  color: var(--color-charcoal-light);
+
+  .id-hint {
+    color: var(--color-terracotta);
+    font-weight: 600;
+    margin-left: 0.25rem;
+  }
+}
+
+.image-upload-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--color-ivory-light);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+
+  .preview-stage {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #000;
+
+    .preview-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-badge {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      background: rgba(35, 70, 55, 0.9);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-pill);
+    }
+  }
+
+  .file-action-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    .file-upload-input {
+      font-size: 0.84rem;
+    }
+
+    .upload-note {
+      font-size: 0.72rem;
+      color: var(--color-charcoal-light);
+    }
+  }
 }
 
 .form-terms {

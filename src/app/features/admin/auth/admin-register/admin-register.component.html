@@ -12,7 +12,7 @@
       </span>
       <span class="brand-text">
         <span class="brand-name">Dinevia</span>
-        <span class="brand-tag">PARTNER ONBOARDING</span>
+        <span class="brand-tag">OWNER ONBOARDING</span>
       </span>
     </a>
 
@@ -29,32 +29,24 @@
       <div class="card-header">
         <div class="kicker-pill">
           <span class="sparkle">✦</span>
-          <span>CURATED ONBOARDING</span>
+          <span>RESTAURANT REGISTRATION</span>
         </div>
         <h1 class="card-title">List Your Restaurant on Dinevia</h1>
         <p class="card-desc">
-          Join our distinguished network of Michelin-starred institutions and fine dining sanctuaries.
+          Register your dining establishment and access the Restaurant Owner Portal.
         </p>
       </div>
 
       <!-- Registration Form -->
       <form class="auth-form" (ngSubmit)="onSubmit()">
+        <!-- SECTION A: OWNER ACCOUNT CREDENTIALS -->
+        <div class="section-divider-label">
+          <span>1. Owner Account Credentials</span>
+        </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label for="restaurantName" class="form-label">Establishment Name</label>
-            <input 
-              id="restaurantName"
-              type="text" 
-              name="restaurantName"
-              [(ngModel)]="restaurantName" 
-              required
-              class="form-input" 
-              placeholder="e.g. Maison Laurent"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="ownerName" class="form-label">Chef / General Manager</label>
+            <label for="ownerName" class="form-label">Owner / Chef Full Name *</label>
             <input 
               id="ownerName"
               type="text" 
@@ -62,42 +54,73 @@
               [(ngModel)]="ownerName" 
               required
               class="form-input" 
-              placeholder="e.g. Chef Elena Vance"
+              placeholder="e.g. Chef Julien Laurent"
             />
           </div>
-        </div>
 
-        <div class="form-row">
           <div class="form-group">
-            <label for="businessEmail" class="form-label">Business Email</label>
+            <label for="ownerEmail" class="form-label">Owner Login Email *</label>
             <input 
-              id="businessEmail"
+              id="ownerEmail"
               type="email" 
-              name="businessEmail"
-              [(ngModel)]="businessEmail" 
+              name="ownerEmail"
+              [(ngModel)]="ownerEmail" 
               required
               class="form-input" 
-              placeholder="contact@restaurant.com"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="phoneNumber" class="form-label">Direct Phone</label>
-            <input 
-              id="phoneNumber"
-              type="tel" 
-              name="phoneNumber"
-              [(ngModel)]="phoneNumber" 
-              required
-              class="form-input" 
-              placeholder="+33 1 42 00 00 00"
+              placeholder="owner@your-restaurant.com"
             />
           </div>
         </div>
 
+        <div class="form-group">
+          <label for="password" class="form-label">Password *</label>
+          <input 
+            id="password"
+            type="password" 
+            name="password"
+            [(ngModel)]="password" 
+            required
+            class="form-input" 
+            placeholder="Create a secure password"
+          />
+        </div>
+
+        <!-- SECTION B: RESTAURANT BUSINESS PROFILE (8 Required Fields) -->
+        <div class="section-divider-label">
+          <span>2. Restaurant Establishment Details</span>
+        </div>
+
+        <!-- 1. Restaurant Name -->
+        <div class="form-group">
+          <label for="restaurantName" class="form-label">1. Restaurant Name *</label>
+          <input 
+            id="restaurantName"
+            type="text" 
+            name="restaurantName"
+            [(ngModel)]="restaurantName" 
+            required
+            class="form-input" 
+            placeholder="e.g. Le Gabriel Paris"
+          />
+        </div>
+
+        <!-- 2. Street Address & 3. City -->
         <div class="form-row">
           <div class="form-group">
-            <label for="city" class="form-label">City &amp; Country</label>
+            <label for="streetAddress" class="form-label">2. Street Address *</label>
+            <input 
+              id="streetAddress"
+              type="text" 
+              name="streetAddress"
+              [(ngModel)]="streetAddress" 
+              required
+              class="form-input" 
+              placeholder="e.g. 42 Avenue Gabriel"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="city" class="form-label">3. City *</label>
             <input 
               id="city"
               type="text" 
@@ -105,63 +128,139 @@
               [(ngModel)]="city" 
               required
               class="form-input" 
-              placeholder="e.g. Paris, France"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="cuisine" class="form-label">Cuisine Philosophy</label>
-            <input 
-              id="cuisine"
-              type="text" 
-              name="cuisine"
-              [(ngModel)]="cuisine" 
-              required
-              class="form-input" 
-              placeholder="e.g. Modern French &bull; Biodynamic"
+              placeholder="e.g. Paris"
             />
           </div>
         </div>
 
+        <!-- 4. Description -->
+        <div class="form-group">
+          <label for="description" class="form-label">4. Restaurant Description *</label>
+          <textarea 
+            id="description"
+            name="description"
+            [(ngModel)]="description" 
+            required
+            rows="3"
+            class="form-input textarea-input" 
+            placeholder="Describe your dining atmosphere, culinary philosophy, and signature dining experience..."
+          ></textarea>
+        </div>
+
+        <!-- 5. Phone & 6. Restaurant Email -->
         <div class="form-row">
           <div class="form-group">
-            <label for="seatingCapacity" class="form-label">Table Seating Count</label>
+            <label for="phone" class="form-label">5. Restaurant Phone *</label>
             <input 
-              id="seatingCapacity"
-              type="number" 
-              name="seatingCapacity"
-              [(ngModel)]="seatingCapacity" 
-              min="1"
+              id="phone"
+              type="tel" 
+              name="phone"
+              [(ngModel)]="phone" 
               required
               class="form-input" 
+              placeholder="+33 1 58 36 60 50"
             />
           </div>
 
           <div class="form-group">
-            <label for="accreditation" class="form-label">Accreditation / Prestige</label>
-            <select id="accreditation" name="accreditation" [(ngModel)]="accreditation" class="form-input">
-              <option>Michelin Star (1-3)</option>
-              <option>Green Michelin Star</option>
-              <option>World's 50 Best Listed</option>
-              <option>Fine Dining Curated</option>
-              <option>Chef's Counter Experience</option>
-            </select>
+            <label for="restaurantEmail" class="form-label">6. Restaurant Email *</label>
+            <input 
+              id="restaurantEmail"
+              type="email" 
+              name="restaurantEmail"
+              [(ngModel)]="restaurantEmail" 
+              required
+              class="form-input" 
+              placeholder="reservations@restaurant.com"
+            />
           </div>
         </div>
 
+        <!-- 7. Multiple Cuisines Selection (Live API Integration) -->
+        <div class="form-group">
+          <div class="field-header-row">
+            <label class="form-label">7. Multiple Cuisines Selection (Select all that apply) *</label>
+            @if (isLoadingCuisines()) {
+              <span class="loading-indicator">
+                <span class="spinner-dot"></span> Loading live cuisines...
+              </span>
+            }
+          </div>
+
+          @if (cuisineLoadError()) {
+            <div class="cuisine-notice cuisine-warning">
+              <span>{{ cuisineLoadError() }}</span>
+              <button type="button" class="retry-btn" (click)="loadCuisines()">Retry</button>
+            </div>
+          }
+
+          @if (availableCuisines().length > 0) {
+            <div class="cuisines-pills-wrap">
+              @for (cuisine of availableCuisines(); track cuisine.id) {
+                <button 
+                  type="button" 
+                  class="cuisine-pill-btn" 
+                  [class.selected]="isCuisineSelected(cuisine.id)"
+                  (click)="toggleCuisine(cuisine.id)">
+                  <span>{{ cuisine.name }}</span>
+                  @if (isCuisineSelected(cuisine.id)) {
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="check-icon">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  }
+                </button>
+              }
+            </div>
+            <span class="field-hint">
+              Selected: {{ selectedCuisineNames.join(', ') || 'None selected' }}
+              <span class="id-hint">(Cuisine IDs: {{ selectedCuisineIds.join(', ') }})</span>
+            </span>
+          } @else if (!isLoadingCuisines()) {
+            <div class="cuisine-empty-state">
+              <p>No cuisines currently available from server.</p>
+              <button type="button" class="retry-btn" (click)="loadCuisines()">Retry</button>
+            </div>
+          }
+        </div>
+
+        <!-- 8. One Cover Image Upload with Preview -->
+        <div class="form-group">
+          <label class="form-label" for="coverImageInput">8. One Cover Image Upload with Image Preview *</label>
+          <div class="image-upload-card">
+            @if (coverImagePreview) {
+              <div class="preview-stage">
+                <img [src]="coverImagePreview" alt="Restaurant Cover Preview" class="preview-img" />
+                <span class="preview-badge">Cover Preview</span>
+              </div>
+            }
+
+            <div class="file-action-row">
+              <input 
+                id="coverImageInput"
+                type="file" 
+                accept="image/*" 
+                (change)="onFileSelected($event)" 
+                class="file-upload-input" 
+              />
+              <span class="upload-note">Select JPG, PNG or WEBP image (prepared for multipart/form-data upload)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirmation Terms -->
         <div class="form-terms">
           <label class="terms-label">
             <input type="checkbox" name="termsAccepted" [checked]="termsAccepted()" (change)="termsAccepted.set(!termsAccepted())" />
-            <span>I confirm this establishment meets Dinevia's gastronomic curation and table pacing standards.</span>
+            <span>I confirm this establishment meets Dinevia's hospitality standards.</span>
           </label>
         </div>
 
         <button type="submit" class="btn btn-primary btn-block submit-btn" [disabled]="isSubmitting()">
           @if (isSubmitting()) {
             <span class="loading-spinner" aria-hidden="true"></span>
-            <span>Registering Sanctuary...</span>
+            <span>Registering Restaurant...</span>
           } @else {
-            <span>Submit Registration &amp; Access Admin Portal</span>
+            <span>Complete Registration &amp; Open Owner Portal</span>
             <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
               <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
             </svg>
@@ -187,4 +286,3 @@
     <p>&copy; 2026 Dinevia Hospitality Group &bull; Fine Dining Sanctuary Network</p>
   </footer>
 </div>
-

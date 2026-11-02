@@ -42,6 +42,23 @@ export interface AdminRestaurantItem {
   addedDate: string;
 }
 
+export interface OwnerRestaurant {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  description: string;
+  phone: string;
+  email: string;
+  cuisines: string[];
+  coverImageUrl: string;
+  galleryImages?: string[];
+  rating?: number;
+  reviewCount?: number;
+  status: 'active' | 'draft';
+  createdAt: string;
+}
+
 export interface AdminNotification {
   id: string;
   title: string;

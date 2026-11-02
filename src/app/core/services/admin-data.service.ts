@@ -3,6 +3,7 @@ import {
   AdminStatCard,
   AdminBookingItem,
   AdminRestaurantItem,
+  OwnerRestaurant,
   AdminNotification,
   BookingTrendPoint,
   BookingStatusSummary
@@ -57,45 +58,111 @@ export class AdminDataService {
     this.notifications().filter(n => !n.read).length
   );
 
-  // Primary Executive Stats Cards
-  readonly statCards: AdminStatCard[] = [
+  // Owner Restaurants Portfolio (Owned by authenticated owner)
+  private readonly ownerRestaurantsSignal = signal<OwnerRestaurant[]>([
     {
-      title: 'Total Dining Sanctuaries',
-      value: '18',
-      change: '+2 this month',
-      isPositive: true,
-      subtitle: 'Active Michelin & Curated Tables',
-      badge: '94% Table Occupancy',
-      icon: 'restaurant'
+      id: 'owner-rest-1',
+      name: 'Le Gabriel Paris',
+      address: '42 Avenue Gabriel',
+      city: 'Paris',
+      description: 'An intimate 3-Michelin-starred dining sanctuary pairing imperial French culinary technique with hyper-seasonal terroir ingredients.',
+      phone: '+33 1 58 36 60 50',
+      email: 'reservations@legabriel.fr',
+      cuisines: ['French Haute', 'Contemporary'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
+      galleryImages: [
+        'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=900&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=900&auto=format&fit=crop&q=80'
+      ],
+      rating: 4.96,
+      reviewCount: 312,
+      status: 'active',
+      createdAt: '2026-01-15'
     },
     {
-      title: 'Total Table Bookings',
-      value: '1,428',
-      change: '+14.8% vs last month',
-      isPositive: true,
-      subtitle: 'Reservations across all dining rooms',
-      badge: '38 Bookings Today',
-      icon: 'booking'
+      id: 'owner-rest-2',
+      name: 'L\'Arpège Heritage',
+      address: '84 Rue de Varenne',
+      city: 'Paris',
+      description: 'Pioneering biodynamic gastronomy and organic garden cuisine with harmonious biodynamic wine pairings.',
+      phone: '+33 1 47 05 09 06',
+      email: 'contact@arpege-paris.fr',
+      cuisines: ['French Haute', 'Biodynamic', 'Vegetarian'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=900&auto=format&fit=crop&q=80',
+      galleryImages: [
+        'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=900&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=900&auto=format&fit=crop&q=80'
+      ],
+      rating: 4.92,
+      reviewCount: 284,
+      status: 'active',
+      createdAt: '2026-02-10'
     },
     {
-      title: 'Epicurean Members',
-      value: '3,890',
-      change: '+240 new patrons',
-      isPositive: true,
-      subtitle: 'Registered culinary gourmands',
-      badge: '68% Repeat Diners',
-      icon: 'customer'
-    },
-    {
-      title: 'Gross Table Revenue',
-      value: '$284,500',
-      change: '+18.2% month-over-month',
-      isPositive: true,
-      subtitle: 'Cover deposits and prepaid menus',
-      badge: '$198 Avg / Cover',
-      icon: 'revenue'
+      id: 'owner-rest-3',
+      name: 'Maison Laurent Bistro',
+      address: '18 Rue Royale',
+      city: 'Paris',
+      description: 'Classic Parisian salon dining reinterpreted through modern culinary artistry, fine champagnes, and intimate seating.',
+      phone: '+33 1 42 68 88 00',
+      email: 'hello@maisonlaurent.fr',
+      cuisines: ['French', 'Contemporary'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&auto=format&fit=crop&q=80',
+      galleryImages: [
+        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=900&auto=format&fit=crop&q=80'
+      ],
+      rating: 4.90,
+      reviewCount: 196,
+      status: 'active',
+      createdAt: '2026-03-22'
     }
-  ];
+  ]);
+
+  readonly ownerRestaurants = this.ownerRestaurantsSignal.asReadonly();
+
+  // Owner Dashboard KPI Cards (Refined to owner-focused metrics)
+  get statCards(): AdminStatCard[] {
+    return [
+      {
+        title: 'My Restaurants',
+        value: `${this.ownerRestaurants().length}`,
+        change: 'All Active',
+        isPositive: true,
+        subtitle: 'Your Listed Sanctuaries',
+        badge: 'Live on Dinevia',
+        icon: 'restaurant'
+      },
+      {
+        title: 'Total Bookings',
+        value: '148',
+        change: '+12.5% this month',
+        isPositive: true,
+        subtitle: 'Reservations across your tables',
+        badge: '12 Today',
+        icon: 'booking'
+      },
+      {
+        title: "Today's Guests / Covers",
+        value: '38',
+        change: "Tonight's Service",
+        isPositive: true,
+        subtitle: 'Confirmed dinner covers',
+        badge: '94% Occupancy',
+        icon: 'guests'
+      },
+      {
+        title: 'Average Rating',
+        value: '4.95 ★',
+        change: 'Verified Diners',
+        isPositive: true,
+        subtitle: 'Guest memoirs & reviews',
+        badge: 'Top 5% in Paris',
+        icon: 'rating'
+      }
+    ];
+  }
 
   // Today's Pulse Metrics
   readonly todaysPulse = {
@@ -372,6 +439,26 @@ export class AdminDataService {
       badgeClass: 'status-cancelled'
     }
   ];
+
+  addRestaurant(data: Omit<OwnerRestaurant, 'id' | 'createdAt'>): OwnerRestaurant {
+    const newRestaurant: OwnerRestaurant = {
+      ...data,
+      id: `owner-rest-${Date.now()}`,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    this.ownerRestaurantsSignal.update(list => [newRestaurant, ...list]);
+    return newRestaurant;
+  }
+
+  updateRestaurant(id: string, updates: Partial<OwnerRestaurant>): void {
+    this.ownerRestaurantsSignal.update(list =>
+      list.map(r => (r.id === id ? { ...r, ...updates } : r))
+    );
+  }
+
+  deleteRestaurant(id: string): void {
+    this.ownerRestaurantsSignal.update(list => list.filter(r => r.id !== id));
+  }
 
   toggleSidebar(): void {
     this.isSidebarOpen.update(open => !open);
