@@ -41,6 +41,36 @@
     </div>
   </section>
 
+  <!-- Loading State Banner -->
+  @if (isLoading()) {
+    <div class="state-banner loading-banner" role="status" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <div class="state-text">
+        <strong class="state-title">Synchronizing Establishment Data</strong>
+        <p class="state-desc">Fetching your restaurant portfolio from the Dinevia API...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Error State Banner with Retry Button -->
+  @if (loadError(); as err) {
+    <div class="state-banner error-banner" role="alert">
+      <svg class="state-icon error-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+      </svg>
+      <div class="state-text">
+        <strong class="state-title">Unable to Load Your Restaurants</strong>
+        <p class="state-desc">{{ err }}</p>
+      </div>
+      <button type="button" class="retry-btn" (click)="retryLoad()" aria-label="Retry loading restaurants">
+        <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+        </svg>
+        <span>Retry Connection</span>
+      </button>
+    </div>
+  }
+
   <!-- SECTION 2: 4 Owner-Focused Metric Cards -->
   <section class="metrics-grid" aria-label="Key Performance Indicators">
     @for (card of adminData.statCards; track card.title) {
@@ -102,9 +132,25 @@
     }
   </section>
 
+  <!-- Empty Establishments Callout -->
+  @if (!isLoading() && !loadError() && ownerRestaurants().length === 0) {
+    <section class="empty-establishments-card">
+      <div class="empty-icon-box">🏛️</div>
+      <div class="empty-content">
+        <h3 class="empty-heading">No Dining Establishments Registered</h3>
+        <p class="empty-subheading">
+          You haven't registered any restaurants under your owner account yet. Register your first culinary sanctuary to start managing tables and receiving guest reservations.
+        </p>
+      </div>
+      <a routerLink="/admin/register" class="btn btn-primary btn-md">
+        <span>Register Restaurant</span>
+      </a>
+    </section>
+  }
+
   <!-- SECTION 3: Main Dashboard Content (Simplified) -->
   <div class="dashboard-main-grid single-column-grid">
-    <!-- 3A. Booking Trends Interactive Chart -->
+    <!-- 3A. Booking Trends Interactive Chart (Preserved Structure with Authentic Unavailable State) -->
     <section class="panel-card chart-panel">
       <div class="panel-header">
         <div>
@@ -135,21 +181,20 @@
         </div>
       </div>
 
-      <!-- Visual Bar Chart -->
+      <!-- Clean Unavailable Placeholder Stage -->
       <div class="chart-stage">
-        <div class="chart-bars-container">
-          @for (pt of currentChartData(); track pt.period) {
-            <div class="chart-bar-group">
-              <div class="bar-tooltip">
-                <span class="tt-bookings">{{ pt.bookings }} reservations</span>
-                <span class="tt-revenue">${{ pt.revenue | number }}</span>
-              </div>
-              <div class="bar-track">
-                <div class="bar-fill" [style.height.%]="pt.percentageHeight"></div>
-              </div>
-              <span class="bar-label">{{ pt.period }}</span>
-            </div>
-          }
+        <div class="chart-unavailable-container">
+          <div class="unavailable-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M3 3v18h18" stroke-linecap="round"></path>
+              <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </div>
+          <h3 class="unavailable-heading">Reservation Trend Analytics Pending</h3>
+          <p class="unavailable-message">
+            Visual reservation analytics, cover pacing, and dining room telemetry will activate once table booking management is connected for your establishments.
+          </p>
+          <span class="badge-pending">Phase 2 Backend Integration</span>
         </div>
       </div>
 
@@ -160,10 +205,10 @@
         </div>
         <div class="legend-item">
           <span class="legend-bullet terracotta"></span>
-          <span>Peak Dinner Window (Fri &amp; Sat)</span>
+          <span>Peak Dinner Window</span>
         </div>
         <div class="legend-note">
-          <span>Paced across your active dining rooms</span>
+          <span>Awaiting live booking telemetry from dining rooms</span>
         </div>
       </div>
     </section>
@@ -179,88 +224,105 @@
         <a routerLink="/admin/bookings" class="panel-link">View Full Ledger &rarr;</a>
       </div>
 
-      <!-- Filter Tabs -->
-      <div class="table-filter-pills">
-        <button 
-          type="button" 
-          class="filter-pill" 
-          [class.active]="bookingStatusFilter() === 'all'"
-          (click)="setBookingFilter('all')">
-          All ({{ adminData.recentBookings().length }})
-        </button>
-        <button 
-          type="button" 
-          class="filter-pill" 
-          [class.active]="bookingStatusFilter() === 'seated'"
-          (click)="setBookingFilter('seated')">
-          Seated Now
-        </button>
-        <button 
-          type="button" 
-          class="filter-pill" 
-          [class.active]="bookingStatusFilter() === 'confirmed'"
-          (click)="setBookingFilter('confirmed')">
-          Confirmed
-        </button>
-        <button 
-          type="button" 
-          class="filter-pill" 
-          [class.active]="bookingStatusFilter() === 'pending'"
-          (click)="setBookingFilter('pending')">
-          Pending
-        </button>
-      </div>
+      @if (filteredBookings().length > 0) {
+        <!-- Filter Tabs -->
+        <div class="table-filter-pills">
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="bookingStatusFilter() === 'all'"
+            (click)="setBookingFilter('all')">
+            All ({{ filteredBookings().length }})
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="bookingStatusFilter() === 'seated'"
+            (click)="setBookingFilter('seated')">
+            Seated Now
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="bookingStatusFilter() === 'confirmed'"
+            (click)="setBookingFilter('confirmed')">
+            Confirmed
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="bookingStatusFilter() === 'pending'"
+            (click)="setBookingFilter('pending')">
+            Pending
+          </button>
+        </div>
 
-      <!-- Bookings Data Table -->
-      <div class="table-responsive">
-        <table class="admin-data-table">
-          <thead>
-            <tr>
-              <th>Booking Ref</th>
-              <th>Guest</th>
-              <th>Dining Sanctuary</th>
-              <th>Date &amp; Time</th>
-              <th>Guests</th>
-              <th>Status</th>
-              <th class="text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (bk of filteredBookings(); track bk.id) {
-              <tr class="table-row">
-                <td class="cell-ref">
-                  <code>{{ bk.bookingRef }}</code>
-                </td>
-                <td class="cell-guest">
-                  <strong class="guest-name">{{ bk.customerName }}</strong>
-                  <span class="guest-contact">{{ bk.customerEmail }}</span>
-                </td>
-                <td class="cell-restaurant">
-                  <span class="rest-name">{{ bk.restaurantName }}</span>
-                  <span class="rest-area">{{ bk.seatingArea }}</span>
-                </td>
-                <td class="cell-datetime">
-                  <span class="date">{{ bk.date }}</span>
-                  <span class="time">{{ bk.time }}</span>
-                </td>
-                <td class="cell-guests">
-                  <span class="party-pill">{{ bk.guests }} Guests</span>
-                </td>
-                <td class="cell-status">
-                  <span class="status-badge" [class]="'status-' + bk.status">
-                    {{ bk.status }}
-                  </span>
-                </td>
-                <td class="cell-action text-right">
-                  <button type="button" class="btn-inspect" (click)="viewBookingDetails(bk)" aria-label="View booking details">
-                    Inspect
-                  </button>
-                </td>
+        <!-- Bookings Data Table -->
+        <div class="table-responsive">
+          <table class="admin-data-table">
+            <thead>
+              <tr>
+                <th>Booking Ref</th>
+                <th>Guest</th>
+                <th>Dining Sanctuary</th>
+                <th>Date &amp; Time</th>
+                <th>Guests</th>
+                <th>Status</th>
+                <th class="text-right">Action</th>
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              @for (bk of filteredBookings(); track bk.id) {
+                <tr class="table-row">
+                  <td class="cell-ref">
+                    <code>{{ bk.bookingRef }}</code>
+                  </td>
+                  <td class="cell-guest">
+                    <strong class="guest-name">{{ bk.customerName }}</strong>
+                    <span class="guest-contact">{{ bk.customerEmail }}</span>
+                  </td>
+                  <td class="cell-restaurant">
+                    <span class="rest-name">{{ bk.restaurantName }}</span>
+                    <span class="rest-area">{{ bk.seatingArea }}</span>
+                  </td>
+                  <td class="cell-datetime">
+                    <span class="date">{{ bk.date }}</span>
+                    <span class="time">{{ bk.time }}</span>
+                  </td>
+                  <td class="cell-guests">
+                    <span class="party-pill">{{ bk.guests }} Guests</span>
+                  </td>
+                  <td class="cell-status">
+                    <span class="status-badge" [class]="'status-' + bk.status">
+                      {{ bk.status }}
+                    </span>
+                  </td>
+                  <td class="cell-action text-right">
+                    <button type="button" class="btn-inspect" (click)="viewBookingDetails(bk)" aria-label="View booking details">
+                      Inspect
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <!-- Authentic Empty State matching requirements -->
+        <div class="empty-bookings-notice">
+          <div class="empty-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
+          <h3 class="notice-title">No Recent Bookings</h3>
+          <p class="notice-message">Booking analytics will appear here once booking management is connected.</p>
+          <span class="badge-pending">Phase 2 Backend Integration</span>
+        </div>
+      }
     </section>
   </div>
 

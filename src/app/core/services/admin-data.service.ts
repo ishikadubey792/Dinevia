@@ -1,4 +1,9 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map, catchError, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { ApiResponse } from '../models/cuisine.model';
+import { ApiRestaurantDto, resolveCoverImageUrl } from '../models/restaurant.model';
 import {
   AdminStatCard,
   AdminBookingItem,
@@ -8,14 +13,20 @@ import {
   BookingTrendPoint,
   BookingStatusSummary
 } from '../models/admin.model';
-import { MOCK_RESTAURANTS } from '../data/mock-restaurants';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminDataService {
+  private readonly http = inject(HttpClient);
+
   // Mobile sidebar visibility state
   readonly isSidebarOpen = signal<boolean>(false);
+
+  // Loading, error, and loaded state for authenticated owner's restaurants
+  readonly isLoadingRestaurants = signal<boolean>(false);
+  readonly restaurantLoadError = signal<string | null>(null);
+  readonly isLoaded = signal<boolean>(false);
 
   // Active notifications signal
   private readonly notificationsSignal = signal<AdminNotification[]>([
@@ -58,387 +69,149 @@ export class AdminDataService {
     this.notifications().filter(n => !n.read).length
   );
 
-  // Owner Restaurants Portfolio (Owned by authenticated owner)
-  private readonly ownerRestaurantsSignal = signal<OwnerRestaurant[]>([
-    {
-      id: 'owner-rest-1',
-      name: 'Le Gabriel Paris',
-      address: '42 Avenue Gabriel',
-      city: 'Paris',
-      description: 'An intimate 3-Michelin-starred dining sanctuary pairing imperial French culinary technique with hyper-seasonal terroir ingredients.',
-      phone: '+33 1 58 36 60 50',
-      email: 'reservations@legabriel.fr',
-      cuisines: ['French Haute', 'Contemporary'],
-      coverImageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
-      galleryImages: [
-        'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=900&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=900&auto=format&fit=crop&q=80'
-      ],
-      rating: 4.96,
-      reviewCount: 312,
-      status: 'active',
-      createdAt: '2026-01-15'
-    },
-    {
-      id: 'owner-rest-2',
-      name: 'L\'Arpège Heritage',
-      address: '84 Rue de Varenne',
-      city: 'Paris',
-      description: 'Pioneering biodynamic gastronomy and organic garden cuisine with harmonious biodynamic wine pairings.',
-      phone: '+33 1 47 05 09 06',
-      email: 'contact@arpege-paris.fr',
-      cuisines: ['French Haute', 'Biodynamic', 'Vegetarian'],
-      coverImageUrl: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=900&auto=format&fit=crop&q=80',
-      galleryImages: [
-        'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=900&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=900&auto=format&fit=crop&q=80'
-      ],
-      rating: 4.92,
-      reviewCount: 284,
-      status: 'active',
-      createdAt: '2026-02-10'
-    },
-    {
-      id: 'owner-rest-3',
-      name: 'Maison Laurent Bistro',
-      address: '18 Rue Royale',
-      city: 'Paris',
-      description: 'Classic Parisian salon dining reinterpreted through modern culinary artistry, fine champagnes, and intimate seating.',
-      phone: '+33 1 42 68 88 00',
-      email: 'hello@maisonlaurent.fr',
-      cuisines: ['French', 'Contemporary'],
-      coverImageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&auto=format&fit=crop&q=80',
-      galleryImages: [
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=900&auto=format&fit=crop&q=80'
-      ],
-      rating: 4.90,
-      reviewCount: 196,
-      status: 'active',
-      createdAt: '2026-03-22'
-    }
-  ]);
-
+  // Owner Restaurants Portfolio (Populated from GET /api/restaurants/my-restaurants)
+  private readonly ownerRestaurantsSignal = signal<OwnerRestaurant[]>([]);
   readonly ownerRestaurants = this.ownerRestaurantsSignal.asReadonly();
 
-  // Owner Dashboard KPI Cards (Refined to owner-focused metrics)
+  // Owner Dashboard KPI Cards (Authentic live & pending metrics)
   get statCards(): AdminStatCard[] {
+    const restaurantCount = this.ownerRestaurants().length;
     return [
       {
         title: 'My Restaurants',
-        value: `${this.ownerRestaurants().length}`,
-        change: 'All Active',
-        isPositive: true,
+        value: `${restaurantCount}`,
+        change: restaurantCount > 0 ? 'All Active' : 'No Establishments',
+        isPositive: restaurantCount > 0,
         subtitle: 'Your Listed Sanctuaries',
         badge: 'Live on Dinevia',
         icon: 'restaurant'
       },
       {
         title: 'Total Bookings',
-        value: '148',
-        change: '+12.5% this month',
-        isPositive: true,
-        subtitle: 'Reservations across your tables',
-        badge: '12 Today',
+        value: 'N/A',
+        change: 'Not Connected',
+        isPositive: false,
+        subtitle: 'Booking management pending',
+        badge: 'Pending API',
         icon: 'booking'
       },
       {
         title: "Today's Guests / Covers",
-        value: '38',
-        change: "Tonight's Service",
-        isPositive: true,
-        subtitle: 'Confirmed dinner covers',
-        badge: '94% Occupancy',
+        value: 'N/A',
+        change: 'Not Connected',
+        isPositive: false,
+        subtitle: 'Cover analytics pending',
+        badge: 'Pending API',
         icon: 'guests'
       },
       {
         title: 'Average Rating',
-        value: '4.95 ★',
-        change: 'Verified Diners',
-        isPositive: true,
-        subtitle: 'Guest memoirs & reviews',
-        badge: 'Top 5% in Paris',
+        value: 'N/A',
+        change: 'Not Tracked',
+        isPositive: false,
+        subtitle: 'Review system not in DB',
+        badge: 'N/A',
         icon: 'rating'
       }
     ];
   }
 
-  // Today's Pulse Metrics
+  // Today's Pulse Metrics placeholder
   readonly todaysPulse = {
-    bookingsToday: 38,
-    coversToday: 142,
-    seatedNow: 24,
-    pendingArrival: 14,
-    avgRatingToday: 4.94,
-    peakServiceWindow: '7:45 PM – 9:30 PM'
+    bookingsToday: 0,
+    coversToday: 0,
+    seatedNow: 0,
+    pendingArrival: 0,
+    avgRatingToday: 0,
+    peakServiceWindow: 'N/A'
   };
 
-  // Recent Bookings Log
-  private readonly recentBookingsSignal = signal<AdminBookingItem[]>([
-    {
-      id: 'bk-101',
-      bookingRef: 'DIN-9402',
-      restaurantId: 'rest-1',
-      restaurantName: 'Le Gabriel Paris',
-      customerName: 'Claire Montgomery',
-      customerEmail: 'claire.m@montgomery-arts.fr',
-      customerPhone: '+33 6 42 19 88 01',
-      date: '2026-10-30',
-      time: '7:30 PM',
-      guests: 4,
-      seatingArea: 'Imperial Salon (Window)',
-      depositAmount: 480,
-      status: 'seated',
-      specialRequests: 'Celebrating 15th wedding anniversary, preferred Vintage Champagne pairing.',
-      createdAt: '2026-10-30T16:15:00Z'
-    },
-    {
-      id: 'bk-102',
-      bookingRef: 'DIN-9398',
-      restaurantId: 'rest-2',
-      restaurantName: 'L\'Arpège Heritage',
-      customerName: 'Marcus Vance',
-      customerEmail: 'marcus.vance@vancapital.com',
-      customerPhone: '+1 (415) 890-2134',
-      date: '2026-10-30',
-      time: '8:00 PM',
-      guests: 2,
-      seatingArea: 'Chef\'s Counter Experience',
-      depositAmount: 350,
-      status: 'confirmed',
-      specialRequests: 'Allergic to shellfish. Sommelier tasting requested.',
-      createdAt: '2026-10-30T14:40:00Z'
-    },
-    {
-      id: 'bk-103',
-      bookingRef: 'DIN-9395',
-      restaurantId: 'rest-3',
-      restaurantName: 'Osteria Francescana',
-      customerName: 'Giulia Bertoli',
-      customerEmail: 'giulia.bertoli@milano-design.it',
-      customerPhone: '+39 02 8923 1109',
-      date: '2026-10-30',
-      time: '8:30 PM',
-      guests: 6,
-      seatingArea: 'Private Wine Vault',
-      depositAmount: 900,
-      status: 'confirmed',
-      specialRequests: 'Corporate dinner with international guests. Tasting menu requested.',
-      createdAt: '2026-10-30T11:20:00Z'
-    },
-    {
-      id: 'bk-104',
-      bookingRef: 'DIN-9391',
-      restaurantId: 'rest-4',
-      restaurantName: 'Odette National Gallery',
-      customerName: 'Jonathan Tan',
-      customerEmail: 'j.tan@apexcapital.sg',
-      customerPhone: '+65 9123 4567',
-      date: '2026-10-30',
-      time: '7:00 PM',
-      guests: 2,
-      seatingArea: 'Main Dining Room',
-      depositAmount: 280,
-      status: 'seated',
-      specialRequests: 'Window table preferred overlooking the glass atrium.',
-      createdAt: '2026-10-30T09:05:00Z'
-    },
-    {
-      id: 'bk-105',
-      bookingRef: 'DIN-9388',
-      restaurantId: 'rest-5',
-      restaurantName: 'Mirazur Côte d\'Azur',
-      customerName: 'Helena Lindqvist',
-      customerEmail: 'helena.l@nordicluxury.se',
-      customerPhone: '+46 8 555 1234',
-      date: '2026-10-31',
-      time: '1:00 PM',
-      guests: 4,
-      seatingArea: 'Mediterranean Garden Terrace',
-      depositAmount: 620,
-      status: 'pending',
-      specialRequests: 'One vegan tasting menu, three standard 9-course Lunar menus.',
-      createdAt: '2026-10-30T08:12:00Z'
-    },
-    {
-      id: 'bk-106',
-      bookingRef: 'DIN-9384',
-      restaurantId: 'rest-6',
-      restaurantName: 'The Clove Club',
-      customerName: 'Oliver Kensington',
-      customerEmail: 'oliver.kensington@mayfair.co.uk',
-      customerPhone: '+44 20 7946 0912',
-      date: '2026-10-31',
-      time: '7:30 PM',
-      guests: 8,
-      seatingArea: 'Library Private Dining',
-      depositAmount: 1120,
-      status: 'confirmed',
-      specialRequests: 'Birthday celebration. Custom dessert message requested.',
-      createdAt: '2026-10-29T21:40:00Z'
-    },
-    {
-      id: 'bk-107',
-      bookingRef: 'DIN-9380',
-      restaurantId: 'rest-1',
-      restaurantName: 'Le Gabriel Paris',
-      customerName: 'Sophia Zhang',
-      customerEmail: 'sophia.zhang@shanghaifashion.cn',
-      customerPhone: '+86 21 8899 7711',
-      date: '2026-10-31',
-      time: '9:00 PM',
-      guests: 2,
-      seatingArea: 'Alcove Sanctuary',
-      depositAmount: 320,
-      status: 'pending',
-      specialRequests: 'Non-alcoholic botanical pairing.',
-      createdAt: '2026-10-29T19:15:00Z'
-    },
-    {
-      id: 'bk-108',
-      bookingRef: 'DIN-9377',
-      restaurantId: 'rest-7',
-      restaurantName: 'Steirereck am Stadtpark',
-      customerName: 'Franziska Weber',
-      customerEmail: 'franziska.w@vienna-legal.at',
-      customerPhone: '+43 1 711 0022',
-      date: '2026-10-29',
-      time: '7:00 PM',
-      guests: 2,
-      seatingArea: 'Parkside Pavilion',
-      depositAmount: 260,
-      status: 'completed',
-      specialRequests: 'Exceptional service noted by guest.',
-      createdAt: '2026-10-29T10:30:00Z'
-    }
-  ]);
-
+  // Recent Bookings Log (Mock data removed; real booking API integration pending)
+  private readonly recentBookingsSignal = signal<AdminBookingItem[]>([]);
   readonly recentBookings = this.recentBookingsSignal.asReadonly();
 
   // Recent Restaurant Additions
-  readonly recentRestaurants: AdminRestaurantItem[] = [
-    {
-      id: 'rest-1',
-      name: 'Le Gabriel — La Réserve',
-      cuisine: 'Haute Cuisine Française',
-      city: 'Paris',
-      neighborhood: '8ème Arrondissement',
-      rating: 4.95,
-      reviewCount: 312,
-      priceRange: '$$$$',
-      imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-      badge: '3 Michelin Stars',
-      tablesCount: 16,
-      status: 'active',
-      addedDate: 'October 15, 2026'
-    },
-    {
-      id: 'rest-2',
-      name: 'L\'Arpège Heritage',
-      cuisine: 'Biodynamic Culinary Art',
-      city: 'Paris',
-      neighborhood: '7ème Arrondissement',
-      rating: 4.92,
-      reviewCount: 284,
-      priceRange: '$$$$',
-      imageUrl: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=600&auto=format&fit=crop&q=80',
-      badge: 'Green Michelin Star',
-      tablesCount: 14,
-      status: 'active',
-      addedDate: 'October 18, 2026'
-    },
-    {
-      id: 'rest-3',
-      name: 'Osteria Francescana',
-      cuisine: 'Modern Italian Masterpiece',
-      city: 'Modena',
-      neighborhood: 'Historic Center',
-      rating: 4.98,
-      reviewCount: 418,
-      priceRange: '$$$$',
-      imageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80',
-      badge: 'World #1 Icon',
-      tablesCount: 12,
-      status: 'active',
-      addedDate: 'October 22, 2026'
-    },
-    {
-      id: 'rest-4',
-      name: 'Odette National Gallery',
-      cuisine: 'Modern French with Asian Accents',
-      city: 'Singapore',
-      neighborhood: 'Civic District',
-      rating: 4.94,
-      reviewCount: 265,
-      priceRange: '$$$$',
-      imageUrl: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=600&auto=format&fit=crop&q=80',
-      badge: 'Asia\'s Best',
-      tablesCount: 18,
-      status: 'active',
-      addedDate: 'October 25, 2026'
-    }
-  ];
+  readonly recentRestaurants: AdminRestaurantItem[] = [];
 
-  // Booking Trends (Weekly Data)
-  readonly weeklyBookingTrends: BookingTrendPoint[] = [
-    { period: 'Mon', bookings: 42, covers: 118, revenue: 19800, percentageHeight: 45 },
-    { period: 'Tue', bookings: 54, covers: 146, revenue: 24200, percentageHeight: 56 },
-    { period: 'Wed', bookings: 68, covers: 182, revenue: 31500, percentageHeight: 68 },
-    { period: 'Thu', bookings: 88, covers: 240, revenue: 42100, percentageHeight: 82 },
-    { period: 'Fri', bookings: 138, covers: 395, revenue: 68400, percentageHeight: 100 },
-    { period: 'Sat', bookings: 146, covers: 412, revenue: 72900, percentageHeight: 105 },
-    { period: 'Sun', bookings: 92, covers: 258, revenue: 44200, percentageHeight: 74 }
-  ];
-
-  // Booking Trends (Monthly Overview)
-  readonly monthlyBookingTrends: BookingTrendPoint[] = [
-    { period: 'May', bookings: 1020, covers: 2890, revenue: 194000, percentageHeight: 68 },
-    { period: 'Jun', bookings: 1140, covers: 3180, revenue: 218000, percentageHeight: 76 },
-    { period: 'Jul', bookings: 1280, covers: 3560, revenue: 246000, percentageHeight: 85 },
-    { period: 'Aug', bookings: 1190, covers: 3340, revenue: 232000, percentageHeight: 80 },
-    { period: 'Sep', bookings: 1350, covers: 3780, revenue: 265000, percentageHeight: 90 },
-    { period: 'Oct', bookings: 1428, covers: 3980, revenue: 284500, percentageHeight: 100 }
-  ];
+  // Booking Trends (Placeholder awaiting live booking analytics)
+  readonly weeklyBookingTrends: BookingTrendPoint[] = [];
+  readonly monthlyBookingTrends: BookingTrendPoint[] = [];
 
   // Booking Status Breakdown
-  readonly statusSummaries: BookingStatusSummary[] = [
-    {
-      status: 'Confirmed',
-      count: 972,
-      percentage: 68,
-      color: '#234637',
-      badgeClass: 'status-confirmed'
-    },
-    {
-      status: 'Seated & Dining',
-      count: 200,
-      percentage: 14,
-      color: '#C8795A',
-      badgeClass: 'status-seated'
-    },
-    {
-      status: 'Pending Host Review',
-      count: 143,
-      percentage: 10,
-      color: '#D97706',
-      badgeClass: 'status-pending'
-    },
-    {
-      status: 'Completed',
-      count: 71,
-      percentage: 5,
-      color: '#565A52',
-      badgeClass: 'status-completed'
-    },
-    {
-      status: 'Cancelled',
-      count: 42,
-      percentage: 3,
-      color: '#E02424',
-      badgeClass: 'status-cancelled'
+  readonly statusSummaries: BookingStatusSummary[] = [];
+
+  /**
+   * Fetches only authenticated owner's restaurants from ASP.NET Core API:
+   * GET /api/restaurants/my-restaurants
+   * Authenticated via JWT ownerAuthInterceptor (owner ID is extracted server-side).
+   */
+  loadOwnerRestaurants(): Observable<OwnerRestaurant[]> {
+    this.isLoadingRestaurants.set(true);
+    this.restaurantLoadError.set(null);
+
+    return this.http
+      .get<ApiResponse<ApiRestaurantDto[]>>(`${environment.apiUrl}/restaurants/my-restaurants`)
+      .pipe(
+        map(response => {
+          const dtoList = Array.isArray(response?.data) ? response.data : [];
+          const mappedList = dtoList.map(dto => this.mapApiToOwnerRestaurant(dto));
+          this.ownerRestaurantsSignal.set(mappedList);
+          this.isLoaded.set(true);
+          this.isLoadingRestaurants.set(false);
+          return mappedList;
+        }),
+        catchError(err => {
+          this.isLoadingRestaurants.set(false);
+          const errorMsg =
+            err?.error?.message ||
+            err?.statusText ||
+            'Failed to load your restaurants. Please try again.';
+          this.restaurantLoadError.set(errorMsg);
+          return throwError(() => err);
+        })
+      );
+  }
+
+  /**
+   * Maps backend ApiRestaurantDto to domain OwnerRestaurant
+   */
+  mapApiToOwnerRestaurant(dto: ApiRestaurantDto): OwnerRestaurant {
+    let cuisines: string[] = [];
+    if (Array.isArray(dto.restaurantCuisines) && dto.restaurantCuisines.length > 0) {
+      cuisines = dto.restaurantCuisines
+        .map(rc => rc?.cuisine?.name || rc?.cuisineName || rc?.name || '')
+        .map(n => n.trim())
+        .filter(n => n.length > 0);
+    } else if (Array.isArray(dto.cuisines) && dto.cuisines.length > 0) {
+      cuisines = dto.cuisines.map(c => c.trim()).filter(c => c.length > 0);
+    } else if (Array.isArray(dto.cuisineNames) && dto.cuisineNames.length > 0) {
+      cuisines = dto.cuisineNames.map(c => c.trim()).filter(c => c.length > 0);
+    } else if (typeof dto.cuisine === 'string' && dto.cuisine.trim().length > 0) {
+      cuisines = dto.cuisine.split(',').map(c => c.trim()).filter(c => c.length > 0);
     }
-  ];
+    if (cuisines.length === 0) {
+      cuisines = ['Fine Dining'];
+    }
+
+    const coverImageUrl = resolveCoverImageUrl(dto.coverImagePath);
+
+    return {
+      id: String(dto.id),
+      name: dto.name,
+      address: dto.address || '',
+      city: dto.city || '',
+      description: dto.description || '',
+      phone: dto.phone || '',
+      email: dto.email || '',
+      cuisines,
+      coverImageUrl,
+      galleryImages: [coverImageUrl],
+      rating: dto.rating,
+      reviewCount: dto.reviewCount,
+      status: dto.isActive === false ? 'draft' : 'active',
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+  }
 
   addRestaurant(data: Omit<OwnerRestaurant, 'id' | 'createdAt'>): OwnerRestaurant {
     const newRestaurant: OwnerRestaurant = {
@@ -458,6 +231,11 @@ export class AdminDataService {
 
   deleteRestaurant(id: string): void {
     this.ownerRestaurantsSignal.update(list => list.filter(r => r.id !== id));
+  }
+
+  setOwnerRestaurants(restaurants: OwnerRestaurant[]): void {
+    this.ownerRestaurantsSignal.set(restaurants);
+    this.isLoaded.set(true);
   }
 
   toggleSidebar(): void {
@@ -484,4 +262,3 @@ export class AdminDataService {
     );
   }
 }
-

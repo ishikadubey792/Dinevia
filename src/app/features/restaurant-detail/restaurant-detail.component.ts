@@ -230,31 +230,51 @@ export class RestaurantDetailComponent implements OnInit {
   loadRestaurantData(id: string): void {
     const found = this.restaurantService.getRestaurantById(id);
     if (found) {
-      this.restaurant.set(found);
-      this.isNotFound.set(false);
-      this.activeImageIndex.set(0);
-      this.imgErrorOccurred.set(false);
-      this.bookingConfirmed.set(false);
-      this.selectedMenuCategory.set('all');
-
-      if (found.availableSlots && found.availableSlots.length > 0) {
-        this.bookingTime.set(found.availableSlots[0]);
-      }
-
-      // Find 3 similar restaurants (same cuisine, neighborhood, or city, excluding current)
-      const all = this.restaurantService.restaurants();
-      const similar = all
-        .filter(r => r.id !== found.id && (r.cuisine === found.cuisine || r.city === found.city))
-        .slice(0, 3);
-      this.similarRestaurants.set(similar.length > 0 ? similar : all.filter(r => r.id !== found.id).slice(0, 3));
-
-      // Scroll to top
-      if (typeof window !== 'undefined') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      this.populateRestaurant(found);
+    } else if (!this.restaurantService.isApiLoaded()) {
+      this.restaurantService.fetchRestaurants().subscribe({
+        next: () => {
+          const liveFound = this.restaurantService.getRestaurantById(id);
+          if (liveFound) {
+            this.populateRestaurant(liveFound);
+          } else {
+            this.restaurant.set(null);
+            this.isNotFound.set(true);
+          }
+        },
+        error: () => {
+          this.restaurant.set(null);
+          this.isNotFound.set(true);
+        }
+      });
     } else {
       this.restaurant.set(null);
       this.isNotFound.set(true);
+    }
+  }
+
+  private populateRestaurant(found: Restaurant): void {
+    this.restaurant.set(found);
+    this.isNotFound.set(false);
+    this.activeImageIndex.set(0);
+    this.imgErrorOccurred.set(false);
+    this.bookingConfirmed.set(false);
+    this.selectedMenuCategory.set('all');
+
+    if (found.availableSlots && found.availableSlots.length > 0) {
+      this.bookingTime.set(found.availableSlots[0]);
+    }
+
+    // Find 3 similar restaurants (same cuisine, neighborhood, or city, excluding current)
+    const all = this.restaurantService.restaurants();
+    const similar = all
+      .filter(r => r.id !== found.id && (r.cuisine === found.cuisine || r.city === found.city))
+      .slice(0, 3);
+    this.similarRestaurants.set(similar.length > 0 ? similar : all.filter(r => r.id !== found.id).slice(0, 3));
+
+    // Scroll to top
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 

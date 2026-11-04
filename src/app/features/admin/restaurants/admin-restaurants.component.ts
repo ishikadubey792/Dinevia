@@ -56,9 +56,11 @@ export class AdminRestaurantsComponent {
     if (!query) return list;
 
     return list.filter(r =>
-      r.name.toLowerCase().includes(query) ||
-      r.city.toLowerCase().includes(query) ||
-      r.cuisines.some(c => c.toLowerCase().includes(query))
+      (r.name && r.name.toLowerCase().includes(query)) ||
+      (r.city && r.city.toLowerCase().includes(query)) ||
+      (r.address && r.address.toLowerCase().includes(query)) ||
+      (r.description && r.description.toLowerCase().includes(query)) ||
+      (Array.isArray(r.cuisines) && r.cuisines.some(c => c && c.toLowerCase().includes(query)))
     );
   });
 

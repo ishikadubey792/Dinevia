@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { AdminRestaurantsComponent } from './admin-restaurants.component';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -14,6 +16,8 @@ describe('AdminRestaurantsComponent', () => {
       imports: [AdminRestaurantsComponent],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         AdminDataService,
         {
           provide: AuthService,
@@ -28,6 +32,42 @@ describe('AdminRestaurantsComponent', () => {
     fixture = TestBed.createComponent(AdminRestaurantsComponent);
     component = fixture.componentInstance;
     adminData = TestBed.inject(AdminDataService);
+
+    adminData.setOwnerRestaurants([
+      {
+        id: 'owner-rest-1',
+        name: 'Le Gabriel Paris',
+        address: '42 Avenue Gabriel',
+        city: 'Paris',
+        description: 'An intimate 3-Michelin-starred dining sanctuary.',
+        phone: '+33 1 58 36 60 50',
+        email: 'reservations@legabriel.fr',
+        cuisines: ['French Haute', 'Contemporary'],
+        coverImageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947',
+        galleryImages: [],
+        rating: 4.96,
+        reviewCount: 312,
+        status: 'active',
+        createdAt: '2026-01-15'
+      },
+      {
+        id: 'owner-rest-2',
+        name: 'L\'Arpège Heritage',
+        address: '84 Rue de Varenne',
+        city: 'Paris',
+        description: 'Pioneering biodynamic gastronomy.',
+        phone: '+33 1 47 05 09 06',
+        email: 'contact@arpege-paris.fr',
+        cuisines: ['French Haute', 'Biodynamic'],
+        coverImageUrl: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c',
+        galleryImages: [],
+        rating: 4.92,
+        reviewCount: 284,
+        status: 'active',
+        createdAt: '2026-02-10'
+      }
+    ]);
+
     fixture.detectChanges();
   });
 
@@ -92,4 +132,3 @@ describe('AdminRestaurantsComponent', () => {
     expect(adminData.ownerRestaurants().length).toBe(initialCount - 1);
   });
 });
-

@@ -1,8 +1,20 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { Restaurant } from '../models/restaurant.model';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map, catchError, tap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import {
+  Restaurant,
+  ApiRestaurantDto,
+  mapApiRestaurantToDomain,
+  matchesRestaurantSearch,
+  matchesRestaurantCuisine,
+  DEFAULT_FALLBACK_RESTAURANT_IMAGE
+} from '../models/restaurant.model';
 import { Cuisine } from '../models/cuisine.model';
 import { Testimonial } from '../models/testimonial.model';
 import { SearchCriteria } from '../models/search-filter.model';
+import { ApiResponse } from '../models/cuisine.model';
 import { MOCK_RESTAURANTS } from '../data/mock-restaurants';
 import { MOCK_CUISINES } from '../data/mock-cuisines';
 import { MOCK_TESTIMONIALS } from '../data/mock-testimonials';
@@ -11,11 +23,19 @@ import { MOCK_TESTIMONIALS } from '../data/mock-testimonials';
   providedIn: 'root'
 })
 export class RestaurantService {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = environment.apiUrl;
+
   // Reactive signals for state management
   private readonly restaurantsSignal = signal<Restaurant[]>(MOCK_RESTAURANTS);
   private readonly cuisinesSignal = signal<Cuisine[]>(MOCK_CUISINES);
   private readonly testimonialsSignal = signal<Testimonial[]>(MOCK_TESTIMONIALS);
-  
+
+  // Real API state signals
+  readonly isLoadingRestaurants = signal<boolean>(false);
+  readonly restaurantLoadError = signal<string | null>(null);
+  readonly isApiLoaded = signal<boolean>(false);
+
   // Selected filter states
   private readonly selectedCuisineFilter = signal<string>('all');
   private readonly selectedCategoryFilter = signal<string>('all');
@@ -32,7 +52,7 @@ export class RestaurantService {
   readonly filteredRestaurants = computed(() => {
     let list = this.restaurantsSignal();
     const category = this.selectedCategoryFilter().toLowerCase();
-    const cuisine = this.selectedCuisineFilter().toLowerCase();
+    const cuisine = this.selectedCuisineFilter();
     const search = this.activeSearchCriteria();
 
     if (category !== 'all') {
@@ -41,30 +61,115 @@ export class RestaurantService {
       } else if (category === 'chef') {
         list = list.filter(r => r.badge?.toLowerCase().includes('chef'));
       } else if (category === 'trending') {
-        list = list.filter(r => r.badge?.toLowerCase().includes('trending') || r.rating >= 4.9);
+        list = list.filter(r => r.badge?.toLowerCase().includes('trending') || (r.rating || 0) >= 4.9);
       }
     }
 
     if (cuisine !== 'all') {
-      list = list.filter(r => r.cuisine.toLowerCase() === cuisine);
+      list = list.filter(r => matchesRestaurantCuisine(r, cuisine));
     }
 
     if (search) {
       if (search.cuisine && search.cuisine.toLowerCase() !== 'all') {
-        list = list.filter(r => r.cuisine.toLowerCase() === search.cuisine.toLowerCase());
+        list = list.filter(r => matchesRestaurantCuisine(r, search.cuisine));
       }
       if (search.location && search.location.trim().length > 0) {
-        const query = search.location.toLowerCase();
-        list = list.filter(r => 
-          r.city.toLowerCase().includes(query) || 
-          r.neighborhood.toLowerCase().includes(query) ||
-          r.location.toLowerCase().includes(query)
-        );
+        list = list.filter(r => matchesRestaurantSearch(r, search.location));
       }
     }
 
     return list;
   });
+
+  constructor() {
+    this.loadLiveRestaurants();
+  }
+
+  /**
+   * Fetch restaurants from ASP.NET Core backend API:
+   * GET /api/restaurants
+   */
+  fetchRestaurants(): Observable<Restaurant[]> {
+    this.isLoadingRestaurants.set(true);
+    this.restaurantLoadError.set(null);
+
+    return this.http.get<ApiResponse<ApiRestaurantDto[]> | ApiRestaurantDto[]>(
+      `${this.apiUrl}/restaurants`
+    ).pipe(
+      map(res => {
+        let rawList: ApiRestaurantDto[] = [];
+        if (Array.isArray(res)) {
+          rawList = res;
+        } else if (res && Array.isArray(res.data)) {
+          rawList = res.data;
+        }
+
+        // Filter only active restaurants
+        const activeList = rawList.filter(dto => dto.isActive !== false);
+
+        // Map to client domain models
+        return activeList.map(dto => mapApiRestaurantToDomain(dto));
+      }),
+      tap(mapped => {
+        this.isLoadingRestaurants.set(false);
+        this.isApiLoaded.set(true);
+        // Replace mock with live restaurants (even if empty, reflecting true backend state)
+        this.restaurantsSignal.set(mapped);
+        this.syncCuisinesWithRestaurants(mapped);
+      }),
+      catchError(err => {
+        this.isLoadingRestaurants.set(false);
+        this.restaurantLoadError.set('Unable to reach live restaurant service. Showing curated reserve catalog.');
+        console.warn('[RestaurantService] Live API /api/restaurants unavailable, fallback active:', err);
+        // Keep current fallback data so user is not blocked
+        return of(this.restaurantsSignal());
+      })
+    );
+  }
+
+  /**
+   * Synchronize cuisines list with live restaurant entities
+   */
+  private syncCuisinesWithRestaurants(restaurants: Restaurant[]): void {
+    const merged = [...MOCK_CUISINES];
+    const knownSlugs = new Set(merged.map(c => c.slug.toLowerCase()));
+    const knownNames = new Set(merged.map(c => c.name.toLowerCase()));
+
+    restaurants.forEach(r => {
+      const list = Array.isArray(r.cuisines) && r.cuisines.length > 0
+        ? r.cuisines
+        : (r.cuisine ? r.cuisine.split(',').map(s => s.trim()) : []);
+
+      list.forEach(cName => {
+        if (!cName || cName.trim().length === 0) return;
+        const name = cName.trim();
+        const lower = name.toLowerCase();
+        const slug = lower.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+        if (!knownNames.has(lower) && !knownSlugs.has(slug)) {
+          knownNames.add(lower);
+          knownSlugs.add(slug);
+          merged.push({
+            id: `cuisine-${slug}`,
+            name,
+            tagline: `Artisanal ${name} culinary artistry`,
+            restaurantCount: 1,
+            imageUrl: DEFAULT_FALLBACK_RESTAURANT_IMAGE,
+            slug
+          });
+        }
+      });
+    });
+
+    this.cuisinesSignal.set(merged);
+  }
+
+  /**
+   * Helper to trigger live restaurant loading
+   */
+  loadLiveRestaurants(): void {
+    this.fetchRestaurants().subscribe();
+  }
 
   /**
    * Filter by cuisine category
@@ -82,7 +187,6 @@ export class RestaurantService {
 
   /**
    * Apply criteria from the search panel
-   * Clean integration point for future API calls (e.g. GET /api/restaurants?search=...)
    */
   searchRestaurants(criteria: SearchCriteria): void {
     this.activeSearchCriteria.set(criteria);
@@ -112,7 +216,6 @@ export class RestaurantService {
         console.warn('Could not read saved restaurants from localStorage', e);
       }
     }
-    // Default demo saved establishments
     const initial = new Set<string>(['rest-1', 'rest-2']);
     if (typeof window !== 'undefined') {
       try {
@@ -174,7 +277,12 @@ export class RestaurantService {
    * Find a specific restaurant by ID
    */
   getRestaurantById(id: string): Restaurant | undefined {
-    return this.restaurantsSignal().find(r => r.id === id);
+    // Check in active restaurants signal first
+    const found = this.restaurantsSignal().find(r => r.id === id || String(r.id) === String(id));
+    if (found) return found;
+
+    // Check mock data for backward-compatibility with prerender and demo links
+    return MOCK_RESTAURANTS.find(r => r.id === id || String(r.id) === String(id));
   }
 
   /**
@@ -187,7 +295,7 @@ export class RestaurantService {
 
     const matching = this.testimonialsSignal().filter(
       t => t.restaurantName.toLowerCase().includes(restaurant.name.toLowerCase()) ||
-           restaurant.name.toLowerCase().includes(t.restaurantName.toLowerCase())
+        restaurant.name.toLowerCase().includes(t.restaurantName.toLowerCase())
     );
 
     const reviews = matching.map(t => ({
@@ -247,7 +355,7 @@ export class RestaurantService {
     return {
       success: true,
       bookingRef: `DV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-      restaurant: this.restaurantsSignal().find(r => r.id === restaurantId),
+      restaurant: this.getRestaurantById(restaurantId),
       details
     };
   }

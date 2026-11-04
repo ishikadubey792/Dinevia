@@ -1083,3 +1083,203 @@
   }
 }
 
+/* ==========================================================================
+   Loading, Error, and Empty States
+   ========================================================================== */
+.state-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-sans);
+
+  .state-text {
+    flex: 1;
+    min-width: 0;
+
+    .state-title {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--color-forest-dark);
+    }
+
+    .state-desc {
+      font-size: 0.8rem;
+      color: var(--color-charcoal-muted);
+      margin: 0.2rem 0 0;
+    }
+  }
+
+  &.loading-banner {
+    background: rgba(35, 70, 55, 0.05);
+    border: 1px solid rgba(35, 70, 55, 0.15);
+  }
+
+  &.error-banner {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+
+    .state-title {
+      color: #991B1B;
+    }
+
+    .state-desc {
+      color: #B91C1C;
+    }
+  }
+
+  .state-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+
+    &.error-icon {
+      color: #DC2626;
+    }
+  }
+
+  .retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid #DC2626;
+    color: #991B1B;
+    background: #ffffff;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #DC2626;
+      color: #ffffff;
+    }
+
+    .btn-icon {
+      width: 0.85rem;
+      height: 0.85rem;
+    }
+  }
+}
+
+.loading-spinner {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 2.5px solid rgba(35, 70, 55, 0.2);
+  border-top-color: var(--color-forest);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-establishments-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: var(--color-ivory-light);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem 2rem;
+  flex-wrap: wrap;
+
+  .empty-icon-box {
+    font-size: 2.2rem;
+    line-height: 1;
+  }
+
+  .empty-content {
+    flex: 1;
+    min-width: 260px;
+
+    .empty-heading {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--color-forest-dark);
+      margin: 0;
+    }
+
+    .empty-subheading {
+      font-size: 0.85rem;
+      color: var(--color-charcoal-muted);
+      margin: 0.35rem 0 0;
+      line-height: 1.45;
+    }
+  }
+}
+
+.chart-unavailable-container,
+.empty-bookings-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: rgba(248, 245, 239, 0.4);
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(35, 70, 55, 0.12);
+
+  .unavailable-icon-circle,
+  .empty-icon-circle {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    background: rgba(35, 70, 55, 0.08);
+    color: var(--color-forest);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+
+    svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+
+  .unavailable-heading,
+  .notice-title {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-forest-dark);
+    margin: 0;
+  }
+
+  .unavailable-message,
+  .notice-message {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--color-charcoal-muted);
+    max-width: 480px;
+    margin: 0.4rem 0 0.85rem;
+    line-height: 1.5;
+  }
+
+  .badge-pending {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-pill);
+    background: rgba(200, 121, 90, 0.12);
+    color: var(--color-terracotta-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+

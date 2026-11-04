@@ -6,7 +6,11 @@ import { NavbarComponent } from '../../shared/components/navbar/navbar.component
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
-import { Restaurant } from '../../core/models/restaurant.model';
+import {
+  Restaurant,
+  matchesRestaurantSearch,
+  matchesRestaurantCuisine
+} from '../../core/models/restaurant.model';
 
 export type SortOption = 'recommended' | 'rating-desc' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'reviews-desc';
 
@@ -44,9 +48,16 @@ export class ExploreComponent implements OnInit {
   readonly viewMode = signal<'grid' | 'compact'>('grid');
 
   // Interactive UI Signals
-  readonly isLoading = signal<boolean>(false);
+  readonly isServiceLoading = this.restaurantService.isLoadingRestaurants;
+  readonly localLoading = signal<boolean>(false);
+  readonly isLoading = computed(() => this.isServiceLoading() || this.localLoading());
+  readonly loadError = this.restaurantService.restaurantLoadError;
   readonly isMobileFilterOpen = signal<boolean>(false);
   readonly toastMessage = signal<string | null>(null);
+
+  retryLoad(): void {
+    this.restaurantService.loadLiveRestaurants();
+  }
 
   // Quick Table Booking Modal State
   readonly isBookingModalOpen = signal<boolean>(false);
@@ -94,43 +105,36 @@ export class ExploreComponent implements OnInit {
     { label: 'Name (Z to A)', value: 'name-desc' }
   ];
 
-  // Distinct cities extracted from mock data
+  // Distinct cities extracted from restaurants data
   readonly availableCities = computed(() => {
     const cities = new Set<string>();
     this.allRestaurants().forEach(r => {
-      if (r.city) cities.add(r.city);
+      if (r.city && r.city.trim().length > 0) {
+        cities.add(r.city.trim());
+      }
     });
-    return Array.from(cities).sort();
+    return Array.from(cities).sort((a, b) => a.localeCompare(b));
   });
 
   // Filtered and Sorted Restaurant List
   readonly filteredRestaurants = computed(() => {
     let list = [...this.allRestaurants()];
-    const query = this.searchQuery().trim().toLowerCase();
-    const cuisine = this.selectedCuisine().toLowerCase();
+    const query = this.searchQuery().trim();
+    const cuisine = this.selectedCuisine();
     const price = this.selectedPrice();
     const minRating = this.selectedRating();
     const badge = this.selectedBadge().toLowerCase();
-    const city = this.selectedCity().toLowerCase();
+    const city = this.selectedCity();
     const sort = this.sortBy();
 
-    // 1. Search Query Filter
-    if (query) {
-      list = list.filter(r => 
-        r.name.toLowerCase().includes(query) ||
-        r.cuisine.toLowerCase().includes(query) ||
-        r.neighborhood.toLowerCase().includes(query) ||
-        r.city.toLowerCase().includes(query) ||
-        r.location.toLowerCase().includes(query) ||
-        r.tagline.toLowerCase().includes(query) ||
-        r.description.toLowerCase().includes(query) ||
-        r.highlights.some(h => h.toLowerCase().includes(query))
-      );
+    // 1. Search Query Filter (name, city, address, description, cuisine)
+    if (query.length > 0) {
+      list = list.filter(r => matchesRestaurantSearch(r, query));
     }
 
     // 2. Cuisine Filter
     if (cuisine !== 'all') {
-      list = list.filter(r => r.cuisine.toLowerCase() === cuisine);
+      list = list.filter(r => matchesRestaurantCuisine(r, cuisine));
     }
 
     // 3. Price Filter
@@ -140,7 +144,7 @@ export class ExploreComponent implements OnInit {
 
     // 4. Minimum Rating Filter
     if (minRating > 0) {
-      list = list.filter(r => r.rating >= minRating);
+      list = list.filter(r => (r.rating || 0) >= minRating);
     }
 
     // 5. Badge / Vibe Filter
@@ -150,7 +154,7 @@ export class ExploreComponent implements OnInit {
       } else if (badge === 'chef') {
         list = list.filter(r => r.badge?.toLowerCase().includes('chef'));
       } else if (badge === 'trending') {
-        list = list.filter(r => r.badge?.toLowerCase().includes('trending') || r.rating >= 4.9);
+        list = list.filter(r => r.badge?.toLowerCase().includes('trending') || (r.rating || 0) >= 4.9);
       } else if (badge === 'gem') {
         list = list.filter(r => r.badge?.toLowerCase().includes('gem') || r.badge?.toLowerCase().includes('cozy') || r.badge?.toLowerCase().includes('popular'));
       }
@@ -158,35 +162,36 @@ export class ExploreComponent implements OnInit {
 
     // 6. City Filter
     if (city !== 'all') {
-      list = list.filter(r => r.city.toLowerCase() === city);
+      const cityLower = city.trim().toLowerCase();
+      list = list.filter(r => r.city && r.city.trim().toLowerCase() === cityLower);
     }
 
     // 7. Sorting
     switch (sort) {
       case 'rating-desc':
-        list.sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
+        list.sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
         break;
       case 'reviews-desc':
-        list.sort((a, b) => b.reviewCount - a.reviewCount);
+        list.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
         break;
       case 'price-asc':
-        list.sort((a, b) => a.priceRange.length - b.priceRange.length);
+        list.sort((a, b) => (a.priceRange?.length || 0) - (b.priceRange?.length || 0));
         break;
       case 'price-desc':
-        list.sort((a, b) => b.priceRange.length - a.priceRange.length);
+        list.sort((a, b) => (b.priceRange?.length || 0) - (a.priceRange?.length || 0));
         break;
       case 'name-asc':
-        list.sort((a, b) => a.name.localeCompare(b.name));
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         break;
       case 'name-desc':
-        list.sort((a, b) => b.name.localeCompare(a.name));
+        list.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
         break;
       case 'recommended':
       default:
         list.sort((a, b) => {
           if (a.featured && !b.featured) return -1;
           if (!a.featured && b.featured) return 1;
-          return b.rating - a.rating;
+          return (b.rating || 0) - (a.rating || 0);
         });
         break;
     }
@@ -337,9 +342,9 @@ export class ExploreComponent implements OnInit {
   }
 
   private simulateBriefLoading(): void {
-    this.isLoading.set(true);
+    this.localLoading.set(true);
     setTimeout(() => {
-      this.isLoading.set(false);
+      this.localLoading.set(false);
     }, 240);
   }
 

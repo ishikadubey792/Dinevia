@@ -477,6 +477,82 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   .empty-desc { color: var(--color-charcoal-muted); margin-bottom: 1.5rem; }
 }
 
+.restaurants-loading-stage {
+  text-align: center;
+  padding: 4.5rem 1.5rem;
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+
+  .luxury-spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid rgba(35, 70, 55, 0.15);
+    border-top-color: var(--color-forest);
+    border-radius: 50%;
+    animation: spin 0.85s linear infinite;
+  }
+
+  .loading-text {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    color: var(--color-forest-dark);
+    margin: 0;
+  }
+}
+
+.restaurants-error-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: #FFF8F5;
+  border: 1px solid rgba(200, 121, 90, 0.4);
+  border-radius: var(--radius-md);
+  margin-bottom: 2rem;
+
+  @media (max-width: 680px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .error-icon-wrap {
+    color: var(--color-terracotta);
+    .error-svg { width: 1.8rem; height: 1.8rem; }
+  }
+
+  .error-content {
+    flex: 1;
+    .error-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--color-terracotta-dark);
+      margin-bottom: 0.2rem;
+    }
+    .error-message {
+      font-size: 0.85rem;
+      color: var(--color-charcoal-muted);
+      margin: 0;
+    }
+  }
+
+  .retry-button {
+    white-space: nowrap;
+    border-color: var(--color-terracotta);
+    color: var(--color-terracotta-dark);
+    &:hover {
+      background: var(--color-terracotta);
+      color: #fff;
+    }
+  }
+}
+
 /* Promo Banner */
 .promo-section { padding: 2rem 0 5rem 0; }
 .promo-card {

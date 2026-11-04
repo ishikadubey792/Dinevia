@@ -5,6 +5,7 @@ import { AdminRestaurantsComponent } from './restaurants/admin-restaurants.compo
 import { AdminPlaceholderComponent } from './placeholder/admin-placeholder.component';
 import { AdminLoginComponent } from './auth/admin-login/admin-login.component';
 import { AdminRegisterComponent } from './auth/admin-register/admin-register.component';
+import { ownerAuthGuard } from '../../core/guards/owner-auth.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -20,6 +21,8 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: '',
     component: AdminLayoutComponent,
+    canActivate: [ownerAuthGuard],
+    canActivateChild: [ownerAuthGuard],
     children: [
       {
         path: '',

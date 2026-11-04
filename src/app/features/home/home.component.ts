@@ -34,6 +34,8 @@ export class HomeComponent {
   readonly restaurants = this.restaurantService.filteredRestaurants;
   readonly currentCategory = this.restaurantService.selectedCategory;
   readonly currentCuisine = this.restaurantService.selectedCuisine;
+  readonly isLoading = this.restaurantService.isLoadingRestaurants;
+  readonly loadError = this.restaurantService.restaurantLoadError;
 
   // Filter Categories
   readonly categoryTabs = [
@@ -70,6 +72,10 @@ export class HomeComponent {
     const locText = criteria.location ? criteria.location : 'all destinations';
     this.showToast(`Updated tables for ${criteria.guests} guests in ${locText}.`);
     this.scrollTo('featured-section');
+  }
+
+  retryLoad(): void {
+    this.restaurantService.loadLiveRestaurants();
   }
 
   onSelectCuisine(slug: string): void {

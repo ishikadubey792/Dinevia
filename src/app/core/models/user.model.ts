@@ -12,6 +12,7 @@ export interface User {
   reservationsCompleted: number;
   avatarUrl?: string;
   isMockUser: boolean;
+  role?: string;
 }
 
 export interface ProfileUpdateDto {

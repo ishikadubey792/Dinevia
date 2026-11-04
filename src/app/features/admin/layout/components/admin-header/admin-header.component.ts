@@ -20,8 +20,8 @@ export class AdminHeaderComponent {
   readonly isProfileMenuOpen = signal<boolean>(false);
   readonly searchQuery = signal<string>('');
 
-  readonly ownerName = computed(() => this.authService.currentUser()?.fullName || 'Chef Julien Laurent');
-  readonly ownerEmail = computed(() => this.authService.currentUser()?.email || 'owner@legabriel.fr');
+  readonly ownerName = computed(() => this.authService.currentOwner?.()?.name || this.authService.currentUser?.()?.fullName || 'Chef Julien Laurent');
+  readonly ownerEmail = computed(() => this.authService.currentOwner?.()?.email || this.authService.currentUser?.()?.email || 'owner@legabriel.fr');
   readonly ownerInitials = computed(() => {
     const name = this.ownerName();
     const parts = name.trim().split(' ');
@@ -58,8 +58,12 @@ export class AdminHeaderComponent {
 
   logout(): void {
     this.isProfileMenuOpen.set(false);
-    this.authService.logout();
-    this.router.navigate(['/']);
+    if (this.authService.clearOwnerSession) {
+      this.authService.clearOwnerSession();
+    } else {
+      this.authService.logout();
+    }
+    this.router.navigate(['/admin/login']);
   }
 }
 

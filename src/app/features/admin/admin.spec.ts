@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AdminLayoutComponent } from './layout/admin-layout.component';
 import { AdminSidebarComponent } from './layout/components/admin-sidebar/admin-sidebar.component';
 import { AdminHeaderComponent } from './layout/components/admin-header/admin-header.component';
@@ -8,6 +10,7 @@ import { AdminRestaurantsComponent } from './restaurants/admin-restaurants.compo
 import { AdminPlaceholderComponent } from './placeholder/admin-placeholder.component';
 import { AdminDataService } from '../../core/services/admin-data.service';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 import { ADMIN_ROUTES } from './admin.routes';
 
 describe('Dinevia Restaurant Owner Portal', () => {
@@ -28,10 +31,17 @@ describe('Dinevia Restaurant Owner Portal', () => {
           { path: 'admin', children: ADMIN_ROUTES },
           { path: '', component: AdminDashboardComponent }
         ]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: AuthService,
           useValue: {
             currentUser: () => ({ fullName: 'Chef Julien Laurent', email: 'owner@legabriel.fr' }),
+            currentOwner: () => ({ name: 'Chef Julien Laurent', email: 'owner@legabriel.fr', role: 'RestaurantOwner' }),
+            isOwnerAuthenticated: () => true,
+            getOwnerAccessToken: () => 'mock-jwt-token',
+            isOwnerSessionExpired: () => false,
+            clearOwnerSession: () => {},
             logout: () => {}
           }
         },
@@ -202,19 +212,42 @@ describe('Dinevia Restaurant Owner Portal', () => {
   describe('AdminDashboardComponent', () => {
     let fixture: ComponentFixture<AdminDashboardComponent>;
     let component: AdminDashboardComponent;
+    let adminData: AdminDataService;
+    let httpMock: HttpTestingController;
 
     beforeEach(() => {
+      httpMock = TestBed.inject(HttpTestingController);
       fixture = TestBed.createComponent(AdminDashboardComponent);
       component = fixture.componentInstance;
+      adminData = TestBed.inject(AdminDataService);
       fixture.detectChanges();
+
+      const pending = httpMock.match(`${environment.apiUrl}/restaurants/my-restaurants`);
+      if (pending.length > 0) {
+        pending[0].flush({
+          statusCode: 200,
+          message: 'Success',
+          data: []
+        });
+        fixture.detectChanges();
+      }
     });
 
-    it('should render greeting for restaurant owner', () => {
+    afterEach(() => {
+      const pending = httpMock.match(() => true);
+      pending.forEach(r => {
+        if (!r.cancelled) {
+          r.flush({ statusCode: 200, message: 'Success', data: [] });
+        }
+      });
+    });
+
+    it('should render greeting for restaurant owner using session name', () => {
       const title = fixture.nativeElement.querySelector('.welcome-title');
       expect(title.textContent).toContain('Chef Julien Laurent');
     });
 
-    it('should render 4 owner-focused KPI metrics', () => {
+    it('should render 4 owner-focused KPI metrics with authentic live and N/A values', () => {
       const metricCards = fixture.nativeElement.querySelectorAll('.metric-card');
       expect(metricCards.length).toBe(4);
 
@@ -223,46 +256,94 @@ describe('Dinevia Restaurant Owner Portal', () => {
       expect(text).toContain('Total Bookings');
       expect(text).toContain("Today's Guests / Covers");
       expect(text).toContain('Average Rating');
+
+      // Check authentic N/A values for pending metrics
+      const cardValues = Array.from(metricCards).map((c: any) => c.querySelector('.card-val')?.textContent.trim());
+      expect(cardValues[1]).toBe('N/A');
+      expect(cardValues[2]).toBe('N/A');
+      expect(cardValues[3]).toBe('N/A');
+    });
+
+    it('should reflect actual restaurant count dynamically in KPI card', () => {
+      adminData.setOwnerRestaurants([
+        {
+          id: '101',
+          name: 'Le Gabriel Paris',
+          address: '42 Avenue Gabriel',
+          city: 'Paris',
+          description: 'Dining sanctuary',
+          phone: '+33 1 00 00 00 00',
+          email: 'info@legabriel.fr',
+          cuisines: ['French Haute'],
+          coverImageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947',
+          status: 'active',
+          createdAt: '2026-01-01'
+        }
+      ]);
+      fixture.detectChanges();
+
+      const metricCards = fixture.nativeElement.querySelectorAll('.metric-card');
+      const restaurantVal = metricCards[0].querySelector('.card-val')?.textContent.trim();
+      expect(restaurantVal).toBe('1');
+    });
+
+    it('should display authentic empty notice for recent bookings', () => {
+      const notice = fixture.nativeElement.querySelector('.empty-bookings-notice');
+      expect(notice).toBeTruthy();
+      expect(notice.textContent).toContain('Booking analytics will appear here once booking management is connected.');
+    });
+
+    it('should display reservation trend analytics pending state in chart panel', () => {
+      const stage = fixture.nativeElement.querySelector('.chart-stage');
+      expect(stage).toBeTruthy();
+      expect(stage.textContent).toContain('Reservation Trend Analytics Pending');
+      expect(stage.textContent).toContain('Phase 2 Backend Integration');
+    });
+
+    it('should display empty establishments card when owner has no restaurants', () => {
+      adminData.isLoadingRestaurants.set(false);
+      adminData.setOwnerRestaurants([]);
+      fixture.detectChanges();
+
+      const emptyCard = fixture.nativeElement.querySelector('.empty-establishments-card');
+      expect(emptyCard).toBeTruthy();
+      expect(emptyCard.textContent).toContain('No Dining Establishments Registered');
+      expect(emptyCard.textContent).toContain('Register Restaurant');
+    });
+
+    it('should render loading banner when isLoading is true', () => {
+      adminData.isLoadingRestaurants.set(true);
+      fixture.detectChanges();
+
+      const loadingBanner = fixture.nativeElement.querySelector('.loading-banner');
+      expect(loadingBanner).toBeTruthy();
+      expect(loadingBanner.textContent).toContain('Synchronizing Establishment Data');
+
+      adminData.isLoadingRestaurants.set(false);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.loading-banner')).toBeNull();
+    });
+
+    it('should render error banner and handle retry button click', () => {
+      adminData.restaurantLoadError.set('Network connection timed out');
+      fixture.detectChanges();
+
+      const errorBanner = fixture.nativeElement.querySelector('.error-banner');
+      expect(errorBanner).toBeTruthy();
+      expect(errorBanner.textContent).toContain('Network connection timed out');
+
+      const retryBtn = fixture.nativeElement.querySelector('.retry-btn');
+      expect(retryBtn).toBeTruthy();
+
+      const retrySpy = vi.spyOn(component, 'retryLoad');
+      retryBtn.click();
+      expect(retrySpy).toHaveBeenCalled();
     });
 
     it('should toggle booking trend chart timeframe', () => {
       expect(component.trendView()).toBe('weekly');
-      expect(component.currentChartData().length).toBe(7);
-
       component.setTrendView('monthly');
-      fixture.detectChanges();
-
       expect(component.trendView()).toBe('monthly');
-      expect(component.currentChartData().length).toBe(6);
-    });
-
-    it('should filter recent bookings table by status', () => {
-      expect(component.bookingStatusFilter()).toBe('all');
-      const allCount = component.filteredBookings().length;
-
-      component.setBookingFilter('seated');
-      fixture.detectChanges();
-      expect(component.bookingStatusFilter()).toBe('seated');
-      expect(component.filteredBookings().every(b => b.status === 'seated')).toBe(true);
-      expect(component.filteredBookings().length).toBeLessThanOrEqual(allCount);
-    });
-
-    it('should inspect booking details in modal', () => {
-      expect(component.selectedBooking()).toBeNull();
-
-      const inspectBtn = fixture.nativeElement.querySelector('.btn-inspect');
-      expect(inspectBtn).toBeTruthy();
-
-      inspectBtn.click();
-      fixture.detectChanges();
-
-      expect(component.selectedBooking()).not.toBeNull();
-      const modal = fixture.nativeElement.querySelector('.admin-modal');
-      expect(modal).toBeTruthy();
-
-      component.closeBookingDetails();
-      fixture.detectChanges();
-      expect(component.selectedBooking()).toBeNull();
     });
 
     it('should provide direct link to Add Restaurant (/admin/register)', () => {

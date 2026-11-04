@@ -156,6 +156,37 @@
   margin: 0;
 }
 
+.auth-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 1.15rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+
+  .alert-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  &.auth-alert-error {
+    background-color: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    color: #991B1B;
+  }
+
+  &.auth-alert-success {
+    background-color: #F0FDF4;
+    border: 1px solid #86EFAC;
+    color: #166534;
+  }
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;

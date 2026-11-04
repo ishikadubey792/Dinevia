@@ -32,7 +32,7 @@ export class AdminSidebarComponent {
   private readonly authService = inject(AuthService);
   private readonly routerSub: Subscription;
 
-  readonly ownerName = computed(() => this.authService.currentUser()?.fullName || 'Chef Julien Laurent');
+  readonly ownerName = computed(() => this.authService.currentOwner?.()?.name || this.authService.currentUser?.()?.fullName || 'Chef Julien Laurent');
   readonly ownerInitials = computed(() => {
     const name = this.ownerName();
     const parts = name.trim().split(' ');
@@ -89,8 +89,12 @@ export class AdminSidebarComponent {
 
   logout(): void {
     this.adminData.closeSidebar();
-    this.authService.logout();
-    this.router.navigate(['/']);
+    if (this.authService.clearOwnerSession) {
+      this.authService.clearOwnerSession();
+    } else {
+      this.authService.logout();
+    }
+    this.router.navigate(['/admin/login']);
   }
 
   ngOnDestroy(): void {

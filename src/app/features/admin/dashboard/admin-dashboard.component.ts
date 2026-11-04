@@ -1,9 +1,9 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { AdminBookingItem, BookingTrendPoint } from '../../../core/models/admin.model';
+import { AdminBookingItem, BookingTrendPoint, OwnerRestaurant } from '../../../core/models/admin.model';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -12,11 +12,20 @@ import { AdminBookingItem, BookingTrendPoint } from '../../../core/models/admin.
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })
-export class AdminDashboardComponent {
+export class AdminDashboardComponent implements OnInit {
   readonly adminData = inject(AdminDataService);
   private readonly authService = inject(AuthService);
 
-  readonly ownerName = computed(() => this.authService.currentUser()?.fullName || 'Restaurant Owner');
+  readonly ownerName = computed(() =>
+    this.authService.currentOwner()?.name ||
+    this.authService.currentUser()?.fullName ||
+    'Restaurant Owner'
+  );
+
+  readonly isLoading = this.adminData.isLoadingRestaurants;
+  readonly loadError = this.adminData.restaurantLoadError;
+  readonly ownerRestaurants = this.adminData.ownerRestaurants;
+
   readonly trendView = signal<'weekly' | 'monthly'>('weekly');
   readonly bookingStatusFilter = signal<string>('all');
   readonly selectedBooking = signal<AdminBookingItem | null>(null);
@@ -34,6 +43,22 @@ export class AdminDashboardComponent {
     if (filter === 'all') return bookings;
     return bookings.filter(b => b.status === filter);
   });
+
+  ngOnInit(): void {
+    this.loadData();
+  }
+
+  loadData(): void {
+    this.adminData.loadOwnerRestaurants().subscribe({
+      error: () => {
+        // Error state handled inside AdminDataService signal
+      }
+    });
+  }
+
+  retryLoad(): void {
+    this.loadData();
+  }
 
   setTrendView(view: 'weekly' | 'monthly'): void {
     this.trendView.set(view);
