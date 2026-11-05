@@ -12,14 +12,6 @@
         </p>
       </div>
 
-      <!-- Demo Simulation Notice -->
-      <div class="demo-notice-pill" role="note">
-        <span class="notice-icon">✦</span>
-        <div class="notice-text">
-          <strong>Demo Registration:</strong> Account creation is simulated for frontend UI demonstration. No backend database modifications will occur.
-        </div>
-      </div>
-
       <!-- Feedback Alerts -->
       @if (errorMessage()) {
         <div class="alert-box alert-error" role="alert">
@@ -167,7 +159,7 @@
             </div>
           }
           @if (isFieldInvalid('password')) {
-            <span class="error-hint">Password must be at least 8 characters.</span>
+            <span class="error-hint">{{ getPasswordErrorMessage() }}</span>
           }
         </div>
 

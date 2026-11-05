@@ -12,22 +12,6 @@
         </p>
       </div>
 
-      <!-- Demo Simulation Notice -->
-      <div class="demo-notice-pill" role="note">
-        <span class="notice-icon">✦</span>
-        <div class="notice-text">
-          <strong>Demo Authentication:</strong> Enter any email and password or click below to autofill our verified demo patron profile.
-        </div>
-      </div>
-
-      <!-- Quick Demo Credentials Chip -->
-      <button type="button" class="quick-autofill-btn" (click)="fillDemoCredentials()">
-        <svg viewBox="0 0 20 20" fill="currentColor" class="chip-icon" aria-hidden="true">
-          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-        </svg>
-        <span>Autofill Demo Account (Alexander Wright)</span>
-      </button>
-
       <!-- Feedback Alerts -->
       @if (errorMessage()) {
         <div class="alert-box alert-error" role="alert">
@@ -64,7 +48,7 @@
               type="email" 
               id="loginEmail" 
               formControlName="email"
-              placeholder="e.g. alexander@epicuredining.com"
+              placeholder="e.g. patron@example.com"
               class="auth-input"
               autocomplete="email"
             />
@@ -115,7 +99,7 @@
             </button>
           </div>
           @if (isFieldInvalid('password')) {
-            <span class="error-hint">Password must contain at least 6 characters.</span>
+            <span class="error-hint">Password must contain at least 8 characters.</span>
           }
         </div>
 
