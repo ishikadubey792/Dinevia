@@ -12,6 +12,7 @@ import { BookingsComponent } from './features/bookings/bookings.component';
 import { WishlistComponent } from './features/wishlist/wishlist.component';
 import { PlaceholderComponent } from './features/placeholder/placeholder.component';
 import { PartnerWithUsComponent } from './features/partner-with-us/partner-with-us.component';
+import { customerAuthGuard } from './core/guards/customer-auth.guard';
 
 export const routes: Routes = [
   {
@@ -73,11 +74,13 @@ export const routes: Routes = [
   {
     path: 'profile',
     component: ProfileComponent,
+    canActivate: [customerAuthGuard],
     title: 'Member Profile & Preferences — Dinevia'
   },
   {
     path: 'bookings',
     component: BookingsComponent,
+    canActivate: [customerAuthGuard],
     title: 'My Table Reservations — Dinevia'
   },
   {
