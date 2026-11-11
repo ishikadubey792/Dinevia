@@ -1,14 +1,34 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { NavbarComponent } from './navbar.component';
+import { vi } from 'vitest';
+import { CustomerAuthSession } from '../../../core/models/customer-auth.model';
+import { OwnerUser } from '../../../core/models/owner-auth.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { NavbarComponent } from './navbar.component';
 
-describe('NavbarComponent Responsive Navigation', () => {
+describe('NavbarComponent Responsive & Auth-Aware Navigation', () => {
   let component: NavbarComponent;
   let fixture: ComponentFixture<NavbarComponent>;
   let router: Router;
 
+  let isCustomerAuthSig: ReturnType<typeof signal<boolean>>;
+  let customerSessionSig: ReturnType<typeof signal<CustomerAuthSession | null>>;
+  let isOwnerAuthSig: ReturnType<typeof signal<boolean>>;
+  let currentOwnerSig: ReturnType<typeof signal<OwnerUser | null>>;
+  let ownerExpired: boolean;
+  let logoutSpy: ReturnType<typeof vi.fn>;
+  let logoutOwnerSpy: ReturnType<typeof vi.fn>;
+
   beforeEach(async () => {
+    isCustomerAuthSig = signal(false);
+    customerSessionSig = signal<CustomerAuthSession | null>(null);
+    isOwnerAuthSig = signal(false);
+    currentOwnerSig = signal<OwnerUser | null>(null);
+    ownerExpired = false;
+    logoutSpy = vi.fn();
+    logoutOwnerSpy = vi.fn();
+
     await TestBed.configureTestingModule({
       imports: [NavbarComponent],
       providers: [
@@ -17,16 +37,24 @@ describe('NavbarComponent Responsive Navigation', () => {
           { path: 'explore', component: NavbarComponent },
           { path: 'bookings', component: NavbarComponent },
           { path: 'wishlist', component: NavbarComponent },
-          { path: 'about', component: NavbarComponent },
+          { path: 'profile', component: NavbarComponent },
           { path: 'partner-with-us', component: NavbarComponent },
           { path: 'login', component: NavbarComponent },
-          { path: 'signup', component: NavbarComponent }
+          { path: 'signup', component: NavbarComponent },
+          { path: 'admin/login', component: NavbarComponent },
+          { path: 'admin/dashboard', component: NavbarComponent }
         ]),
         {
           provide: AuthService,
           useValue: {
             currentUser: () => null,
-            logout: () => {}
+            isCustomerAuthenticated: isCustomerAuthSig.asReadonly(),
+            currentCustomerSession: customerSessionSig.asReadonly(),
+            isOwnerAuthenticated: isOwnerAuthSig.asReadonly(),
+            isOwnerSessionExpired: () => ownerExpired,
+            currentOwner: currentOwnerSig.asReadonly(),
+            logout: logoutSpy,
+            logoutOwner: logoutOwnerSpy
           }
         }
       ]
@@ -39,190 +67,223 @@ describe('NavbarComponent Responsive Navigation', () => {
   });
 
   afterEach(() => {
-    // Ensure body scroll is unlocked after each test
     document.body.style.overflow = '';
   });
 
-  it('should create the navbar component', () => {
+  it('should create the navbar component with clean initial state', () => {
     expect(component).toBeTruthy();
-  });
-
-  it('should initialize with mobile menu closed and body scroll unlocked', () => {
     expect(component.isMobileMenuOpen()).toBe(false);
+    expect(component.isUserMenuOpen()).toBe(false);
+    expect(component.isCartNoticeOpen()).toBe(false);
     expect(document.body.style.overflow).toBe('');
   });
 
-  it('should toggle mobile menu open and lock body scroll', () => {
-    component.toggleMobileMenu();
-    fixture.detectChanges();
+  it('should render redesigned desktop links and utility icons in left-to-right order', () => {
+    const desktopLinks = fixture.nativeElement.querySelectorAll('.nav-links .nav-link');
+    expect(desktopLinks.length).toBe(3);
 
-    expect(component.isMobileMenuOpen()).toBe(true);
-    expect(document.body.style.overflow).toBe('hidden');
+    const linkTexts = Array.from(desktopLinks).map((el: any) => el.textContent.trim());
+    expect(linkTexts).toEqual(['Home', 'My Bookings', 'For Restaurant Owners']);
 
-    const drawer = fixture.nativeElement.querySelector('#mobileMenu');
-    expect(drawer).toBeTruthy();
-    expect(drawer.classList.contains('open')).toBe(true);
+    const searchLink = fixture.nativeElement.querySelector('.nav-actions a[routerLink="/explore"]');
+    const wishlistLink = fixture.nativeElement.querySelector('.nav-actions a[routerLink="/wishlist"]');
+    const cartBtn = fixture.nativeElement.querySelector('.nav-actions button.cart-icon-btn');
+    const profileBtn = fixture.nativeElement.querySelector('.nav-actions button.profile-trigger-btn');
 
-    const backdrop = fixture.nativeElement.querySelector('.mobile-backdrop');
-    expect(backdrop).toBeTruthy();
+    expect(searchLink).toBeTruthy();
+    expect(wishlistLink).toBeTruthy();
+    expect(cartBtn).toBeTruthy();
+    expect(profileBtn).toBeTruthy();
   });
 
-  it('should close mobile menu with closeMobileMenu() and unlock body scroll', () => {
-    component.toggleMobileMenu();
-    fixture.detectChanges();
-    expect(component.isMobileMenuOpen()).toBe(true);
-
-    component.closeMobileMenu();
+  it('should toggle honest Cart unavailable notice when Cart icon is clicked', () => {
+    const cartBtn = fixture.nativeElement.querySelector('.cart-icon-btn') as HTMLButtonElement;
+    cartBtn.click();
     fixture.detectChanges();
 
-    expect(component.isMobileMenuOpen()).toBe(false);
-    expect(document.body.style.overflow).toBe('');
-
-    const drawer = fixture.nativeElement.querySelector('#mobileMenu');
-    expect(drawer.classList.contains('open')).toBe(false);
-
-    const backdrop = fixture.nativeElement.querySelector('.mobile-backdrop');
-    expect(backdrop).toBeNull();
-  });
-
-  it('should close mobile drawer when X close button is clicked', () => {
-    component.toggleMobileMenu();
-    fixture.detectChanges();
-
-    const closeBtn = fixture.nativeElement.querySelector('.close-btn') as HTMLButtonElement;
-    expect(closeBtn).toBeTruthy();
-
-    closeBtn.click();
-    fixture.detectChanges();
-
-    expect(component.isMobileMenuOpen()).toBe(false);
-    expect(document.body.style.overflow).toBe('');
-  });
-
-  it('should close mobile drawer when backdrop is clicked', () => {
-    component.toggleMobileMenu();
-    fixture.detectChanges();
-
-    const backdrop = fixture.nativeElement.querySelector('.mobile-backdrop') as HTMLDivElement;
-    expect(backdrop).toBeTruthy();
-
-    backdrop.click();
-    fixture.detectChanges();
-
-    expect(component.isMobileMenuOpen()).toBe(false);
-    expect(document.body.style.overflow).toBe('');
-  });
-
-  it('should close mobile drawer when Escape key is pressed', () => {
-    component.toggleMobileMenu();
-    fixture.detectChanges();
-    expect(component.isMobileMenuOpen()).toBe(true);
+    expect(component.isCartNoticeOpen()).toBe(true);
+    const notice = fixture.nativeElement.querySelector('.cart-notice-popover');
+    expect(notice?.textContent).toContain('Cart feature is not implemented yet.');
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
-
-    expect(component.isMobileMenuOpen()).toBe(false);
-    expect(document.body.style.overflow).toBe('');
+    expect(component.isCartNoticeOpen()).toBe(false);
   });
 
-  it('should close mobile drawer after Router navigation completes', async () => {
-    component.toggleMobileMenu();
-    fixture.detectChanges();
-    expect(component.isMobileMenuOpen()).toBe(true);
+  describe('Profile Dropdown Authentication States', () => {
+    it('shows Log In and Sign Up options (no Profile/Logout) for unauthenticated visitors', () => {
+      component.toggleUserMenu();
+      fixture.detectChanges();
 
-    await router.navigate(['/explore']);
-    fixture.detectChanges();
+      const dropdown = fixture.nativeElement.querySelector('.user-dropdown');
+      expect(dropdown).toBeTruthy();
+      expect(dropdown.textContent).toContain('Log In');
+      expect(dropdown.textContent).toContain('Sign Up');
+      expect(dropdown.querySelector('a[routerLink="/profile"]')).toBeNull();
+      expect(dropdown.textContent).not.toContain('Alexander Wright');
+      expect(dropdown.textContent).not.toContain('Logout');
+    });
 
-    expect(component.isMobileMenuOpen()).toBe(false);
-    expect(document.body.style.overflow).toBe('');
+    it('shows Profile and isolated Customer Logout for authenticated Customers', () => {
+      const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+      isCustomerAuthSig.set(true);
+      customerSessionSig.set({
+        user: {
+          id: 42,
+          name: 'Ishika Customer',
+          email: 'ishika@gmail.com',
+          role: 'Customer'
+        },
+        accessToken: 'jwt-cust',
+        tokenType: 'Bearer',
+        expiresIn: 1800,
+        authenticatedAt: Date.now()
+      });
+      fixture.detectChanges();
+
+      expect(component.userInitials()).toBe('IC');
+
+      component.toggleUserMenu();
+      fixture.detectChanges();
+
+      const dropdown = fixture.nativeElement.querySelector('.user-dropdown');
+      expect(dropdown.textContent).toContain('Ishika Customer');
+      expect(dropdown.querySelector('a[routerLink="/profile"]')).toBeTruthy();
+
+      const logoutBtn = dropdown.querySelector('.dropdown-item-danger') as HTMLButtonElement;
+      expect(logoutBtn.textContent?.trim()).toBe('Logout');
+      logoutBtn.click();
+
+      expect(logoutSpy).toHaveBeenCalledTimes(1);
+      expect(logoutOwnerSpy).not.toHaveBeenCalled();
+      expect(navigateSpy).toHaveBeenCalledWith(['/login']);
+    });
+
+    it('shows Owner Console, Customer Log In/Sign Up, and isolated Owner Logout for RestaurantOwners', () => {
+      const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+      isOwnerAuthSig.set(true);
+      currentOwnerSig.set({
+        id: 7,
+        name: 'Chef Julien',
+        email: 'owner@dinevia.com',
+        role: 'RestaurantOwner'
+      });
+      fixture.detectChanges();
+
+      expect(component.userInitials()).toBe('CJ');
+
+      component.toggleUserMenu();
+      fixture.detectChanges();
+
+      const dropdown = fixture.nativeElement.querySelector('.user-dropdown');
+      expect(dropdown.textContent).toContain('Chef Julien');
+      expect(dropdown.querySelector('a[routerLink="/admin/dashboard"]')).toBeTruthy();
+      expect(dropdown.querySelector('a[routerLink="/login"]')).toBeTruthy();
+      expect(dropdown.querySelector('a[routerLink="/signup"]')).toBeTruthy();
+
+      const logoutBtn = dropdown.querySelector('.dropdown-item-danger') as HTMLButtonElement;
+      logoutBtn.click();
+
+      expect(logoutOwnerSpy).toHaveBeenCalledTimes(1);
+      expect(logoutSpy).not.toHaveBeenCalled();
+      expect(navigateSpy).toHaveBeenCalledWith(['/admin/login']);
+    });
   });
 
-  it('should handle repeated open and close without state corruption', () => {
-    for (let i = 0; i < 5; i++) {
+  describe('Mobile Drawer & Responsive Breakpoints', () => {
+    it('should toggle mobile menu open and lock body scroll', () => {
       component.toggleMobileMenu();
       fixture.detectChanges();
+
       expect(component.isMobileMenuOpen()).toBe(true);
       expect(document.body.style.overflow).toBe('hidden');
+      expect(fixture.nativeElement.querySelector('.mobile-drawer')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.mobile-backdrop')).toBeTruthy();
+    });
+
+    it('should close mobile menu with closeMobileMenu() and unlock body scroll', () => {
+      component.toggleMobileMenu();
+      fixture.detectChanges();
 
       component.closeMobileMenu();
       fixture.detectChanges();
+
       expect(component.isMobileMenuOpen()).toBe(false);
       expect(document.body.style.overflow).toBe('');
-    }
-  });
+      expect(fixture.nativeElement.querySelector('.mobile-drawer')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.mobile-backdrop')).toBeNull();
+    });
 
-  it('should unlock body scroll and unsubscribe on ngOnDestroy', () => {
-    component.toggleMobileMenu();
-    fixture.detectChanges();
-    expect(document.body.style.overflow).toBe('hidden');
+    it('should close mobile drawer when X close button or backdrop is clicked', () => {
+      component.toggleMobileMenu();
+      fixture.detectChanges();
 
-    fixture.destroy();
-    expect(document.body.style.overflow).toBe('');
-  });
+      const closeBtn = fixture.nativeElement.querySelector('.drawer-close-btn') as HTMLButtonElement;
+      closeBtn.click();
+      fixture.detectChanges();
+      expect(component.isMobileMenuOpen()).toBe(false);
 
-  it('should close mobile menu on window resize to desktop width (>= 1024px)', () => {
-    component.toggleMobileMenu();
-    fixture.detectChanges();
-    expect(component.isMobileMenuOpen()).toBe(true);
+      component.toggleMobileMenu();
+      fixture.detectChanges();
+      const backdrop = fixture.nativeElement.querySelector('.mobile-backdrop') as HTMLDivElement;
+      backdrop.click();
+      fixture.detectChanges();
+      expect(component.isMobileMenuOpen()).toBe(false);
+    });
 
-    // Simulate window innerWidth >= 1024
-    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 });
-    window.dispatchEvent(new Event('resize'));
-    fixture.detectChanges();
+    it('should close mobile drawer when Escape key is pressed', () => {
+      component.toggleMobileMenu();
+      fixture.detectChanges();
 
-    expect(component.isMobileMenuOpen()).toBe(false);
-    expect(document.body.style.overflow).toBe('');
-  });
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      fixture.detectChanges();
 
-  it('should update isScrolled on scroll past 20px', () => {
-    expect(component.isScrolled()).toBe(false);
+      expect(component.isMobileMenuOpen()).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+    });
 
-    Object.defineProperty(window, 'scrollY', { writable: true, configurable: true, value: 50 });
-    window.dispatchEvent(new Event('scroll'));
-    fixture.detectChanges();
+    it('should close mobile drawer after Router navigation completes', async () => {
+      component.toggleMobileMenu();
+      fixture.detectChanges();
 
-    expect(component.isScrolled()).toBe(true);
+      await router.navigate(['/explore']);
+      fixture.detectChanges();
 
-    Object.defineProperty(window, 'scrollY', { writable: true, configurable: true, value: 5 });
-    window.dispatchEvent(new Event('scroll'));
-    fixture.detectChanges();
+      expect(component.isMobileMenuOpen()).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+    });
 
-    expect(component.isScrolled()).toBe(false);
-  });
+    it('should render mobile drawer navigation links and guest buttons', () => {
+      component.toggleMobileMenu();
+      fixture.detectChanges();
 
-  it('should render desktop navigation links', () => {
-    const desktopLinks = fixture.nativeElement.querySelectorAll('.desktop-nav .nav-item');
-    expect(desktopLinks.length).toBe(6);
+      const mobileLinks = fixture.nativeElement.querySelectorAll('.mobile-nav-list .mobile-nav-link');
+      const mobileLinkTexts = Array.from(mobileLinks).map((el: any) => el.textContent.trim());
 
-    const linkTexts = Array.from(desktopLinks).map((el: any) => el.textContent.trim());
-    expect(linkTexts).toContain('Home');
-    expect(linkTexts).toContain('Explore Restaurants');
-    expect(linkTexts).toContain('My Bookings');
-    expect(linkTexts).toContain('Saved');
-    expect(linkTexts).toContain('About Us');
-    expect(linkTexts.some((t: string) => t.includes('For Restaurant Owners'))).toBe(true);
-  });
+      expect(mobileLinkTexts).toEqual([
+        'Home',
+        'My Bookings',
+        'For Restaurant Owners',
+        'Search Restaurants',
+        'Wishlist'
+      ]);
 
-  it('should render mobile drawer navigation links and buttons', () => {
-    const mobileLinks = fixture.nativeElement.querySelectorAll('.mobile-nav-links .mobile-nav-item');
-    expect(mobileLinks.length).toBe(6);
+      expect(fixture.nativeElement.querySelector('.mobile-drawer-footer a[routerLink="/login"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.mobile-drawer-footer a[routerLink="/signup"]')).toBeTruthy();
+    });
 
-    const mobileLinkTexts = Array.from(mobileLinks).map((el: any) => el.textContent.trim());
-    expect(mobileLinkTexts).toContain('Home');
-    expect(mobileLinkTexts).toContain('Explore Restaurants');
-    expect(mobileLinkTexts).toContain('My Bookings');
-    expect(mobileLinkTexts).toContain('Saved');
-    expect(mobileLinkTexts).toContain('About Us');
-    expect(mobileLinkTexts.some((t: string) => t.includes('For Restaurant Owners'))).toBe(true);
+    it('should unlock body scroll on ngOnDestroy', () => {
+      component.toggleMobileMenu();
+      fixture.detectChanges();
+      expect(document.body.style.overflow).toBe('hidden');
 
-    const loginBtn = fixture.nativeElement.querySelector('.mobile-menu-footer a[routerLink="/login"]');
-    const signupBtn = fixture.nativeElement.querySelector('.mobile-menu-footer a[routerLink="/signup"]');
-    expect(loginBtn).toBeTruthy();
-    expect(signupBtn).toBeTruthy();
-  });
+      component.ngOnDestroy();
+      expect(document.body.style.overflow).toBe('');
+    });
 
-  describe('Breakpoint verification (1440px, 1024px, 768px, 390px, 360px)', () => {
-    it('1440px Desktop: should auto-close mobile drawer and keep menu closed', () => {
+    it('1440px Desktop: should auto-close mobile drawer on resize', () => {
       Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1440 });
       component.isMobileMenuOpen.set(true);
       window.dispatchEvent(new Event('resize'));
@@ -232,59 +293,28 @@ describe('NavbarComponent Responsive Navigation', () => {
       expect(document.body.style.overflow).toBe('');
     });
 
-    it('1024px Laptop: should auto-close mobile drawer and keep menu closed', () => {
+    it('1024px Laptop: should auto-close mobile drawer on resize', () => {
       Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 });
       component.isMobileMenuOpen.set(true);
       window.dispatchEvent(new Event('resize'));
       fixture.detectChanges();
 
       expect(component.isMobileMenuOpen()).toBe(false);
-      expect(document.body.style.overflow).toBe('');
     });
 
-    it('768px Tablet: should allow opening and closing mobile drawer with scroll lock', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 768 });
-      component.toggleMobileMenu();
-      fixture.detectChanges();
+    it('768px Tablet, 390px Mobile, and 360px Mobile: allow drawer toggle with scroll lock', () => {
+      for (const width of [768, 390, 360]) {
+        Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: width });
+        component.toggleMobileMenu();
+        fixture.detectChanges();
+        expect(component.isMobileMenuOpen()).toBe(true);
+        expect(document.body.style.overflow).toBe('hidden');
 
-      expect(component.isMobileMenuOpen()).toBe(true);
-      expect(document.body.style.overflow).toBe('hidden');
-
-      component.closeMobileMenu();
-      fixture.detectChanges();
-
-      expect(component.isMobileMenuOpen()).toBe(false);
-      expect(document.body.style.overflow).toBe('');
-    });
-
-    it('390px Mobile: should allow opening and closing mobile drawer with scroll lock', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 390 });
-      component.toggleMobileMenu();
-      fixture.detectChanges();
-
-      expect(component.isMobileMenuOpen()).toBe(true);
-      expect(document.body.style.overflow).toBe('hidden');
-
-      component.closeMobileMenu();
-      fixture.detectChanges();
-
-      expect(component.isMobileMenuOpen()).toBe(false);
-      expect(document.body.style.overflow).toBe('');
-    });
-
-    it('360px Mobile: should allow opening and closing mobile drawer with scroll lock', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 360 });
-      component.toggleMobileMenu();
-      fixture.detectChanges();
-
-      expect(component.isMobileMenuOpen()).toBe(true);
-      expect(document.body.style.overflow).toBe('hidden');
-
-      component.closeMobileMenu();
-      fixture.detectChanges();
-
-      expect(component.isMobileMenuOpen()).toBe(false);
-      expect(document.body.style.overflow).toBe('');
+        component.closeMobileMenu();
+        fixture.detectChanges();
+        expect(component.isMobileMenuOpen()).toBe(false);
+        expect(document.body.style.overflow).toBe('');
+      }
     });
   });
 });

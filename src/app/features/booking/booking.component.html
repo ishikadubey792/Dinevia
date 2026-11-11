@@ -26,8 +26,28 @@
       }
     </div>
 
-    <!-- INVALID RESTAURANT STATE -->
-    @if (isNotFound() || !restaurant()) {
+    <!-- LOADING / ERROR / INVALID RESTAURANT STATES -->
+    @if (isLoadingRestaurant() && !restaurant()) {
+      <div class="restaurants-loading-stage" aria-live="polite">
+        <div class="luxury-spinner"></div>
+        <p class="loading-text">Loading restaurant details...</p>
+      </div>
+    } @else if (restaurantLoadError() && !restaurant()) {
+      <div class="restaurants-error-card" role="alert">
+        <div class="error-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="error-content">
+          <h3 class="error-title">Connection Notice</h3>
+          <p class="error-message">{{ restaurantLoadError() }}</p>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm retry-button" (click)="retryRestaurantLoad()">
+          Retry Connection
+        </button>
+      </div>
+    } @else if (isNotFound() || !restaurant()) {
       <div class="restaurant-not-found-card" role="region" aria-label="Restaurant not found">
         <div class="error-badge-circle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -49,27 +69,27 @@
       </div>
     }
 
-    <!-- RESTAURANT FOUND: BOOKING FORM & SUMMARY SPLIT -->
+    <!-- RESTAURANT FOUND: AVAILABILITY & RESERVATION PREVIEW SPLIT -->
     @if (restaurant(); as rest) {
       <div class="booking-layout-grid">
         <!-- LEFT: Full Reservation Form -->
         <div class="booking-form-col">
           <div class="booking-header-card">
-            <span class="eyebrow">Table Reservation</span>
-            <h1 class="booking-page-title">Reserve at {{ rest.name }}</h1>
+            <span class="eyebrow">Real-Time Table Availability</span>
+            <h1 class="booking-page-title">Check Availability at {{ rest.name }}</h1>
             <p class="booking-page-subtitle">
-              Instant verified table reservation. No booking fee or deposit required.
+              Select your dining date, start and end time window, and party size to view live available tables.
             </p>
           </div>
 
           <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" class="luxury-booking-form" novalidate>
-            <!-- 1. DATE, GUESTS & SEATING PREFERENCE -->
+            <!-- 1. DATE, TIME WINDOW, GUESTS & SEATING PREFERENCE -->
             <section class="form-section-card">
               <div class="section-badge-header">
                 <span class="step-num">1</span>
                 <div>
-                  <h2 class="section-heading">Date, Guests & Seating</h2>
-                  <p class="section-sub">Choose your dining party configuration</p>
+                  <h2 class="section-heading">Date, Time Window & Guests</h2>
+                  <p class="section-sub">Choose your dining schedule and party size</p>
                 </div>
               </div>
 
@@ -99,6 +119,35 @@
                   <button type="button" class="quick-chip" (click)="setQuickDate(1)">Tomorrow</button>
                   <button type="button" class="quick-chip" (click)="setQuickDate(2)">In 2 Days</button>
                   <button type="button" class="quick-chip" (click)="setQuickDate(3)">In 3 Days</button>
+                </div>
+              </div>
+
+              <!-- Start & End Time Grid -->
+              <div class="form-two-cols">
+                <div class="form-field-group">
+                  <label for="bookStartTimeInput" class="field-label">
+                    <span>Start Time</span>
+                    <span class="label-requirement">*Required</span>
+                  </label>
+                  <input 
+                    type="time" 
+                    id="bookStartTimeInput" 
+                    formControlName="startTime"
+                    class="styled-input"
+                  />
+                </div>
+
+                <div class="form-field-group">
+                  <label for="bookEndTimeInput" class="field-label">
+                    <span>End Time</span>
+                    <span class="label-requirement">*Required</span>
+                  </label>
+                  <input 
+                    type="time" 
+                    id="bookEndTimeInput" 
+                    formControlName="endTime"
+                    class="styled-input"
+                  />
                 </div>
               </div>
 
@@ -164,68 +213,76 @@
               </div>
             </section>
 
-            <!-- 2. TIME SLOTS SELECTION -->
+            <!-- 2. LIVE AVAILABLE TABLES -->
             <section class="form-section-card">
               <div class="section-badge-header">
                 <span class="step-num">2</span>
                 <div>
-                  <h2 class="section-heading">Available Seating Times</h2>
-                  <p class="section-sub">Select your seating slot for {{ formattedSelectedDate() }}</p>
+                  <h2 class="section-heading">Live Available Tables</h2>
+                  <p class="section-sub">
+                    Showing verified tables for {{ formattedSelectedDate() }} ({{ formattedTimeWindow() }}) &bull; {{ currentGuestsValue() }} {{ currentGuestsValue() === 1 ? 'Guest' : 'Guests' }}
+                  </p>
                 </div>
               </div>
 
-              <!-- Lunch Slots -->
-              @if (lunchSlots().length > 0) {
+              @if (isLoadingAvailability()) {
+                <div class="availability-loading-box" aria-live="polite" style="padding: 1rem 0;">
+                  <p class="section-sub">Checking real-time table availability...</p>
+                </div>
+              } @else if (availabilityValidationError()) {
+                <div class="submission-error-alert" role="alert">
+                  <span>{{ availabilityValidationError() }}</span>
+                </div>
+              } @else if (availabilityError()) {
+                <div class="submission-error-alert" role="alert" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                  <span>{{ availabilityError() }}</span>
+                  <button type="button" class="btn btn-outline btn-sm" (click)="retryAvailability()">
+                    Retry Availability
+                  </button>
+                </div>
+              } @else if (availableTables().length > 0) {
                 <div class="slots-period-group">
-                  <span class="period-title">Lunch & Afternoon Service</span>
+                  <span class="period-title">Available Tables at {{ rest.name }}</span>
                   <div class="slots-buttons-grid">
-                    @for (slot of lunchSlots(); track slot.time) {
+                    @for (table of availableTables(); track table.id) {
                       <button 
                         type="button" 
                         class="slot-btn" 
-                        [class.active]="selectedTimeSlot() === slot.time && slot.available"
-                        [class.disabled-slot]="!slot.available"
-                        [disabled]="!slot.available"
-                        (click)="selectTimeSlot(slot)"
-                        [attr.aria-label]="slot.time + ' - ' + slot.statusText">
-                        <span class="slot-time-text">{{ slot.time }}</span>
-                        <span class="slot-status-tag" [class.booked-tag]="!slot.available">{{ slot.statusText }}</span>
+                        [class.active]="selectedTableId() === table.id"
+                        (click)="selectTable(table)"
+                        [attr.aria-label]="'Table ' + table.tableNumber + ' seats ' + table.capacity + ' - ' + table.status">
+                        <span class="slot-time-text">Table #{{ table.tableNumber }}</span>
+                        <span class="slot-status-tag">Seats {{ table.capacity }} &bull; {{ table.status }}</span>
                       </button>
                     }
                   </div>
                 </div>
-              }
-
-              <!-- Dinner Slots -->
-              <div class="slots-period-group">
-                <span class="period-title">Prime Dinner Service</span>
-                <div class="slots-buttons-grid">
-                  @for (slot of dinnerSlots(); track slot.time) {
-                    <button 
-                      type="button" 
-                      class="slot-btn" 
-                      [class.active]="selectedTimeSlot() === slot.time && slot.available"
-                      [class.disabled-slot]="!slot.available"
-                      [disabled]="!slot.available"
-                      (click)="selectTimeSlot(slot)"
-                      [attr.aria-label]="slot.time + ' - ' + slot.statusText">
-                      <span class="slot-time-text">{{ slot.time }}</span>
-                      <span class="slot-status-tag" [class.booked-tag]="!slot.available">{{ slot.statusText }}</span>
-                    </button>
-                  }
+              } @else {
+                <div class="slot-selection-notice" style="margin-bottom: 1rem;">
+                  <span>
+                    No available tables found at {{ rest.name }} for {{ currentGuestsValue() }} {{ currentGuestsValue() === 1 ? 'guest' : 'guests' }} on {{ formattedSelectedDate() }} ({{ formattedTimeWindow() }}).
+                  </span>
                 </div>
-              </div>
+              }
 
               <div class="slot-selection-notice">
                 <svg viewBox="0 0 20 20" fill="currentColor" class="notice-icon" aria-hidden="true">
                   <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                 </svg>
-                <span>Selected Time: <strong>{{ selectedTimeSlot() }}</strong>. Fully booked slots are disabled.</span>
+                <span>
+                  @if (slotNotice()) {
+                    {{ slotNotice() }}
+                  } @else if (selectedTable(); as tbl) {
+                    Selected Table: <strong>Table #{{ tbl.tableNumber }}</strong> ({{ tbl.capacity }} seats) for <strong>{{ formattedTimeWindow() }}</strong>.
+                  } @else {
+                    Time Window: <strong>{{ formattedTimeWindow() }}</strong>. Only tables matching this restaurant, guest capacity, and Available status are shown.
+                  }
+                </span>
               </div>
             </section>
 
             <!-- 3. CUSTOMER INFORMATION -->
-            <section class="form-section-card">
+            <section class="form-section-card" id="leadGuestSection">
               <div class="section-badge-header">
                 <span class="step-num">3</span>
                 <div>
@@ -244,7 +301,7 @@
                   type="text" 
                   id="bookNameInput" 
                   formControlName="fullName"
-                  placeholder="e.g. Lorde Evelyn Wright"
+                  placeholder="Enter your full name"
                   [class.form-input-error]="isFieldInvalid('fullName')"
                   class="styled-input"
                 />
@@ -265,12 +322,12 @@
                     type="email" 
                     id="bookEmailInput" 
                     formControlName="email"
-                    placeholder="e.g. evelyn@example.com"
+                    placeholder="Enter your email (.com or .in)"
                     [class.form-input-error]="isFieldInvalid('email')"
                     class="styled-input"
                   />
                   @if (isFieldInvalid('email')) {
-                    <span class="field-error-msg">Please enter a valid email address.</span>
+                    <span class="field-error-msg">{{ getEmailErrorMessage() }}</span>
                   }
                 </div>
 
@@ -282,14 +339,16 @@
                   </label>
                   <input 
                     type="tel" 
+                    inputmode="numeric"
+                    maxlength="10"
                     id="bookPhoneInput" 
                     formControlName="phone"
-                    placeholder="e.g. +1 (555) 019-2831"
+                    placeholder="Enter 10-digit mobile number"
                     [class.form-input-error]="isFieldInvalid('phone')"
                     class="styled-input"
                   />
                   @if (isFieldInvalid('phone')) {
-                    <span class="field-error-msg">Please enter a valid phone number.</span>
+                    <span class="field-error-msg">{{ getPhoneErrorMessage() }}</span>
                   }
                 </div>
               </div>
@@ -351,20 +410,26 @@
                 </div>
               }
 
-              <!-- Submit Button -->
+              <!-- Phase 3: Table selection requirement notice (shown when no table selected) -->
+              @if (!selectedTable() && hasCheckedAvailability()) {
+                <div class="slot-selection-notice" style="margin-bottom: 1rem;">
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="notice-icon" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Please select an available table above before confirming your reservation.</span>
+                </div>
+              }
+
               <div class="form-submit-row">
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   [disabled]="isSubmitting()"
                   class="btn btn-terracotta btn-lg book-now-submit-btn">
-                  @if (!isSubmitting()) {
-                    <span>Confirm Table Reservation for {{ selectedTimeSlot() }}</span>
-                    <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
-                      <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
+                  @if (isSubmitting()) {
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span>Confirming Reservation...</span>
                   } @else {
-                    <span class="loading-spinner" aria-hidden="true"></span>
-                    <span>Securing Your Table Reservation...</span>
+                    <span>Confirm Table Reservation</span>
                   }
                 </button>
               </div>
@@ -372,8 +437,8 @@
           </form>
         </div>
 
-        <!-- RIGHT: Live Booking Summary Sidebar -->
-        <aside class="booking-sidebar-col" aria-label="Live reservation summary">
+        <!-- RIGHT: Live Availability Summary Sidebar -->
+        <aside class="booking-sidebar-col" aria-label="Live availability summary">
           <div class="sticky-summary-box">
             <!-- Restaurant Mini Card -->
             <div class="summary-restaurant-card">
@@ -386,23 +451,28 @@
               </div>
 
               <div class="summary-rest-text">
-                <div class="rest-badge-pill">
-                  <span class="badge badge-ivory">{{ rest.cuisine }}</span>
-                  <span class="badge badge-sage">{{ rest.priceRange }}</span>
-                </div>
+                @if (rest.cuisine) {
+                  <div class="rest-badge-pill">
+                    <span class="badge badge-ivory">{{ rest.cuisine }}</span>
+                  </div>
+                }
                 <h3 class="summary-rest-name">{{ rest.name }}</h3>
-                <p class="summary-rest-loc">{{ rest.address || rest.location }}</p>
+                <p class="summary-rest-loc">{{ rest.address || rest.location }}@if (rest.city && rest.address) {, {{ rest.city }}}</p>
                 <div class="summary-rest-rating">
-                  <span class="star-icon">★</span>
-                  <span class="score-text">{{ rest.rating.toFixed(2) }}</span>
-                  <span class="reviews-count">({{ rest.reviewCount }} reviews)</span>
+                  @if (rest.rating > 0) {
+                    <span class="star-icon">★</span>
+                    <span class="score-text">{{ rest.rating.toFixed(2) }}</span>
+                    <span class="reviews-count">({{ rest.reviewCount }} reviews)</span>
+                  } @else {
+                    <span class="reviews-count">New &bull; Not yet rated</span>
+                  }
                 </div>
               </div>
             </div>
 
-            <!-- Live Booking Details Breakdown -->
+            <!-- Live Availability Breakdown -->
             <div class="summary-breakdown-card">
-              <h4 class="summary-breakdown-title">Reservation Summary</h4>
+              <h4 class="summary-breakdown-title">Availability Summary</h4>
 
               <div class="summary-line-item">
                 <div class="line-icon-box">
@@ -427,8 +497,8 @@
                   </svg>
                 </div>
                 <div class="line-content">
-                  <span class="line-label">Seating Time</span>
-                  <strong class="line-val">{{ selectedTimeSlot() }}</strong>
+                  <span class="line-label">Time Window</span>
+                  <strong class="line-val">{{ formattedTimeWindow() }}</strong>
                 </div>
               </div>
 
@@ -444,11 +514,26 @@
                 <div class="line-content">
                   <span class="line-label">Party Size</span>
                   <strong class="line-val">
-                    {{ bookingForm.get('guests')?.value }} 
-                    {{ bookingForm.get('guests')?.value === 1 ? 'Guest' : 'Guests' }}
+                    {{ currentGuestsValue() }} 
+                    {{ currentGuestsValue() === 1 ? 'Guest' : 'Guests' }}
                   </strong>
                 </div>
               </div>
+
+              @if (selectedTable(); as tbl) {
+                <div class="summary-line-item">
+                  <div class="line-icon-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                  </div>
+                  <div class="line-content">
+                    <span class="line-label">Selected Table</span>
+                    <strong class="line-val">Table #{{ tbl.tableNumber }} ({{ tbl.capacity }} seats)</strong>
+                  </div>
+                </div>
+              }
 
               <div class="summary-line-item">
                 <div class="line-icon-box">
@@ -479,23 +564,23 @@
                 </div>
               }
 
-              <!-- Pricing and Booking Fee Notice -->
+              <!-- Pricing and Availability Note -->
               <div class="summary-pricing-row">
                 <div class="pricing-badge">
                   <span class="pricing-icon">✓</span>
                   <span>No Booking Fees</span>
                 </div>
-                <span class="pricing-note">Complimentary Table Reservation</span>
+                <span class="pricing-note">Phase 2: Live Availability Preview</span>
               </div>
             </div>
 
             <!-- Guarantee Box -->
             <div class="summary-guarantee-card">
-              <span class="guarantee-title">Dinevia Hospitality Commitment</span>
+              <span class="guarantee-title">Real-Time Availability Details</span>
               <ul class="guarantee-list">
-                <li>Instant table reservation with the maître d'</li>
-                <li>15-minute grace period held for your party</li>
-                <li>Complimentary modification up to 6 hours prior</li>
+                <li>Checked live against backend table inventory</li>
+                <li>Filtered strictly to active tables matching guest capacity</li>
+                <li>Booking creation opens in Phase 3</li>
               </ul>
             </div>
           </div>

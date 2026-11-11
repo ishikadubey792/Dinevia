@@ -1,8 +1,19 @@
-<app-navbar></app-navbar>
+@if (!embedded) {
+  <app-navbar></app-navbar>
 
-<main class="auth-page" role="main">
-  <div class="container auth-container">
-    <div class="auth-card signup-card">
+  <main class="auth-page" role="main">
+    <div class="container auth-container">
+      <ng-container *ngTemplateOutlet="signupCardTpl"></ng-container>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+} @else {
+  <ng-container *ngTemplateOutlet="signupCardTpl"></ng-container>
+}
+
+<ng-template #signupCardTpl>
+    <div class="auth-card signup-card" [class.modal-embedded-card]="embedded">
       <!-- Brand & Header -->
       <div class="auth-card-header">
         <span class="auth-eyebrow">Gastronomic Membership</span>
@@ -47,7 +58,7 @@
               type="text" 
               id="signupName" 
               formControlName="fullName"
-              placeholder="e.g. Lorde Evelyn Wright"
+              placeholder="Enter your full name"
               class="auth-input"
               autocomplete="name"
             />
@@ -74,13 +85,13 @@
                 type="email" 
                 id="signupEmail" 
                 formControlName="email"
-                placeholder="e.g. evelyn@example.com"
+                placeholder="Enter your email (.com or .in)"
                 class="auth-input"
                 autocomplete="email"
               />
             </div>
             @if (isFieldInvalid('email')) {
-              <span class="error-hint">Please enter a valid email address.</span>
+              <span class="error-hint">{{ getEmailErrorMessage() }}</span>
             }
           </div>
 
@@ -96,15 +107,17 @@
               </svg>
               <input 
                 type="tel" 
+                inputmode="numeric"
+                maxlength="10"
                 id="signupPhone" 
                 formControlName="phone"
-                placeholder="+1 (555) 234-5678"
+                placeholder="Enter 10-digit mobile number"
                 class="auth-input"
                 autocomplete="tel"
               />
             </div>
             @if (isFieldInvalid('phone')) {
-              <span class="error-hint">Please enter a valid telephone number.</span>
+              <span class="error-hint">{{ getPhoneErrorMessage() }}</span>
             }
           </div>
         </div>
@@ -238,11 +251,14 @@
       <div class="auth-card-footer">
         <p class="footer-text">
           <span>Already have a Dinevia account?</span>
-          <a routerLink="/login" class="footer-action-link">Log In</a>
+          @if (embedded) {
+            <button type="button" class="footer-action-link btn-as-link" (click)="switchToLogin.emit()">
+              Log In
+            </button>
+          } @else {
+            <a routerLink="/login" class="footer-action-link">Log In</a>
+          }
         </p>
       </div>
     </div>
-  </div>
-</main>
-
-<app-footer></app-footer>
+</ng-template>

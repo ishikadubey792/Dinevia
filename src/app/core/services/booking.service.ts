@@ -1,12 +1,33 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { BookingDetails, BookingCustomer, TimeSlotAvailability } from '../models/booking.model';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, defer, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import {
+  BookingDetails,
+  BookingCustomer,
+  ApiRestaurantTableDto,
+  AvailableTable,
+  AvailabilityQuery,
+  CreateBookingRequest,
+  UpdateBookingRequest,
+  ApiBookingRecord,
+  ApiCreatedBooking,
+  formatBookingDateParam,
+  formatTimeSpanParam,
+  formatDisplayTime,
+  filterAvailableTables
+} from '../models/booking.model';
+import { ApiResponse } from '../models/cuisine.model';
 import { RestaurantService } from './restaurant.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BookingService {
+  private readonly http = inject(HttpClient);
   private readonly restaurantService = inject(RestaurantService);
+  private readonly apiUrl = environment.apiUrl;
 
   private readonly activeBookingSignal = signal<BookingDetails | null>(this.loadInitialActiveBooking());
   private readonly bookingsHistorySignal = signal<BookingDetails[]>(this.loadInitialStoredBookings());
@@ -184,9 +205,33 @@ export class BookingService {
   }
 
   /**
-   * Submit a new table reservation and generate reference code
+   * Submit a new table reservation to the backend API:
+   * POST /api/bookings
+   *
+   * Real HTTP Observable-based implementation. Does NOT generate fake booking references
+   * or claim success before the API responds.
    */
-  createBooking(params: {
+  createBooking(
+    payload: CreateBookingRequest,
+    context: {
+      restaurantId: string;
+      restaurantName: string;
+      restaurantImage: string;
+      restaurantCuisine: string;
+      restaurantLocation: string;
+      restaurantAddress?: string;
+      restaurantPhone?: string;
+      seatingArea?: string;
+      customer: BookingCustomer;
+    }
+  ): Observable<BookingDetails> {
+    return this.createBookingApi(payload, context);
+  }
+
+  /**
+   * Backward-compatible mock reservation utility preserved for legacy tests and offline demo.
+   */
+  createMockBooking(params: {
     restaurantId: string;
     date: string;
     time: string;
@@ -217,7 +262,6 @@ export class BookingService {
       isMockReservation: true
     };
 
-    // Update active booking signal and session storage
     this.activeBookingSignal.set(newBooking);
     if (typeof window !== 'undefined') {
       try {
@@ -227,7 +271,6 @@ export class BookingService {
       }
     }
 
-    // Append to local history
     const currentList = [newBooking, ...this.bookingsHistorySignal()];
     this.bookingsHistorySignal.set(currentList);
     if (typeof window !== 'undefined') {
@@ -268,61 +311,284 @@ export class BookingService {
   }
 
   /**
-   * Generate realistic mock availability for any chosen date and restaurant
+   * Fetch raw table availability from ASP.NET Core backend API:
+   * GET /api/bookings/availability?BookingDate=...&StartTime=...&EndTime=...&NumberOfGuests=...
+   *
+   * Note: Backend stored procedure dbo.GetAvailableRestaurantTables does not filter by
+   * RestaurantId, Status = 'Available', or active restaurant status. Use
+   * getAvailableTablesForRestaurant() for complete client-side filtering.
    */
-  getTimeSlotsForDate(restaurantId: string, dateStr: string): TimeSlotAvailability[] {
-    const restaurant = this.restaurantService.getRestaurantById(restaurantId);
+  getAvailableTables(query: AvailabilityQuery): Observable<AvailableTable[]> {
+    return defer(() => {
+      const bookingDate = formatBookingDateParam(query.bookingDate);
+      const startTime = formatTimeSpanParam(query.startTime);
+      const endTime = formatTimeSpanParam(query.endTime);
+      const numberOfGuests = Math.trunc(Number(query.numberOfGuests));
 
-    // Standard high-end dinner & lunch seating periods
-    const allSlots: { time: string; period: 'lunch' | 'dinner'; defaultAvailable: boolean }[] = [
-      { time: '12:00 PM', period: 'lunch', defaultAvailable: true },
-      { time: '12:30 PM', period: 'lunch', defaultAvailable: true },
-      { time: '1:00 PM', period: 'lunch', defaultAvailable: false },
-      { time: '1:30 PM', period: 'lunch', defaultAvailable: true },
-      { time: '5:30 PM', period: 'dinner', defaultAvailable: true },
-      { time: '6:00 PM', period: 'dinner', defaultAvailable: true },
-      { time: '6:30 PM', period: 'dinner', defaultAvailable: false },
-      { time: '7:00 PM', period: 'dinner', defaultAvailable: true },
-      { time: '7:30 PM', period: 'dinner', defaultAvailable: true },
-      { time: '8:00 PM', period: 'dinner', defaultAvailable: false },
-      { time: '8:30 PM', period: 'dinner', defaultAvailable: true },
-      { time: '9:00 PM', period: 'dinner', defaultAvailable: true },
-      { time: '9:30 PM', period: 'dinner', defaultAvailable: false }
-    ];
-
-    // If restaurant has custom availableSlots, ensure they are prioritized as available
-    const customSlots = restaurant?.availableSlots || [];
-
-    // Simple pseudo-random seed based on date string and restaurantId
-    const seed = (dateStr + restaurantId)
-      .split('')
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-
-    return allSlots.map((item, index) => {
-      const isCustomFav = customSlots.includes(item.time);
-      // Determine availability variation
-      const pseudoVal = (seed + index * 7) % 10;
-      let available = item.defaultAvailable;
-
-      if (isCustomFav) {
-        available = true;
-      } else if (pseudoVal > 7) {
-        available = false;
+      if (!Number.isFinite(numberOfGuests) || numberOfGuests < 1 || numberOfGuests > 20) {
+        throw new Error('NumberOfGuests must be an integer between 1 and 20.');
       }
 
-      let statusText: 'Available' | 'Few Tables Left' | 'Fully Booked' = 'Available';
-      if (!available) {
-        statusText = 'Fully Booked';
-      } else if (pseudoVal === 6 || pseudoVal === 7) {
-        statusText = 'Few Tables Left';
-      }
+      const params = new HttpParams()
+        .set('BookingDate', bookingDate)
+        .set('StartTime', startTime)
+        .set('EndTime', endTime)
+        .set('NumberOfGuests', String(numberOfGuests));
 
-      return {
-        time: item.time,
-        period: item.period,
-        available,
-        statusText
-      };
+      return this.http
+        .get<ApiResponse<ApiRestaurantTableDto[]> | ApiRestaurantTableDto[]>(
+          `${this.apiUrl}/bookings/availability`,
+          { params }
+        )
+        .pipe(
+          map(res => {
+            if (Array.isArray(res)) {
+              return res;
+            }
+            if (res && Array.isArray(res.data)) {
+              return res.data;
+            }
+            return [];
+          })
+        );
     });
+  }
+
+  /**
+   * Fetch available tables for a specific restaurant and enforce client-side filtering:
+   * - restaurantId === selected restaurant
+   * - status === 'Available'
+   * - capacity >= numberOfGuests
+   * - restaurant is active
+   */
+  getAvailableTablesForRestaurant(
+    restaurantId: string | number,
+    query: AvailabilityQuery,
+    isRestaurantActive = true
+  ): Observable<AvailableTable[]> {
+    return this.getAvailableTables(query).pipe(
+      map(tables =>
+        filterAvailableTables(tables, restaurantId, query.numberOfGuests, isRestaurantActive)
+      )
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Phase 3: Real API Methods
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Create a real customer booking via POST /api/bookings.
+   * Requires Customer JWT (attached by authInterceptor automatically).
+   *
+   * @param payload  Verified CreateBookingRequest — no customerId needed.
+   * @param context  Frontend-only display info (restaurant, customer) for confirmation page.
+   * @returns        Observable<BookingDetails> mapped from the backend response.
+   */
+  createBookingApi(
+    payload: CreateBookingRequest,
+    context: {
+      restaurantId: string;
+      restaurantName: string;
+      restaurantImage: string;
+      restaurantCuisine: string;
+      restaurantLocation: string;
+      restaurantAddress?: string;
+      restaurantPhone?: string;
+      seatingArea?: string;
+      customer: BookingCustomer;
+    }
+  ): Observable<BookingDetails> {
+    return this.http
+      .post<ApiResponse<ApiCreatedBooking> | ApiCreatedBooking>(
+        `${this.apiUrl}/bookings`,
+        payload
+      )
+      .pipe(
+        map(res => {
+          // Support both { statusCode, message, data } envelope and bare object
+          const data: ApiCreatedBooking =
+            res && typeof res === 'object' && 'data' in res && res.data !== undefined
+              ? (res as ApiResponse<ApiCreatedBooking>).data
+              : (res as ApiCreatedBooking);
+
+          const backendId = data?.id ?? 0;
+          const bookingRef = `DV-${backendId}`;
+
+          // Parse date from bookingDate ISO string
+          const rawDate = data?.bookingDate ?? payload.bookingDate;
+          const datePart = rawDate ? rawDate.split('T')[0] : payload.bookingDate.split('T')[0];
+
+          // Format display time from start/end
+          const startDisplay = formatDisplayTime(data?.startTime ?? payload.startTime);
+          const endDisplay = formatDisplayTime(data?.endTime ?? payload.endTime);
+          const timeDisplay = `${startDisplay} – ${endDisplay}`;
+
+          // Normalize status
+          const rawStatus = (data?.status ?? 'confirmed').toLowerCase();
+          const status = (['confirmed', 'pending', 'cancelled', 'completed'] as const).includes(
+            rawStatus as 'confirmed' | 'pending' | 'cancelled' | 'completed'
+          )
+            ? (rawStatus as BookingDetails['status'])
+            : 'confirmed';
+
+          const booking: BookingDetails = {
+            bookingRef,
+            backendId,
+            restaurantId: context.restaurantId,
+            restaurantName: context.restaurantName,
+            restaurantImage: context.restaurantImage,
+            restaurantCuisine: context.restaurantCuisine,
+            restaurantLocation: context.restaurantLocation,
+            restaurantAddress: context.restaurantAddress,
+            restaurantPhone: context.restaurantPhone,
+            date: datePart,
+            time: timeDisplay,
+            guests: data?.numberOfGuests ?? payload.numberOfGuests,
+            seatingArea: context.seatingArea ?? 'Chef-Curated Table',
+            customer: context.customer,
+            createdAt: data?.createdAt ?? new Date().toISOString(),
+            status,
+            isMockReservation: false
+          };
+
+          // Set active booking for confirmation page
+          this.activeBookingSignal.set(booking);
+          if (typeof window !== 'undefined') {
+            try {
+              sessionStorage.setItem('dinevia_active_booking', JSON.stringify(booking));
+            } catch (e) {
+              console.warn('Could not persist active booking to sessionStorage', e);
+            }
+          }
+
+          return booking;
+        }),
+        catchError(err => {
+          return throwError(() => err);
+        })
+      );
+  }
+
+  /**
+   * Fetch real customer booking history via GET /api/bookings/customer/{customerId}.
+   * Requires Customer JWT (attached by authInterceptor automatically).
+   *
+   * @param customerId  Numeric backend customer ID from JWT session.
+   */
+  getCustomerBookings(customerId: number): Observable<BookingDetails[]> {
+    return this.http
+      .get<ApiResponse<ApiBookingRecord[]> | ApiBookingRecord[]>(
+        `${this.apiUrl}/bookings/customer/${customerId}`
+      )
+      .pipe(
+        map(res => {
+          const records: ApiBookingRecord[] = Array.isArray(res)
+            ? res
+            : Array.isArray((res as ApiResponse<ApiBookingRecord[]>)?.data)
+            ? (res as ApiResponse<ApiBookingRecord[]>).data
+            : [];
+
+          return records.map(r => this.mapApiBookingRecord(r));
+        }),
+        catchError(err => throwError(() => err))
+      );
+  }
+
+  /**
+   * Cancel a customer booking via POST /api/bookings/{id}/cancel.
+   * Requires Customer JWT (attached by authInterceptor automatically).
+   * The backend accepts an empty POST body — no cancellation reason is sent.
+   *
+   * @param backendId  Numeric backend booking ID.
+   */
+  cancelBookingApi(backendId: number): Observable<void> {
+    return this.http
+      .post<void>(`${this.apiUrl}/bookings/${backendId}/cancel`, {})
+      .pipe(
+        map(() => void 0),
+        catchError(err => throwError(() => err))
+      );
+  }
+
+  /**
+   * Update a customer booking via PUT /api/bookings/{id}.
+   * Only the verified UpdateBookingRequest fields are sent — restaurantTableId is NOT updatable.
+   *
+   * @param backendId  Numeric backend booking ID.
+   * @param payload    UpdateBookingRequest fields.
+   */
+  updateBookingApi(backendId: number, payload: UpdateBookingRequest): Observable<void> {
+    return this.http
+      .put<void>(`${this.apiUrl}/bookings/${backendId}`, payload)
+      .pipe(
+        map(() => void 0),
+        catchError(err => throwError(() => err))
+      );
+  }
+
+  /**
+   * Maps a raw ApiBookingRecord from the backend to the frontend BookingDetails model.
+   * Enriches restaurant name/image from Phase 1 restaurant list when not in the API response.
+   */
+  private mapApiBookingRecord(r: ApiBookingRecord): BookingDetails {
+    const backendId = r.id;
+    const bookingRef = `DV-${backendId}`;
+
+    // Extract date portion from ISO booking date
+    const datePart = r.bookingDate ? r.bookingDate.split('T')[0] : '';
+
+    // Format display time
+    const startDisplay = r.startTime ? formatDisplayTime(r.startTime) : '';
+    const endDisplay = r.endTime ? formatDisplayTime(r.endTime) : '';
+    const timeDisplay = startDisplay && endDisplay ? `${startDisplay} – ${endDisplay}` : startDisplay;
+
+    // Normalize backend status to frontend status values
+    const rawStatus = (r.status ?? 'confirmed').toLowerCase().trim();
+    const statusMap: Record<string, BookingDetails['status']> = {
+      confirmed: 'confirmed',
+      pending: 'pending',
+      cancelled: 'cancelled',
+      canceled: 'cancelled',
+      completed: 'completed',
+      done: 'completed'
+    };
+    const status: BookingDetails['status'] = statusMap[rawStatus] ?? 'confirmed';
+
+    // Try to enrich restaurant info from Phase 1 list via restaurantId on table
+    const restaurantId = r.restaurantTable?.restaurantId ?? 0;
+    const enriched = restaurantId
+      ? this.restaurantService.enrichFromLoadedList({ id: restaurantId } as any)
+      : null;
+
+    const fallbackImage =
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80';
+
+    return {
+      bookingRef,
+      backendId,
+      restaurantId: String(restaurantId || ''),
+      restaurantName: enriched?.name ?? `Restaurant #${restaurantId}`,
+      restaurantImage: enriched?.imageUrl ?? fallbackImage,
+      restaurantCuisine: enriched?.cuisine ?? 'Fine Dining',
+      restaurantLocation: enriched ? `${enriched.neighborhood ?? ''}, ${enriched.city ?? ''}`.replace(/^,\s*/, '') : '',
+      restaurantAddress: enriched?.address ?? enriched?.location,
+      restaurantPhone: enriched?.phone,
+      date: datePart,
+      time: timeDisplay,
+      guests: r.numberOfGuests ?? 1,
+      seatingArea: r.restaurantTable ? `Table #${r.restaurantTable.tableNumber}` : 'Chef-Curated Table',
+      customer: {
+        fullName: '',
+        email: '',
+        phone: '',
+        specialRequests: r.specialRequest ?? undefined
+      },
+      createdAt: r.createdAt ?? new Date().toISOString(),
+      status,
+      isMockReservation: false,
+      restaurantTableId: r.restaurantTableId ?? r.restaurantTable?.id,
+      tableCapacity: r.restaurantTable?.capacity
+    };
   }
 }

@@ -111,33 +111,64 @@
         </p>
       </div>
 
-      <div class="cuisines-grid">
-        @for (c of cuisines(); track c.id) {
-          <article 
-            class="cuisine-card" 
-            [class.active]="currentCuisine() === c.slug"
-            (click)="onSelectCuisine(c.slug)"
-            tabindex="0"
-            role="button"
-            [attr.aria-pressed]="currentCuisine() === c.slug"
-            [attr.aria-label]="c.name + ' cuisine. ' + c.restaurantCount + ' restaurants available.'">
-            <div class="cuisine-img-wrap">
-              <img [src]="c.imageUrl" [alt]="c.name + ' specialty dishes and presentation'" loading="lazy" class="cuisine-img" />
-              <div class="cuisine-overlay"></div>
-            </div>
-            <div class="cuisine-info">
-              <span class="cuisine-count">{{ c.restaurantCount }} Tables</span>
-              <h3 class="cuisine-name">{{ c.name }}</h3>
-              <p class="cuisine-tagline">{{ c.tagline }}</p>
-              <div class="cuisine-arrow" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
+      @if (isLoadingCuisines() || isLoading()) {
+        <div class="restaurants-loading-stage" aria-live="polite">
+          <div class="luxury-spinner"></div>
+          <p class="loading-text">Calculating available restaurants per cuisine...</p>
+        </div>
+      } @else if (cuisinesLoadError()) {
+        <div class="restaurants-error-card" role="alert">
+          <div class="error-icon-wrap">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg" aria-hidden="true">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="error-content">
+            <h3 class="error-title">Connection Notice</h3>
+            <p class="error-message">{{ cuisinesLoadError() }}</p>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm retry-button" (click)="retryCuisines()">
+            Retry Connection
+          </button>
+        </div>
+      } @else if (cuisines().length === 0) {
+        <div class="empty-state" role="region" aria-label="No cuisines available">
+          <p class="empty-title">No cuisines currently available</p>
+          <p class="empty-desc">Browse all available destinations or refresh to check again.</p>
+          <a routerLink="/explore" class="btn btn-outline">Explore All Restaurants</a>
+        </div>
+      } @else {
+        <div class="cuisines-grid">
+          @for (c of cuisines(); track c.id) {
+            <article 
+              class="cuisine-card" 
+              [class.active]="currentCuisine() === c.slug"
+              (click)="onSelectCuisine(c.slug)"
+              (keydown.enter)="onSelectCuisine(c.slug)"
+              (keydown.space)="onSelectCuisine(c.slug); $event.preventDefault()"
+              tabindex="0"
+              role="button"
+              [attr.aria-label]="c.name + ' cuisine. ' + (c.restaurantCount === 1 ? '1 restaurant' : c.restaurantCount + ' restaurants') + ' available. Explore restaurants.'">
+              <div class="cuisine-img-wrap">
+                <img [src]="c.imageUrl" [alt]="c.name + ' specialty dishes and presentation'" loading="lazy" class="cuisine-img" />
+                <div class="cuisine-overlay"></div>
               </div>
-            </div>
-          </article>
-        }
-      </div>
+              <div class="cuisine-info">
+                <span class="cuisine-count">
+                  {{ c.restaurantCount === 1 ? '1 Restaurant' : c.restaurantCount + ' Restaurants' }}
+                </span>
+                <h3 class="cuisine-name">{{ c.name }}</h3>
+                <p class="cuisine-tagline">{{ c.tagline }}</p>
+                <div class="cuisine-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
     </div>
   </section>
 
@@ -200,10 +231,8 @@
             Retry Connection
           </button>
         </div>
-      }
-
-      <!-- Restaurant Cards Grid -->
-      @if (!isLoading() && restaurants().length > 0) {
+      } @else if (restaurants().length > 0) {
+        <!-- Restaurant Cards Grid -->
         <div class="restaurants-grid">
           @for (restaurant of restaurants(); track restaurant.id) {
             <app-restaurant-card 
@@ -222,11 +251,17 @@
             </svg>
           </a>
         </div>
-      } @else if (!isLoading() && restaurants().length === 0) {
+      } @else {
         <div class="empty-state">
-          <p class="empty-title">No tables matched your precise criteria</p>
-          <p class="empty-desc">Try clearing your filters or exploring our other world-class dining destinations.</p>
-          <button type="button" class="btn btn-outline" (click)="resetAllFilters()">View All Restaurants</button>
+          @if (currentCuisine() !== 'all' || currentCategory() !== 'all') {
+            <p class="empty-title">No tables matched your precise criteria</p>
+            <p class="empty-desc">Try clearing your filters or exploring our other world-class dining destinations.</p>
+            <button type="button" class="btn btn-outline" (click)="resetAllFilters()">View All Restaurants</button>
+          } @else {
+            <p class="empty-title">No restaurants are currently available</p>
+            <p class="empty-desc">Check back soon or refresh to load live destinations.</p>
+            <button type="button" class="btn btn-outline" (click)="retryLoad()">Refresh Destinations</button>
+          }
         </div>
       }
     </div>

@@ -11,7 +11,7 @@
       </label>
       <div class="select-wrapper">
         <select id="searchLocation" formControlName="location" class="form-select">
-          @for (loc of locations; track loc.value) {
+          @for (loc of locations(); track loc.value) {
             <option [value]="loc.value">{{ loc.label }}</option>
           }
         </select>
@@ -29,7 +29,7 @@
       </label>
       <div class="select-wrapper">
         <select id="searchCuisine" formControlName="cuisine" class="form-select">
-          @for (c of cuisines; track c.value) {
+          @for (c of cuisines(); track c.value) {
             <option [value]="c.value">{{ c.label }}</option>
           }
         </select>

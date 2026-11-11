@@ -80,16 +80,18 @@
         </div>
       </header>
 
-      <!-- 2. DEMO NOTICE DISCLAIMER -->
-      <div class="demo-mock-notice-banner" role="status">
-        <div class="notice-icon-circle">✦</div>
-        <div class="notice-text-content">
-          <strong>Demonstration Reservation:</strong>
-          <span>
-            This reservation is a simulation generated for frontend user experience evaluation. No real database records or credit card charges have been processed. In production, this directly coordinates with the Dinevia RestaurantBookingAPI.
-          </span>
+      <!-- 2. DEMO NOTICE DISCLAIMER (Only shown for mock reservations) -->
+      @if (b.isMockReservation) {
+        <div class="demo-mock-notice-banner" role="status">
+          <div class="notice-icon-circle">✦</div>
+          <div class="notice-text-content">
+            <strong>Demonstration Reservation:</strong>
+            <span>
+              This reservation is a simulation generated for frontend user experience evaluation. No real database records or credit card charges have been processed. In production, this directly coordinates with the Dinevia RestaurantBookingAPI.
+            </span>
+          </div>
         </div>
-      </div>
+      }
 
       <!-- 3. MAIN SPLIT ITINERARY LAYOUT -->
       <div class="itinerary-split-grid">

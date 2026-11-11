@@ -776,6 +776,141 @@
   z-index: 9999;
 }
 
+/* Edit / Reschedule Modal Specific */
+.edit-dialog {
+  max-width: 600px;
+
+  .edit-booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .form-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    @media (max-width: 540px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .styled-input {
+    height: 2.75rem;
+    padding: 0 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    border: 1px solid rgba(38, 40, 36, 0.2);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    color: var(--color-charcoal);
+    width: 100%;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-forest);
+      box-shadow: 0 0 0 3px rgba(35, 70, 55, 0.1);
+    }
+  }
+
+  .styled-textarea {
+    padding: 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    border: 1px solid rgba(38, 40, 36, 0.2);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    color: var(--color-charcoal);
+    resize: vertical;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-forest);
+      box-shadow: 0 0 0 3px rgba(35, 70, 55, 0.1);
+    }
+  }
+
+  .char-count {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: rgba(38, 40, 36, 0.5);
+  }
+
+  .edit-table-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+    background: rgba(35, 70, 55, 0.05);
+    border: 1px solid rgba(35, 70, 55, 0.15);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--color-forest);
+    line-height: 1.45;
+
+    .notice-icon {
+      width: 1.125rem;
+      height: 1.125rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+  }
+
+  .edit-error-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+    background: #FFF8F5;
+    border: 1px solid rgba(200, 121, 90, 0.4);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: #9C3818;
+    line-height: 1.45;
+
+    .alert-icon {
+      width: 1.125rem;
+      height: 1.125rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+      color: var(--color-terracotta);
+    }
+  }
+
+  .confirm-update-btn {
+    min-width: 150px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    .spinner {
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+  }
+}
+
+.card-actions-col .edit-btn {
+  color: var(--color-forest);
+  border-color: rgba(35, 70, 55, 0.3);
+
+  &:hover {
+    background: rgba(35, 70, 55, 0.06);
+    border-color: var(--color-forest);
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

@@ -6,13 +6,17 @@ import { NavbarComponent } from '../../shared/components/navbar/navbar.component
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
+import { CuisineService } from '../../core/services/cuisine.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   Restaurant,
   matchesRestaurantSearch,
-  matchesRestaurantCuisine
+  matchesRestaurantCuisine,
+  meetsMinimumRating,
+  sortRestaurantsAlphabetically
 } from '../../core/models/restaurant.model';
 
-export type SortOption = 'recommended' | 'rating-desc' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'reviews-desc';
+export type SortOption = 'name-asc' | 'name-desc' | 'rating-desc' | 'reviews-desc' | 'recommended';
 
 @Component({
   selector: 'app-explore',
@@ -30,22 +34,27 @@ export type SortOption = 'recommended' | 'rating-desc' | 'name-asc' | 'name-desc
 })
 export class ExploreComponent implements OnInit {
   private readonly restaurantService = inject(RestaurantService);
+  private readonly cuisineService = inject(CuisineService);
+  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
   // Raw data from service
   readonly allRestaurants = this.restaurantService.restaurants;
   readonly allCuisines = this.restaurantService.cuisines;
+  readonly isLoadingCuisines = this.cuisineService.isLoadingCuisines;
+  readonly cuisinesLoadError = this.cuisineService.cuisinesLoadError;
 
   // Filter & Search Signals
   readonly searchQuery = signal<string>('');
   readonly selectedCuisine = signal<string>('all');
-  readonly selectedPrice = signal<string>('all');
   readonly selectedRating = signal<number>(0);
   readonly selectedBadge = signal<string>('all');
   readonly selectedCity = signal<string>('all');
-  readonly sortBy = signal<SortOption>('recommended');
+  readonly sortBy = signal<SortOption>('name-asc');
   readonly viewMode = signal<'grid' | 'compact'>('grid');
+
+  private lastRouteCuisineParam: string | null | undefined = undefined;
 
   // Interactive UI Signals
   readonly isServiceLoading = this.restaurantService.isLoadingRestaurants;
@@ -56,7 +65,12 @@ export class ExploreComponent implements OnInit {
   readonly toastMessage = signal<string | null>(null);
 
   retryLoad(): void {
-    this.restaurantService.loadLiveRestaurants();
+    this.restaurantService.loadLiveRestaurants(true);
+    this.cuisineService.loadCuisines(true).subscribe();
+  }
+
+  retryCuisines(): void {
+    this.cuisineService.loadCuisines(true).subscribe();
   }
 
   // Quick Table Booking Modal State
@@ -65,17 +79,13 @@ export class ExploreComponent implements OnInit {
   readonly bookingTime = signal<string>('7:30 PM');
   readonly bookingDate = signal<string>('');
   readonly bookingPartySize = signal<number>(2);
-  readonly guestName = signal<string>('Alexander Wright');
+  readonly guestName = signal<string>(
+    this.authService.isCustomerAuthenticated()
+      ? (this.authService.currentCustomerSession()?.user.name ?? '')
+      : ''
+  );
   readonly bookingConfirmed = signal<boolean>(false);
   readonly bookingRefCode = signal<string>('');
-
-  // Price tier filter options
-  readonly priceOptions = [
-    { label: 'All Tiers', value: 'all' },
-    { label: '$$ Casual Fine', value: '$$' },
-    { label: '$$$ Upscale', value: '$$$' },
-    { label: '$$$$ High Luxury', value: '$$$$' }
-  ];
 
   // Rating options
   readonly ratingOptions = [
@@ -94,16 +104,28 @@ export class ExploreComponent implements OnInit {
     { label: 'Neighborhood Gems', value: 'gem' }
   ];
 
-  // Sort options list
+  // Sort options list (alphabetical A–Z default)
   readonly sortOptions: { label: string; value: SortOption }[] = [
-    { label: 'Curated & Featured', value: 'recommended' },
+    { label: 'Name (A to Z)', value: 'name-asc' },
+    { label: 'Name (Z to A)', value: 'name-desc' },
     { label: 'Highest Rated (5.0 → 1.0)', value: 'rating-desc' },
     { label: 'Most Reviewed', value: 'reviews-desc' },
-    { label: 'Price: Low to High', value: 'price-asc' },
-    { label: 'Price: High to Low', value: 'price-desc' },
-    { label: 'Name (A to Z)', value: 'name-asc' },
-    { label: 'Name (Z to A)', value: 'name-desc' }
+    { label: 'Curated & Featured', value: 'recommended' }
   ];
+
+  // Human-readable active cuisine label
+  readonly selectedCuisineLabel = computed(() => {
+    const slug = this.selectedCuisine();
+    if (slug === 'all') return 'All Cuisines';
+    const match = this.allCuisines().find(
+      c => c.slug.toLowerCase() === slug.toLowerCase() || c.name.toLowerCase() === slug.toLowerCase()
+    );
+    if (match) return match.name;
+    return slug
+      .split('-')
+      .map(part => part ? part.charAt(0).toUpperCase() + part.slice(1) : '')
+      .join(' ');
+  });
 
   // Distinct cities extracted from restaurants data
   readonly availableCities = computed(() => {
@@ -116,12 +138,11 @@ export class ExploreComponent implements OnInit {
     return Array.from(cities).sort((a, b) => a.localeCompare(b));
   });
 
-  // Filtered and Sorted Restaurant List
+  // Filtered and Sorted Restaurant List (non-mutating; A–Z by default)
   readonly filteredRestaurants = computed(() => {
     let list = [...this.allRestaurants()];
     const query = this.searchQuery().trim();
     const cuisine = this.selectedCuisine();
-    const price = this.selectedPrice();
     const minRating = this.selectedRating();
     const badge = this.selectedBadge().toLowerCase();
     const city = this.selectedCity();
@@ -137,36 +158,31 @@ export class ExploreComponent implements OnInit {
       list = list.filter(r => matchesRestaurantCuisine(r, cuisine));
     }
 
-    // 3. Price Filter
-    if (price !== 'all') {
-      list = list.filter(r => r.priceRange === price);
-    }
-
-    // 4. Minimum Rating Filter
+    // 3. Minimum Actual Rating Filter (unrated/0 never satisfy positive thresholds)
     if (minRating > 0) {
-      list = list.filter(r => (r.rating || 0) >= minRating);
+      list = list.filter(r => meetsMinimumRating(r, minRating));
     }
 
-    // 5. Badge / Vibe Filter
+    // 4. Badge / Vibe Filter
     if (badge !== 'all') {
       if (badge === 'michelin') {
         list = list.filter(r => r.badge?.toLowerCase().includes('michelin'));
       } else if (badge === 'chef') {
         list = list.filter(r => r.badge?.toLowerCase().includes('chef'));
       } else if (badge === 'trending') {
-        list = list.filter(r => r.badge?.toLowerCase().includes('trending') || (r.rating || 0) >= 4.9);
+        list = list.filter(r => r.badge?.toLowerCase().includes('trending') || meetsMinimumRating(r, 4.9));
       } else if (badge === 'gem') {
         list = list.filter(r => r.badge?.toLowerCase().includes('gem') || r.badge?.toLowerCase().includes('cozy') || r.badge?.toLowerCase().includes('popular'));
       }
     }
 
-    // 6. City Filter
+    // 5. City Filter
     if (city !== 'all') {
       const cityLower = city.trim().toLowerCase();
       list = list.filter(r => r.city && r.city.trim().toLowerCase() === cityLower);
     }
 
-    // 7. Sorting
+    // 6. Non-mutating Sorting
     switch (sort) {
       case 'rating-desc':
         list.sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
@@ -174,25 +190,19 @@ export class ExploreComponent implements OnInit {
       case 'reviews-desc':
         list.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
         break;
-      case 'price-asc':
-        list.sort((a, b) => (a.priceRange?.length || 0) - (b.priceRange?.length || 0));
-        break;
-      case 'price-desc':
-        list.sort((a, b) => (b.priceRange?.length || 0) - (a.priceRange?.length || 0));
-        break;
-      case 'name-asc':
-        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        break;
-      case 'name-desc':
-        list.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
-        break;
       case 'recommended':
-      default:
         list.sort((a, b) => {
           if (a.featured && !b.featured) return -1;
           if (!a.featured && b.featured) return 1;
           return (b.rating || 0) - (a.rating || 0);
         });
+        break;
+      case 'name-desc':
+        list = sortRestaurantsAlphabetically(list, 'desc');
+        break;
+      case 'name-asc':
+      default:
+        list = sortRestaurantsAlphabetically(list, 'asc');
         break;
     }
 
@@ -204,7 +214,6 @@ export class ExploreComponent implements OnInit {
     let count = 0;
     if (this.searchQuery().trim().length > 0) count++;
     if (this.selectedCuisine() !== 'all') count++;
-    if (this.selectedPrice() !== 'all') count++;
     if (this.selectedRating() > 0) count++;
     if (this.selectedBadge() !== 'all') count++;
     if (this.selectedCity() !== 'all') count++;
@@ -212,6 +221,10 @@ export class ExploreComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // Reuse shared live restaurants & active cuisines state without duplicate API requests
+    this.restaurantService.ensureRestaurantsLoaded().subscribe();
+    this.cuisineService.loadCuisines().subscribe();
+
     // Initialize default booking date to today
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -226,9 +239,14 @@ export class ExploreComponent implements OnInit {
       const cityParam = params.get('city');
       const badgeParam = params.get('badge');
 
-      if (cuisineParam) {
-        this.selectedCuisine.set(cuisineParam.toLowerCase());
+      const normalizedCuisine = cuisineParam ? cuisineParam.trim().toLowerCase() : null;
+      if (normalizedCuisine) {
+        this.selectedCuisine.set(normalizedCuisine);
+      } else if (this.lastRouteCuisineParam !== undefined && this.lastRouteCuisineParam !== null) {
+        this.selectedCuisine.set('all');
       }
+      this.lastRouteCuisineParam = normalizedCuisine;
+
       if (searchParam) {
         this.searchQuery.set(searchParam);
       }
@@ -251,16 +269,15 @@ export class ExploreComponent implements OnInit {
   }
 
   setCuisine(slug: string): void {
-    if (this.selectedCuisine() === slug) {
-      this.selectedCuisine.set('all');
-    } else {
-      this.selectedCuisine.set(slug);
-    }
+    const nextCuisine = this.selectedCuisine() === slug ? 'all' : slug;
+    this.selectedCuisine.set(nextCuisine);
+    this.syncCuisineQueryParam(nextCuisine);
     this.simulateBriefLoading();
   }
 
-  setPrice(price: string): void {
-    this.selectedPrice.set(price);
+  toggleRating45(): void {
+    const nextRating = this.selectedRating() === 4.5 ? 0 : 4.5;
+    this.selectedRating.set(nextRating);
     this.simulateBriefLoading();
   }
 
@@ -290,13 +307,24 @@ export class ExploreComponent implements OnInit {
   resetAllFilters(): void {
     this.searchQuery.set('');
     this.selectedCuisine.set('all');
-    this.selectedPrice.set('all');
     this.selectedRating.set(0);
     this.selectedBadge.set('all');
     this.selectedCity.set('all');
-    this.sortBy.set('recommended');
+    this.sortBy.set('name-asc');
+    this.syncCuisineQueryParam('all');
     this.showToast('All filters have been reset.');
     this.simulateBriefLoading();
+  }
+
+  private syncCuisineQueryParam(cuisine: string): void {
+    const nextParam = cuisine === 'all' ? null : cuisine;
+    if (this.route.snapshot.queryParamMap.get('cuisine') !== nextParam) {
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { cuisine: nextParam },
+        queryParamsHandling: 'merge'
+      });
+    }
   }
 
   toggleMobileFilters(): void {

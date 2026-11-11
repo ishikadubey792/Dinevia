@@ -1,12 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
 import { SearchPanelComponent } from './components/search-panel/search-panel.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
+import { CuisineService } from '../../core/services/cuisine.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Restaurant } from '../../core/models/restaurant.model';
 import { SearchCriteria } from '../../core/models/search-filter.model';
 
@@ -25,11 +27,17 @@ import { SearchCriteria } from '../../core/models/search-filter.model';
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
   readonly restaurantService = inject(RestaurantService);
+  private readonly cuisineService = inject(CuisineService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
-  // Read data from service signals
+  // Shared live cuisines and restaurants API state (deduplicated at service layer)
+  readonly isLoadingCuisines = this.cuisineService.isLoadingCuisines;
+  readonly cuisinesLoadError = this.cuisineService.cuisinesLoadError;
   readonly cuisines = this.restaurantService.cuisines;
+
   readonly testimonials = this.restaurantService.testimonials;
   readonly restaurants = this.restaurantService.filteredRestaurants;
   readonly currentCategory = this.restaurantService.selectedCategory;
@@ -56,7 +64,9 @@ export class HomeComponent {
   bookingPartySize = 2;
   bookingTime = '7:30 PM';
   bookingDate = '';
-  guestName = 'Alexander Wright';
+  guestName = this.authService.isCustomerAuthenticated()
+    ? (this.authService.currentCustomerSession()?.user.name ?? '')
+    : '';
   specialRequests = '';
 
   constructor() {
@@ -67,6 +77,15 @@ export class HomeComponent {
     this.bookingDate = `${yyyy}-${mm}-${dd}`;
   }
 
+  ngOnInit(): void {
+    this.restaurantService.ensureRestaurantsLoaded().subscribe();
+    this.loadLiveCuisines();
+  }
+
+  loadLiveCuisines(forceRefresh = false): void {
+    this.cuisineService.loadCuisines(forceRefresh).subscribe();
+  }
+
   onSearch(criteria: SearchCriteria): void {
     this.restaurantService.searchRestaurants(criteria);
     const locText = criteria.location ? criteria.location : 'all destinations';
@@ -75,18 +94,18 @@ export class HomeComponent {
   }
 
   retryLoad(): void {
-    this.restaurantService.loadLiveRestaurants();
+    this.restaurantService.loadLiveRestaurants(true);
+    this.loadLiveCuisines(true);
+  }
+
+  retryCuisines(): void {
+    this.loadLiveCuisines(true);
   }
 
   onSelectCuisine(slug: string): void {
-    if (this.currentCuisine() === slug) {
-      this.restaurantService.setCuisineFilter('all');
-      this.showToast('Showing all world cuisines.');
-    } else {
-      this.restaurantService.setCuisineFilter(slug);
-      this.showToast(`Filtering by ${slug.toUpperCase()} cuisine.`);
-    }
-    this.scrollTo('featured-section');
+    this.router.navigate(['/explore'], {
+      queryParams: { cuisine: slug }
+    });
   }
 
   onCategoryChange(catId: string): void {

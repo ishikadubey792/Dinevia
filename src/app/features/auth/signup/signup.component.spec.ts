@@ -113,6 +113,10 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     expect(component.isPasswordVisible()).toBe(false);
     expect(component.isConfirmPasswordVisible()).toBe(false);
     expect(component.signupForm.valid).toBe(false);
+    expect(component.signupForm.get('fullName')?.value).toBe('');
+    expect(component.signupForm.get('email')?.value).toBe('');
+    expect(component.signupForm.get('phone')?.value).toBe('');
+    expect(component.signupForm.get('agreeTerms')?.value).toBe(false);
   });
 
   it('should toggle password and confirm password visibility signals', () => {
@@ -146,7 +150,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'ishika@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true
@@ -181,7 +185,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
       component.signupForm.patchValue({
         fullName: 'Ishika Patron',
         email: 'ishika@example.com',
-        phone: '+1 (555) 234-5678',
+        phone: '9876543210',
         password: testCase.pwd,
         confirmPassword: testCase.pwd,
         agreeTerms: true
@@ -190,6 +194,35 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
       expect(component.signupForm.get('password')?.valid).toBe(false);
       expect(component.getPasswordErrorMessage().length).toBeGreaterThan(0);
     }
+  });
+
+  it('should block signup submission until mandatory agreeTerms checkbox is checked', () => {
+    const termsCheckbox = fixture.nativeElement.querySelector('input[formControlName="agreeTerms"]') as HTMLInputElement;
+    expect(termsCheckbox).toBeTruthy();
+    expect(termsCheckbox.checked).toBe(false);
+
+    // Populate all valid fields except agreeTerms remains false
+    component.signupForm.patchValue({
+      fullName: 'Ishika Patron',
+      email: 'ishika@example.com',
+      phone: '9876543210',
+      password: 'Password@123',
+      confirmPassword: 'Password@123',
+      agreeTerms: false
+    });
+
+    component.onSubmit();
+
+    expect(customerAuthServiceMock.register).not.toHaveBeenCalled();
+    expect(component.isFieldInvalid('agreeTerms')).toBe(true);
+    expect(component.errorMessage()).toContain('Please review and correct the highlighted fields');
+
+    // Now check agreeTerms and submit cleanly
+    component.signupForm.patchValue({ agreeTerms: true });
+    component.onSubmit();
+
+    expect(customerAuthServiceMock.register).toHaveBeenCalledTimes(1);
+    expect(authService.isCustomerAuthenticated()).toBe(true);
   });
 
   it('should reject submission and display error when form is invalid', () => {
@@ -212,7 +245,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'ishika@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true
@@ -256,7 +289,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'existing@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true
@@ -281,7 +314,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'ishika@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true
@@ -306,7 +339,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'ishika@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true
@@ -335,7 +368,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'ishika@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true
@@ -364,7 +397,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'ishika@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true
@@ -399,7 +432,7 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'noid@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true
@@ -411,11 +444,72 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     expect(authService.isCustomerAuthenticated()).toBe(false);
   });
 
+  it('should enforce strict Indian mobile numbers and .com/.in email domains', () => {
+    const emailCtrl = component.signupForm.get('email');
+    const phoneCtrl = component.signupForm.get('phone');
+
+    // Valid Indian phone numbers
+    for (const validPhone of ['9876543210', '8765432109', '7654321098', '6123456789']) {
+      phoneCtrl?.setValue(validPhone);
+      expect(phoneCtrl?.valid).toBe(true);
+    }
+
+    // Invalid phone numbers (start digit < 6, <10 digits, >10 digits, non-numeric)
+    for (const invalidPhone of ['1234567890', '987654321', '98765432101', '98765abc10', '+919876543210']) {
+      phoneCtrl?.setValue(invalidPhone);
+      expect(phoneCtrl?.valid).toBe(false);
+      expect(component.getPhoneErrorMessage().length).toBeGreaterThan(0);
+    }
+
+    // Valid .com and .in emails
+    for (const validEmail of ['user@gmail.com', 'ishika@yahoo.in', 'person@example.com']) {
+      emailCtrl?.setValue(validEmail);
+      expect(emailCtrl?.valid).toBe(true);
+    }
+
+    // Rejected email domains & malformed emails
+    for (const badEmail of ['user@domain.org', 'user@domain.net', 'user@domain.co', 'user@gmail.com.in', 'invalid-email']) {
+      emailCtrl?.setValue(badEmail);
+      expect(emailCtrl?.valid).toBe(false);
+      expect(component.getEmailErrorMessage()).toContain('.com or .in');
+    }
+  });
+
+  it('should emit authSuccess and switchToLogin in embedded modal mode without navigating', () => {
+    component.embedded = true;
+    fixture.detectChanges();
+
+    const authSuccessSpy = vi.fn();
+    const switchLoginSpy = vi.fn();
+    component.authSuccess.subscribe(authSuccessSpy);
+    component.switchToLogin.subscribe(switchLoginSpy);
+
+    const navigateSpy = vi.spyOn(router, 'navigate');
+    const switchBtn = fixture.nativeElement.querySelector('.footer-action-link.btn-as-link') as HTMLButtonElement;
+    expect(switchBtn).toBeTruthy();
+    switchBtn.click();
+    expect(switchLoginSpy).toHaveBeenCalledTimes(1);
+
+    component.signupForm.patchValue({
+      fullName: 'Ishika Patron',
+      email: 'ishika@yahoo.in',
+      phone: '9876543210',
+      password: 'Password@123',
+      confirmPassword: 'Password@123',
+      agreeTerms: true
+    });
+
+    component.onSubmit();
+
+    expect(authSuccessSpy).toHaveBeenCalledTimes(1);
+    expect(navigateSpy).not.toHaveBeenCalled();
+  });
+
   it('should prevent duplicate submissions while request is already pending (loading state)', () => {
     component.signupForm.patchValue({
       fullName: 'Ishika Patron',
       email: 'ishika@example.com',
-      phone: '+1 (555) 234-5678',
+      phone: '9876543210',
       password: 'Password@123',
       confirmPassword: 'Password@123',
       agreeTerms: true

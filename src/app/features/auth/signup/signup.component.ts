@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl,
@@ -15,6 +15,13 @@ import { FooterComponent } from '../../../shared/components/footer/footer.compon
 import { AuthService } from '../../../core/services/auth.service';
 import { CustomerAuthService } from '../../../core/services/customer-auth.service';
 import { parseJwtClaims } from '../../../core/models/customer-auth.model';
+import {
+  dineviaEmailValidator,
+  getDineviaEmailErrorMessage,
+  getIndianPhoneErrorMessage,
+  indianPhoneValidator,
+  isValidStandardEmail
+} from '../../../core/validators/auth-validators';
 
 export const passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   const password = control.get('password');
@@ -76,6 +83,10 @@ export function backendPasswordValidator(): ValidatorFn {
   styleUrl: './signup.component.scss'
 })
 export class SignupComponent {
+  @Input() embedded = false;
+  @Output() authSuccess = new EventEmitter<void>();
+  @Output() switchToLogin = new EventEmitter<void>();
+
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly customerAuthService = inject(CustomerAuthService);
@@ -90,11 +101,11 @@ export class SignupComponent {
 
   signupForm: FormGroup = this.fb.group({
     fullName: ['', [Validators.required, Validators.minLength(2)]],
-    email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.required, Validators.pattern(/^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9()]{7,15}$/)]],
+    email: ['', [Validators.required, dineviaEmailValidator()]],
+    phone: ['', [Validators.required, indianPhoneValidator()]],
     password: ['', [Validators.required, backendPasswordValidator()]],
     confirmPassword: ['', [Validators.required]],
-    agreeTerms: [true, [Validators.requiredTrue]]
+    agreeTerms: [false, [Validators.requiredTrue]]
   }, { validators: passwordMatchValidator });
 
   constructor() {
@@ -148,6 +159,14 @@ export class SignupComponent {
     );
   }
 
+  getEmailErrorMessage(): string {
+    return getDineviaEmailErrorMessage(this.signupForm.get('email')?.errors);
+  }
+
+  getPhoneErrorMessage(): string {
+    return getIndianPhoneErrorMessage(this.signupForm.get('phone')?.errors);
+  }
+
   getPasswordErrorMessage(): string {
     const control = this.signupForm.get('password');
     if (!control || !control.errors) return '';
@@ -188,14 +207,7 @@ export class SignupComponent {
   }
 
   private isValidEmail(val: unknown): boolean {
-    if (typeof val !== 'string') {
-      return false;
-    }
-    const trimmed = val.trim();
-    if (trimmed.length === 0) {
-      return false;
-    }
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    return isValidStandardEmail(val);
   }
 
   onSubmit(): void {
@@ -314,7 +326,10 @@ export class SignupComponent {
 
             this.isLoading.set(false);
             this.successMessage.set(`Welcome to Dinevia, ${name}! Your membership has been activated.`);
-            this.router.navigate(['/profile']);
+            this.authSuccess.emit();
+            if (!this.embedded) {
+              this.router.navigate(['/profile']);
+            }
           },
           error: () => {
             this.isLoading.set(false);

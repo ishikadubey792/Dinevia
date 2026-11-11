@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, catchError, tap } from 'rxjs/operators';
+import { map, catchError, tap, finalize, shareReplay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   Restaurant,
@@ -9,27 +9,34 @@ import {
   mapApiRestaurantToDomain,
   matchesRestaurantSearch,
   matchesRestaurantCuisine,
-  DEFAULT_FALLBACK_RESTAURANT_IMAGE
+  countDistinctRestaurantsForCuisine,
+  toCuisineSlug,
+  getCuisineVisualMetadata
 } from '../models/restaurant.model';
-import { Cuisine } from '../models/cuisine.model';
+import { Cuisine, ApiResponse } from '../models/cuisine.model';
 import { Testimonial } from '../models/testimonial.model';
 import { SearchCriteria } from '../models/search-filter.model';
-import { ApiResponse } from '../models/cuisine.model';
-import { MOCK_RESTAURANTS } from '../data/mock-restaurants';
-import { MOCK_CUISINES } from '../data/mock-cuisines';
+import { CuisineService } from './cuisine.service';
 import { MOCK_TESTIMONIALS } from '../data/mock-testimonials';
+
+export interface RestaurantDetailResult {
+  status: 'found' | 'not-found' | 'error';
+  restaurant: Restaurant | null;
+  errorMessage: string | null;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class RestaurantService {
   private readonly http = inject(HttpClient);
+  private readonly cuisineService = inject(CuisineService);
   private readonly apiUrl = environment.apiUrl;
 
-  // Reactive signals for state management
-  private readonly restaurantsSignal = signal<Restaurant[]>(MOCK_RESTAURANTS);
-  private readonly cuisinesSignal = signal<Cuisine[]>(MOCK_CUISINES);
+  // Reactive signals for state management (live API state only; never preloaded with mock restaurants)
+  private readonly restaurantsSignal = signal<Restaurant[]>([]);
   private readonly testimonialsSignal = signal<Testimonial[]>(MOCK_TESTIMONIALS);
+  private inFlightRestaurants$: Observable<Restaurant[]> | null = null;
 
   // Real API state signals
   readonly isLoadingRestaurants = signal<boolean>(false);
@@ -43,7 +50,66 @@ export class RestaurantService {
 
   // Readonly public accessors
   readonly restaurants = this.restaurantsSignal.asReadonly();
-  readonly cuisines = this.cuisinesSignal.asReadonly();
+  readonly cuisines = computed<Cuisine[]>(() => {
+    const restaurants = this.restaurantsSignal();
+
+    if (this.cuisineService.cuisinesLoadError()) {
+      return [];
+    }
+
+    if (this.cuisineService.isCuisinesLoaded()) {
+      const result: Cuisine[] = [];
+      for (const apiCuisine of this.cuisineService.apiCuisines()) {
+        if (!apiCuisine || apiCuisine.isActive === false || !apiCuisine.name?.trim()) {
+          continue;
+        }
+        const name = apiCuisine.name.trim();
+        const slug = toCuisineSlug(name);
+        if (!slug) continue;
+        const visual = getCuisineVisualMetadata(name, slug);
+        result.push({
+          id: `cuisine-${apiCuisine.id ?? slug}`,
+          name,
+          tagline: visual.tagline,
+          imageUrl: visual.imageUrl,
+          slug,
+          restaurantCount: countDistinctRestaurantsForCuisine(restaurants, slug)
+        });
+      }
+      return result;
+    }
+
+    if (!this.isApiLoaded()) {
+      return [];
+    }
+
+    const derived: Cuisine[] = [];
+    const seenSlugs = new Set<string>();
+    for (const restaurant of restaurants) {
+      const list = Array.isArray(restaurant.cuisines) && restaurant.cuisines.length > 0
+        ? restaurant.cuisines
+        : (restaurant.cuisine ? restaurant.cuisine.split(',').map(s => s.trim()) : []);
+
+      for (const rawName of list) {
+        const name = (rawName || '').trim();
+        const slug = toCuisineSlug(name);
+        if (!name || !slug || seenSlugs.has(slug)) {
+          continue;
+        }
+        seenSlugs.add(slug);
+        const visual = getCuisineVisualMetadata(name, slug);
+        derived.push({
+          id: `cuisine-${slug}`,
+          name,
+          tagline: visual.tagline,
+          imageUrl: visual.imageUrl,
+          slug,
+          restaurantCount: countDistinctRestaurantsForCuisine(restaurants, slug)
+        });
+      }
+    }
+    return derived;
+  });
   readonly testimonials = this.testimonialsSignal.asReadonly();
   readonly selectedCategory = this.selectedCategoryFilter.asReadonly();
   readonly selectedCuisine = this.selectedCuisineFilter.asReadonly();
@@ -86,6 +152,19 @@ export class RestaurantService {
   }
 
   /**
+   * Ensure live restaurants are loaded once, sharing in-flight or cached state across components.
+   */
+  ensureRestaurantsLoaded(): Observable<Restaurant[]> {
+    if (this.isApiLoaded() || this.restaurantLoadError() !== null) {
+      return of(this.restaurantsSignal());
+    }
+    if (this.inFlightRestaurants$) {
+      return this.inFlightRestaurants$;
+    }
+    return this.fetchRestaurants();
+  }
+
+  /**
    * Fetch restaurants from ASP.NET Core backend API:
    * GET /api/restaurants
    */
@@ -93,7 +172,7 @@ export class RestaurantService {
     this.isLoadingRestaurants.set(true);
     this.restaurantLoadError.set(null);
 
-    return this.http.get<ApiResponse<ApiRestaurantDto[]> | ApiRestaurantDto[]>(
+    const request$ = this.http.get<ApiResponse<ApiRestaurantDto[]> | ApiRestaurantDto[]>(
       `${this.apiUrl}/restaurants`
     ).pipe(
       map(res => {
@@ -105,70 +184,50 @@ export class RestaurantService {
         }
 
         // Filter only active restaurants
-        const activeList = rawList.filter(dto => dto.isActive !== false);
+        const activeList = rawList.filter(dto => dto && dto.isActive !== false);
 
         // Map to client domain models
         return activeList.map(dto => mapApiRestaurantToDomain(dto));
       }),
       tap(mapped => {
-        this.isLoadingRestaurants.set(false);
-        this.isApiLoaded.set(true);
-        // Replace mock with live restaurants (even if empty, reflecting true backend state)
         this.restaurantsSignal.set(mapped);
-        this.syncCuisinesWithRestaurants(mapped);
-      }),
-      catchError(err => {
+        this.isApiLoaded.set(true);
         this.isLoadingRestaurants.set(false);
-        this.restaurantLoadError.set('Unable to reach live restaurant service. Showing curated reserve catalog.');
-        console.warn('[RestaurantService] Live API /api/restaurants unavailable, fallback active:', err);
-        // Keep current fallback data so user is not blocked
-        return of(this.restaurantsSignal());
-      })
-    );
-  }
-
-  /**
-   * Synchronize cuisines list with live restaurant entities
-   */
-  private syncCuisinesWithRestaurants(restaurants: Restaurant[]): void {
-    const merged = [...MOCK_CUISINES];
-    const knownSlugs = new Set(merged.map(c => c.slug.toLowerCase()));
-    const knownNames = new Set(merged.map(c => c.name.toLowerCase()));
-
-    restaurants.forEach(r => {
-      const list = Array.isArray(r.cuisines) && r.cuisines.length > 0
-        ? r.cuisines
-        : (r.cuisine ? r.cuisine.split(',').map(s => s.trim()) : []);
-
-      list.forEach(cName => {
-        if (!cName || cName.trim().length === 0) return;
-        const name = cName.trim();
-        const lower = name.toLowerCase();
-        const slug = lower.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
-        if (!knownNames.has(lower) && !knownSlugs.has(slug)) {
-          knownNames.add(lower);
-          knownSlugs.add(slug);
-          merged.push({
-            id: `cuisine-${slug}`,
-            name,
-            tagline: `Artisanal ${name} culinary artistry`,
-            restaurantCount: 1,
-            imageUrl: DEFAULT_FALLBACK_RESTAURANT_IMAGE,
-            slug
-          });
+        this.restaurantLoadError.set(null);
+        this.inFlightRestaurants$ = null;
+      }),
+      catchError(() => {
+        this.restaurantsSignal.set([]);
+        this.isApiLoaded.set(false);
+        this.isLoadingRestaurants.set(false);
+        this.restaurantLoadError.set('Unable to load restaurants right now. Please try again.');
+        this.inFlightRestaurants$ = null;
+        return of([] as Restaurant[]);
+      }),
+      finalize(() => {
+        if (this.inFlightRestaurants$ === request$) {
+          this.inFlightRestaurants$ = null;
         }
-      });
-    });
+      }),
+      shareReplay(1)
+    );
 
-    this.cuisinesSignal.set(merged);
+    if (this.isLoadingRestaurants()) {
+      this.inFlightRestaurants$ = request$;
+    }
+
+    return request$;
   }
 
   /**
-   * Helper to trigger live restaurant loading
+   * Helper to trigger live restaurant loading (pass forceRefresh = true to retry/reload)
    */
-  loadLiveRestaurants(): void {
-    this.fetchRestaurants().subscribe();
+  loadLiveRestaurants(forceRefresh = false): void {
+    if (forceRefresh) {
+      this.fetchRestaurants().subscribe();
+    } else {
+      this.ensureRestaurantsLoaded().subscribe();
+    }
   }
 
   /**
@@ -274,15 +333,90 @@ export class RestaurantService {
   }
 
   /**
-   * Find a specific restaurant by ID
+   * Fetch single restaurant details by ID from ASP.NET Core backend API:
+   * GET /api/restaurants/{id}
+   */
+  fetchRestaurantById(id: string): Observable<RestaurantDetailResult> {
+    const cleanId = (id || '').trim();
+    if (!cleanId) {
+      return of({ status: 'not-found', restaurant: null, errorMessage: null });
+    }
+
+    return this.http
+      .get<ApiResponse<ApiRestaurantDto> | ApiRestaurantDto>(
+        `${this.apiUrl}/restaurants/${encodeURIComponent(cleanId)}`
+      )
+      .pipe(
+        map((res): RestaurantDetailResult => {
+          let dto: ApiRestaurantDto | null = null;
+          let statusCode: number | undefined;
+
+          if (res && typeof res === 'object' && 'data' in res) {
+            statusCode = typeof res.statusCode === 'number' ? res.statusCode : undefined;
+            dto = res.data ?? null;
+          } else if (res && typeof res === 'object' && 'id' in res) {
+            dto = res as ApiRestaurantDto;
+          }
+
+          if (statusCode === 404 || !dto || dto.isActive === false) {
+            return { status: 'not-found', restaurant: null, errorMessage: null };
+          }
+
+          const mapped = mapApiRestaurantToDomain(dto);
+          return {
+            status: 'found',
+            restaurant: this.enrichFromLoadedList(mapped),
+            errorMessage: null
+          };
+        }),
+        catchError((err: unknown) => {
+          if (err instanceof HttpErrorResponse && err.status === 404) {
+            return of<RestaurantDetailResult>({
+              status: 'not-found',
+              restaurant: null,
+              errorMessage: null
+            });
+          }
+
+          return of<RestaurantDetailResult>({
+            status: 'error',
+            restaurant: null,
+            errorMessage: 'Unable to load restaurant details right now. Please try again.'
+          });
+        })
+      );
+  }
+
+  /**
+   * Supplement missing detail fields (such as cuisines omitted by GetRestaurantById)
+   * using already-loaded Phase 1 restaurant list metadata without inventing data.
+   */
+  enrichFromLoadedList(detail: Restaurant): Restaurant {
+    const listMatch = this.getRestaurantById(detail.id);
+    if (!listMatch) {
+      return detail;
+    }
+
+    const hasDetailCuisine =
+      Array.isArray(detail.cuisines) &&
+      detail.cuisines.some(c => typeof c === 'string' && c.trim().length > 0);
+
+    if (hasDetailCuisine || !listMatch.cuisine) {
+      return detail;
+    }
+
+    return {
+      ...detail,
+      cuisine: listMatch.cuisine,
+      cuisines: listMatch.cuisines
+    };
+  }
+
+  /**
+   * Find a specific restaurant by ID from live loaded restaurants
    */
   getRestaurantById(id: string): Restaurant | undefined {
-    // Check in active restaurants signal first
-    const found = this.restaurantsSignal().find(r => r.id === id || String(r.id) === String(id));
-    if (found) return found;
-
-    // Check mock data for backward-compatibility with prerender and demo links
-    return MOCK_RESTAURANTS.find(r => r.id === id || String(r.id) === String(id));
+    return this.restaurantsSignal().find(r => r.id === id || String(r.id) === String(id));
   }
 
   /**
@@ -293,58 +427,7 @@ export class RestaurantService {
       return restaurant.reviews;
     }
 
-    const matching = this.testimonialsSignal().filter(
-      t => t.restaurantName.toLowerCase().includes(restaurant.name.toLowerCase()) ||
-        restaurant.name.toLowerCase().includes(t.restaurantName.toLowerCase())
-    );
-
-    const reviews = matching.map(t => ({
-      id: t.id,
-      author: t.reviewerName,
-      rating: t.rating,
-      date: t.date,
-      title: t.title,
-      comment: t.reviewText,
-      visitType: 'Verified Diner Reservation',
-      verified: true
-    }));
-
-    if (reviews.length === 0) {
-      reviews.push(
-        {
-          id: `rev-${restaurant.id}-1`,
-          author: 'Harrison & Victoria Cole',
-          rating: 5,
-          date: 'April 2026',
-          title: 'An exquisite gastronomic voyage from first bite to last',
-          comment: `Every expectation was surpassed at ${restaurant.name}. The attentive staff, discreet table placement, and harmonic wine pairings made our celebration truly magical.`,
-          visitType: 'Anniversary Dinner',
-          verified: true
-        },
-        {
-          id: `rev-${restaurant.id}-2`,
-          author: 'Dr. Alistair Sterling',
-          rating: 5,
-          date: 'March 2026',
-          title: 'Masterful execution and exemplary hospitality',
-          comment: `The culinary depth in their tasting menu is second to none. Reserving through Dinevia ensured a seamless arrival with our party's dietary preferences already noted by the executive chef.`,
-          visitType: 'Executive Dining',
-          verified: true
-        },
-        {
-          id: `rev-${restaurant.id}-3`,
-          author: 'Camilla Dupont',
-          rating: restaurant.rating >= 4.9 ? 5 : 4,
-          date: 'February 2026',
-          title: 'Memorable ambiance and exceptional flavors',
-          comment: `The atmosphere alone is worth the reservation. Truly world-class ${restaurant.cuisine.toLowerCase()} dining in the heart of ${restaurant.neighborhood}.`,
-          visitType: 'Weekend Tasting',
-          verified: true
-        }
-      );
-    }
-
-    return reviews;
+    return [];
   }
 
   /**

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
@@ -7,6 +7,7 @@ import { FooterComponent } from '../../../shared/components/footer/footer.compon
 import { AuthService } from '../../../core/services/auth.service';
 import { CustomerAuthService } from '../../../core/services/customer-auth.service';
 import { parseJwtClaims } from '../../../core/models/customer-auth.model';
+import { isValidStandardEmail, standardEmailValidator } from '../../../core/validators/auth-validators';
 
 @Component({
   selector: 'app-login',
@@ -22,6 +23,11 @@ import { parseJwtClaims } from '../../../core/models/customer-auth.model';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
+  @Input() embedded = false;
+  @Output() authSuccess = new EventEmitter<void>();
+  @Output() switchToSignup = new EventEmitter<void>();
+  @Output() forgotPassword = new EventEmitter<void>();
+
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly customerAuthService = inject(CustomerAuthService);
@@ -34,9 +40,9 @@ export class LoginComponent {
   readonly successMessage = signal<string | null>(null);
 
   loginForm: FormGroup = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.required, standardEmailValidator()]],
     password: ['', [Validators.required, Validators.minLength(8)]],
-    rememberMe: [true]
+    rememberMe: [false]
   });
 
   togglePasswordVisibility(): void {
@@ -74,14 +80,12 @@ export class LoginComponent {
   }
 
   private isValidEmail(val: unknown): boolean {
-    if (typeof val !== 'string') {
-      return false;
-    }
-    const trimmed = val.trim();
-    if (trimmed.length === 0) {
-      return false;
-    }
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+    return isValidStandardEmail(val);
+  }
+
+  onForgotPasswordClick(): void {
+    this.forgotPassword.emit();
+    this.router.navigate(['/forgot-password']);
   }
 
   onSubmit(): void {
@@ -193,10 +197,13 @@ export class LoginComponent {
 
         this.isLoading.set(false);
         this.successMessage.set(`Welcome back, ${name}! Redirecting to your member portal...`);
+        this.authSuccess.emit();
 
-        // Navigate to the intended returnUrl if present, otherwise navigate to /profile
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/profile';
-        this.router.navigateByUrl(returnUrl);
+        if (!this.embedded) {
+          // Navigate to the intended returnUrl if present, otherwise navigate to /profile
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/profile';
+          this.router.navigateByUrl(returnUrl);
+        }
       },
       error: (err) => {
         this.isLoading.set(false);

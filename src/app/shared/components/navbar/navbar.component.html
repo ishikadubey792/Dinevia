@@ -1,236 +1,344 @@
-<header class="navbar-wrapper" [class.scrolled]="isScrolled()">
-  <div class="container navbar-inner">
-    <!-- Brand Wordmark -->
-    <a routerLink="/" class="brand-link" (click)="closeMobileMenu()" aria-label="Dinevia Home">
-      <span class="brand-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
-          <path d="M6 2v20"></path>
-          <path d="M3 6h6"></path>
-          <path d="M3 10h6"></path>
+<header class="navbar-wrapper" [class.navbar-scrolled]="isScrolled()">
+  <div class="navbar-container">
+    <!-- 1. Left: Brand Logo -->
+    <a routerLink="/" class="brand-logo" aria-label="Dinevia Home" (click)="closeMobileMenu(); closeUserMenu(); closeCartNotice()">
+      <span class="brand-crest" aria-hidden="true">
+        <svg viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="12.5" stroke="currentColor" stroke-width="1.5" />
+          <path d="M9.5 19.5V8.5H13.6C16.8 8.5 19 10.6 19 14C19 17.4 16.8 19.5 13.6 19.5H9.5Z" stroke="currentColor" stroke-width="1.6" />
         </svg>
       </span>
-      <span class="brand-text">
-        <span class="brand-name">Dinevia</span>
-        <span class="brand-tag">RESERVE</span>
-      </span>
+      <span class="brand-wordmark">Dinevia</span>
     </a>
 
-    <!-- Desktop Navigation Links -->
-    <nav class="desktop-nav" aria-label="Primary Navigation">
-      <ul class="nav-links">
-        <li>
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">Home</a>
-        </li>
-        <li>
-          <a routerLink="/explore" routerLinkActive="active" class="nav-item">Explore Restaurants</a>
-        </li>
-        <li>
-          <a routerLink="/bookings" routerLinkActive="active" class="nav-item">My Bookings</a>
-        </li>
-        <li>
-          <a routerLink="/wishlist" routerLinkActive="active" class="nav-item">Saved</a>
-        </li>
-        <li>
-          <a routerLink="/about" routerLinkActive="active" class="nav-item">About Us</a>
-        </li>
-        <li>
-          <a routerLink="/partner-with-us" routerLinkActive="active" class="nav-item nav-item-partner">
-            <span class="partner-sparkle" aria-hidden="true">✦</span>
-            <span>For Restaurant Owners</span>
-          </a>
-        </li>
-      </ul>
+    <!-- 2. Center: Primary Text Navigation -->
+    <nav class="nav-links" aria-label="Primary Navigation">
+      <a
+        routerLink="/"
+        routerLinkActive="nav-link-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="nav-link"
+      >
+        Home
+      </a>
+      <a
+        routerLink="/bookings"
+        routerLinkActive="nav-link-active"
+        class="nav-link"
+      >
+        My Bookings
+      </a>
+      <a
+        routerLink="/partner-with-us"
+        routerLinkActive="nav-link-active"
+        class="nav-link"
+      >
+        For Restaurant Owners
+      </a>
     </nav>
 
-    <!-- Desktop Actions -->
-    <div class="navbar-actions">
-      @if (authService.currentUser(); as user) {
-        <div class="user-menu-container">
-          <button 
-            type="button" 
-            class="user-avatar-btn" 
-            (click)="toggleUserMenu()"
-            [attr.aria-expanded]="isUserMenuOpen()"
-            aria-label="Member account menu">
-            <span class="nav-avatar-circle">{{ userInitials() }}</span>
-            <span class="nav-user-name">{{ user.fullName.split(' ')[0] }}</span>
-            <svg viewBox="0 0 20 20" fill="currentColor" class="nav-chevron" [class.open]="isUserMenuOpen()" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
-          </button>
+    <!-- 3. Right: Utility Icons & Account Menu -->
+    <div class="nav-actions">
+      <!-- Search Icon -->
+      <a
+        routerLink="/explore"
+        routerLinkActive="nav-icon-active"
+        class="nav-icon-btn"
+        aria-label="Search restaurants"
+        title="Search restaurants"
+        (click)="closeUserMenu(); closeCartNotice()"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="20" y1="20" x2="16.65" y2="16.65" />
+        </svg>
+      </a>
 
-          <!-- Dropdown Menu -->
-          @if (isUserMenuOpen()) {
-            <div class="user-dropdown-menu" role="menu">
+      <!-- Wishlist Icon -->
+      <a
+        routerLink="/wishlist"
+        routerLinkActive="nav-icon-active"
+        class="nav-icon-btn"
+        aria-label="Wishlist"
+        title="Saved sanctuaries"
+        (click)="closeUserMenu(); closeCartNotice()"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M12 20.4l-1.35-1.23C5.8 14.78 2.5 11.79 2.5 8.15A4.95 4.95 0 0 1 7.5 3.2c1.7 0 3.33.8 4.5 2.06A6 6 0 0 1 16.5 3.2a4.95 4.95 0 0 1 5 4.95c0 3.64-3.3 6.63-8.15 11.03L12 20.4z" />
+        </svg>
+      </a>
+
+      <!-- Cart Icon + Honest Unimplemented Popover -->
+      <div class="cart-action-wrap">
+        <button
+          type="button"
+          class="nav-icon-btn cart-icon-btn"
+          [class.nav-icon-active]="isCartNoticeOpen()"
+          aria-label="Cart"
+          [attr.aria-expanded]="isCartNoticeOpen()"
+          title="Cart"
+          (click)="toggleCartNotice($event)"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M6 7h12l-1 13H7L6 7z" />
+            <path d="M9 7a3 3 0 0 1 6 0" />
+          </svg>
+        </button>
+
+        @if (isCartNoticeOpen()) {
+          <div class="cart-notice-popover" role="status">
+            <p class="cart-notice-title">Dining Cart Unavailable</p>
+            <p class="cart-notice-copy">Cart feature is not implemented yet.</p>
+          </div>
+        }
+      </div>
+
+      <!-- Profile Icon + Role-Isolated Account Dropdown -->
+      <div class="user-menu-wrap">
+        <button
+          type="button"
+          class="nav-icon-btn profile-trigger-btn"
+          [class.is-authenticated]="hasActiveAuthSession()"
+          [class.nav-icon-active]="isUserMenuOpen()"
+          aria-label="Account profile menu"
+          [attr.aria-expanded]="isUserMenuOpen()"
+          aria-haspopup="menu"
+          (click)="toggleUserMenu($event)"
+        >
+          @if (userInitials()) {
+            <span class="avatar-initials">{{ userInitials() }}</span>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          }
+        </button>
+
+        @if (isUserMenuOpen()) {
+          <div class="user-dropdown" role="menu" aria-label="Account options">
+            @if (isCustomerLoggedIn() && customerAccount(); as customer) {
               <div class="dropdown-header">
-                <strong class="dropdown-name">{{ user.fullName }}</strong>
-                <span class="dropdown-tier">{{ user.memberTier }}</span>
-                <span class="dropdown-email">{{ user.email }}</span>
+                <span class="dropdown-role-badge">Member Account</span>
+                <strong class="dropdown-user-name">{{ customer.name }}</strong>
+                <span class="dropdown-user-email">{{ customer.email }}</span>
               </div>
 
               <div class="dropdown-divider"></div>
 
-              <a routerLink="/profile" class="dropdown-item" (click)="closeUserMenu()" role="menuitem">
-                <svg viewBox="0 0 20 20" fill="currentColor" class="item-icon" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                </svg>
-                <span>Profile & Preferences</span>
+              <a
+                routerLink="/profile"
+                class="dropdown-item"
+                role="menuitem"
+                (click)="closeUserMenu()"
+              >
+                Profile
               </a>
 
-              <a routerLink="/bookings" class="dropdown-item" (click)="closeUserMenu()" role="menuitem">
-                <svg viewBox="0 0 20 20" fill="currentColor" class="item-icon" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
-                </svg>
-                <span>My Reservations</span>
-              </a>
+              @if (isOwnerLoggedIn()) {
+                <a
+                  routerLink="/admin/dashboard"
+                  class="dropdown-item"
+                  role="menuitem"
+                  (click)="closeUserMenu()"
+                >
+                  Owner Console
+                </a>
+              }
 
-              <a routerLink="/wishlist" class="dropdown-item" (click)="closeUserMenu()" role="menuitem">
-                <svg viewBox="0 0 20 20" fill="currentColor" class="item-icon" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                </svg>
-                <span>Saved Sanctuaries</span>
+              <div class="dropdown-divider"></div>
+
+              <button
+                type="button"
+                class="dropdown-item dropdown-item-danger"
+                role="menuitem"
+                (click)="logoutCustomer()"
+              >
+                Logout
+              </button>
+            } @else if (isOwnerLoggedIn() && ownerAccount(); as owner) {
+              <div class="dropdown-header">
+                <span class="dropdown-role-badge">Restaurant Owner</span>
+                <strong class="dropdown-user-name">{{ owner.name }}</strong>
+                <span class="dropdown-user-email">{{ owner.email }}</span>
+              </div>
+
+              <div class="dropdown-divider"></div>
+
+              <a
+                routerLink="/admin/dashboard"
+                class="dropdown-item"
+                role="menuitem"
+                (click)="closeUserMenu()"
+              >
+                Owner Console
+              </a>
+              <a
+                routerLink="/login"
+                class="dropdown-item"
+                role="menuitem"
+                (click)="closeUserMenu()"
+              >
+                Customer Log In
+              </a>
+              <a
+                routerLink="/signup"
+                class="dropdown-item"
+                role="menuitem"
+                (click)="closeUserMenu()"
+              >
+                Customer Sign Up
               </a>
 
               <div class="dropdown-divider"></div>
 
-              <button type="button" class="dropdown-item logout-item" (click)="logout()" role="menuitem">
-                <svg viewBox="0 0 20 20" fill="currentColor" class="item-icon" aria-hidden="true">
-                  <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
-                </svg>
-                <span>Sign Out</span>
+              <button
+                type="button"
+                class="dropdown-item dropdown-item-danger"
+                role="menuitem"
+                (click)="logoutOwner()"
+              >
+                Logout
               </button>
-            </div>
-          }
-        </div>
-      } @else {
-        <a routerLink="/login" class="nav-link-login">Log In</a>
-        <a routerLink="/signup" class="nav-link-login">Sign Up</a>
-      }
+            } @else {
+              <div class="dropdown-header">
+                <strong class="dropdown-user-name">Guest Access</strong>
+                <span class="dropdown-user-email">Sign in to manage reservations</span>
+              </div>
 
-      <a routerLink="/explore" class="btn btn-primary btn-sm nav-btn-cta">
-        <span>Find a Table</span>
-        <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
-          <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-        </svg>
-      </a>
+              <div class="dropdown-divider"></div>
+
+              <a
+                routerLink="/login"
+                class="dropdown-item dropdown-item-primary"
+                role="menuitem"
+                (click)="closeUserMenu()"
+              >
+                Log In
+              </a>
+              <a
+                routerLink="/signup"
+                class="dropdown-item"
+                role="menuitem"
+                (click)="closeUserMenu()"
+              >
+                Sign Up
+              </a>
+            }
+          </div>
+        }
+      </div>
 
       <!-- Mobile Hamburger Button -->
-      <button 
-        type="button" 
-        class="mobile-toggle" 
-        (click)="toggleMobileMenu()" 
+      <button
+        type="button"
+        class="mobile-menu-toggle"
         [attr.aria-expanded]="isMobileMenuOpen()"
         aria-label="Toggle navigation menu"
-        aria-controls="mobileMenu">
-        <span class="hamburger-box">
-          <span class="hamburger-inner" [class.open]="isMobileMenuOpen()"></span>
-        </span>
+        (click)="toggleMobileMenu()"
+      >
+        <span class="hamburger-line" [class.open]="isMobileMenuOpen()"></span>
+        <span class="hamburger-line" [class.open]="isMobileMenuOpen()"></span>
+        <span class="hamburger-line" [class.open]="isMobileMenuOpen()"></span>
       </button>
     </div>
   </div>
 </header>
 
-<!-- Mobile Drawer Backdrop -->
+<!-- Mobile Navigation Drawer -->
 @if (isMobileMenuOpen()) {
-  <div 
-    class="mobile-backdrop" 
-    (click)="closeMobileMenu()" 
-    aria-hidden="true">
-  </div>
-}
-
-<!-- Mobile Navigation Menu Drawer -->
-<div 
-  id="mobileMenu"
-  class="mobile-menu" 
-  [class.open]="isMobileMenuOpen()"
-  [attr.aria-hidden]="!isMobileMenuOpen()"
-  role="dialog"
-  aria-modal="true"
-  aria-label="Mobile Navigation">
-  <div class="mobile-menu-header">
-    <a routerLink="/" class="brand-link" (click)="closeMobileMenu()" aria-label="Dinevia Home">
-      <span class="brand-icon small">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
-          <path d="M6 2v20"></path>
-          <path d="M3 6h6"></path>
-          <path d="M3 10h6"></path>
-        </svg>
-      </span>
-      <span class="brand-text">
-        <span class="brand-name">Dinevia</span>
-        <span class="brand-tag">RESERVE</span>
-      </span>
-    </a>
-    <button 
-      type="button" 
-      class="close-btn" 
-      (click)="closeMobileMenu()" 
-      aria-label="Close navigation menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
-  </div>
-
-  <nav class="mobile-nav-links" aria-label="Mobile Menu Links">
-    <ul>
-      <li>
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileMenu()" class="mobile-nav-item">
-          <span>Home</span>
-        </a>
-      </li>
-      <li>
-        <a routerLink="/explore" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-          <span>Explore Restaurants</span>
-        </a>
-      </li>
-      <li>
-        <a routerLink="/bookings" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-          <span>My Bookings</span>
-        </a>
-      </li>
-      <li>
-        <a routerLink="/wishlist" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-          <span>Saved</span>
-        </a>
-      </li>
-      @if (authService.currentUser()) {
-        <li>
-          <a routerLink="/profile" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-            <span>Member Profile</span>
-          </a>
-        </li>
-      }
-      <li>
-        <a routerLink="/about" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item">
-          <span>About Us</span>
-        </a>
-      </li>
-      <li>
-        <a routerLink="/partner-with-us" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-item mobile-nav-partner">
-          <span class="partner-sparkle" aria-hidden="true">✦</span>
-          <span>For Restaurant Owners</span>
-        </a>
-      </li>
-    </ul>
-  </nav>
-
-  <div class="mobile-menu-footer">
-    @if (authService.currentUser(); as user) {
-      <a routerLink="/profile" (click)="closeMobileMenu()" class="btn btn-outline mobile-btn">
-        <span>{{ user.fullName }} (Profile)</span>
-      </a>
-      <button type="button" (click)="logout()" class="btn btn-ghost mobile-btn">
-        <span>Log Out</span>
+  <div class="mobile-backdrop" (click)="closeMobileMenu()"></div>
+  <nav class="mobile-drawer" aria-label="Mobile Navigation">
+    <div class="mobile-drawer-header">
+      <span class="drawer-brand-title">Dinevia</span>
+      <button
+        type="button"
+        class="drawer-close-btn"
+        aria-label="Close navigation menu"
+        (click)="closeMobileMenu()"
+      >
+        &times;
       </button>
-    } @else {
-      <a routerLink="/login" (click)="closeMobileMenu()" class="btn btn-outline mobile-btn">Log In</a>
-      <a routerLink="/signup" (click)="closeMobileMenu()" class="btn btn-terracotta mobile-btn">Sign Up</a>
-    }
-    <p class="mobile-tagline">Discover. Reserve. Dine.</p>
-  </div>
-</div>
+    </div>
+
+    <div class="mobile-nav-list">
+      <a
+        routerLink="/"
+        routerLinkActive="mobile-link-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="mobile-nav-link"
+        (click)="closeMobileMenu()"
+      >
+        Home
+      </a>
+      <a
+        routerLink="/bookings"
+        routerLinkActive="mobile-link-active"
+        class="mobile-nav-link"
+        (click)="closeMobileMenu()"
+      >
+        My Bookings
+      </a>
+      <a
+        routerLink="/partner-with-us"
+        routerLinkActive="mobile-link-active"
+        class="mobile-nav-link"
+        (click)="closeMobileMenu()"
+      >
+        For Restaurant Owners
+      </a>
+      <a
+        routerLink="/explore"
+        routerLinkActive="mobile-link-active"
+        class="mobile-nav-link"
+        (click)="closeMobileMenu()"
+      >
+        Search Restaurants
+      </a>
+      <a
+        routerLink="/wishlist"
+        routerLinkActive="mobile-link-active"
+        class="mobile-nav-link"
+        (click)="closeMobileMenu()"
+      >
+        Wishlist
+      </a>
+    </div>
+
+    <div class="mobile-drawer-footer">
+      @if (isCustomerLoggedIn() && customerAccount(); as customer) {
+        <div class="mobile-account-meta">
+          <strong>{{ customer.name }}</strong>
+          <span>{{ customer.email }}</span>
+        </div>
+        <a routerLink="/profile" class="btn btn-outline btn-md mobile-full-btn" (click)="closeMobileMenu()">
+          Profile
+        </a>
+        <button type="button" class="btn btn-primary btn-md mobile-full-btn" (click)="logoutCustomer()">
+          Logout
+        </button>
+      } @else if (isOwnerLoggedIn() && ownerAccount(); as owner) {
+        <div class="mobile-account-meta">
+          <strong>{{ owner.name }}</strong>
+          <span>Restaurant Owner &bull; {{ owner.email }}</span>
+        </div>
+        <a routerLink="/admin/dashboard" class="btn btn-outline btn-md mobile-full-btn" (click)="closeMobileMenu()">
+          Owner Console
+        </a>
+        <a routerLink="/login" class="btn btn-outline btn-md mobile-full-btn" (click)="closeMobileMenu()">
+          Customer Log In
+        </a>
+        <button type="button" class="btn btn-primary btn-md mobile-full-btn" (click)="logoutOwner()">
+          Logout
+        </button>
+      } @else {
+        <a routerLink="/login" class="btn btn-primary btn-md mobile-full-btn" (click)="closeMobileMenu()">
+          Log In
+        </a>
+        <a routerLink="/signup" class="btn btn-outline btn-md mobile-full-btn" (click)="closeMobileMenu()">
+          Sign Up
+        </a>
+      }
+    </div>
+  </nav>
+}

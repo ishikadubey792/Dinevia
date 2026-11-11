@@ -1,0 +1,84 @@
+@if (authModalService.isOpen()) {
+  <div
+    class="auth-modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="authModalHeading"
+    (click)="onBackdropClick($event)"
+  >
+    <div class="auth-modal-dialog" (click)="$event.stopPropagation()">
+      <div class="auth-modal-top">
+        <div class="auth-modal-brand">
+          <span class="modal-brand-badge">Dinevia</span>
+          <h2 id="authModalHeading" class="modal-heading">
+            {{
+              authModalService.activeMode() === 'login'
+                ? 'Sign in to reserve your table'
+                : 'Create your Dinevia guest account'
+            }}
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          class="modal-close-btn"
+          aria-label="Close sign in dialog"
+          (click)="close()"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="auth-mode-tabs" role="tablist" aria-label="Authentication options">
+        <button
+          type="button"
+          role="tab"
+          class="mode-tab-btn"
+          [class.active]="authModalService.activeMode() === 'login'"
+          [attr.aria-selected]="authModalService.activeMode() === 'login'"
+          (click)="switchMode('login')"
+        >
+          Log In
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="mode-tab-btn"
+          [class.active]="authModalService.activeMode() === 'signup'"
+          [attr.aria-selected]="authModalService.activeMode() === 'signup'"
+          (click)="switchMode('signup')"
+        >
+          Sign Up
+        </button>
+      </div>
+
+      <div class="auth-modal-body">
+        @if (authModalService.activeMode() === 'login') {
+          <app-login
+            [embedded]="true"
+            (authSuccess)="onAuthSuccess()"
+            (switchToSignup)="switchMode('signup')"
+            (forgotPassword)="onForgotPassword()"
+          ></app-login>
+        } @else {
+          <app-signup
+            [embedded]="true"
+            (authSuccess)="onAuthSuccess()"
+            (switchToLogin)="switchMode('login')"
+          ></app-signup>
+        }
+      </div>
+
+      <div class="auth-modal-footer">
+        <button
+          type="button"
+          class="browse-guest-btn"
+          (click)="close()"
+        >
+          Continue browsing without signing in
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

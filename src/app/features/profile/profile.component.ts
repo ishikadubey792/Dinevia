@@ -8,6 +8,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { User } from '../../core/models/user.model';
+import {
+  dineviaEmailValidator,
+  indianPhoneValidator,
+  getDineviaEmailErrorMessage,
+  getIndianPhoneErrorMessage
+} from '../../core/validators/auth-validators';
 
 @Component({
   selector: 'app-profile',
@@ -94,22 +100,24 @@ export class ProfileComponent implements OnInit {
   }
 
   private initForm(): void {
-    const user = this.authService.currentUser();
+    const user = this.authService.isCustomerAuthenticated()
+      ? this.authService.currentUser()
+      : null;
     const defaults = {
-      fullName: user?.fullName || 'Alexander Wright',
-      email: user?.email || 'a.wright@epicuredining.com',
-      phone: user?.phone || '+1 (555) 234-5678',
-      preferredCity: user?.preferredCity || 'New York',
-      preferredSeating: user?.preferredSeating || "Chef's Counter & Window Alcove"
+      fullName: user?.fullName || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      preferredCity: user?.preferredCity || '',
+      preferredSeating: user?.preferredSeating || ''
     };
 
-    this.selectedDietary.set(user?.dietaryPreferences || ['Pescatarian', 'Gluten-Free Friendly']);
-    this.selectedCuisines.set(user?.favoriteCuisines || ['Italian', 'French Contemporary', 'Japanese Omakase']);
+    this.selectedDietary.set(user?.dietaryPreferences || []);
+    this.selectedCuisines.set(user?.favoriteCuisines || []);
 
     this.profileForm = this.fb.group({
       fullName: [defaults.fullName, [Validators.required, Validators.minLength(2)]],
-      email: [defaults.email, [Validators.required, Validators.email]],
-      phone: [defaults.phone, [Validators.required, Validators.pattern(/^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]{7,15}$/)]],
+      email: [defaults.email, [Validators.required, dineviaEmailValidator()]],
+      phone: [defaults.phone, [Validators.required, indianPhoneValidator()]],
       preferredCity: [defaults.preferredCity, [Validators.required]],
       preferredSeating: [defaults.preferredSeating, [Validators.required]]
     });
@@ -149,6 +157,14 @@ export class ProfileComponent implements OnInit {
   isFieldInvalid(fieldName: string): boolean {
     const field = this.profileForm.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  getEmailErrorMessage(): string {
+    return getDineviaEmailErrorMessage(this.profileForm.get('email')?.errors);
+  }
+
+  getPhoneErrorMessage(): string {
+    return getIndianPhoneErrorMessage(this.profileForm.get('phone')?.errors);
   }
 
   saveProfile(): void {

@@ -1,0 +1,187 @@
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(23, 47, 36, 0.56);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.auth-modal-dialog {
+  width: 100%;
+  max-width: 540px;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  background-color: var(--color-ivory-light, #FDFBF7);
+  border: 1px solid var(--color-border, #E5DEC9);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(23, 47, 36, 0.25);
+  padding: 1.5rem 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: modalSlideUp 0.22s ease-out;
+}
+
+.auth-modal-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.auth-modal-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.modal-brand-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-forest, #234637);
+  background-color: var(--color-sage-light, #EEF3ED);
+  border: 1px solid rgba(35, 70, 55, 0.16);
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+}
+
+.modal-heading {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-forest-dark, #172F24);
+  margin: 0;
+}
+
+.modal-close-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, #E5DEC9);
+  background-color: var(--color-ivory, #F8F5EF);
+  color: var(--color-forest-dark, #172F24);
+  font-size: 1.35rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+
+  &:hover {
+    background-color: var(--color-sage-light, #EEF3ED);
+    border-color: var(--color-forest, #234637);
+  }
+}
+
+.auth-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border-radius: 12px;
+  background-color: var(--color-ivory, #F8F5EF);
+  border: 1px solid var(--color-border, #E5DEC9);
+}
+
+.mode-tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary, #4E5D55);
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.62rem 1rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+
+  &.active {
+    background-color: var(--color-forest, #234637);
+    color: #FDFBF7;
+    box-shadow: 0 2px 8px rgba(35, 70, 55, 0.22);
+  }
+
+  &:not(.active):hover {
+    color: var(--color-forest-dark, #172F24);
+    background-color: rgba(35, 70, 55, 0.06);
+  }
+}
+
+.auth-modal-body {
+  width: 100%;
+}
+
+.auth-modal-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--color-border, #E5DEC9);
+}
+
+.browse-guest-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary, #4E5D55);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.18s ease, background-color 0.18s ease;
+
+  &:hover {
+    color: var(--color-forest-dark, #172F24);
+    background-color: rgba(35, 70, 55, 0.05);
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 576px) {
+  .auth-modal-backdrop {
+    padding: 0.65rem;
+  }
+
+  .auth-modal-dialog {
+    padding: 1.15rem 1rem 1rem;
+    border-radius: 16px;
+    max-height: calc(100dvh - 1.3rem);
+  }
+
+  .modal-heading {
+    font-size: 1.18rem;
+  }
+}
+

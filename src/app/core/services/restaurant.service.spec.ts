@@ -8,6 +8,10 @@ import {
   mapApiRestaurantToDomain,
   matchesRestaurantSearch,
   matchesRestaurantCuisine,
+  hasActualRating,
+  meetsMinimumRating,
+  countDistinctRestaurantsForCuisine,
+  sortRestaurantsAlphabetically,
   BACKEND_ORIGIN,
   DEFAULT_FALLBACK_RESTAURANT_IMAGE
 } from '../models/restaurant.model';
@@ -128,15 +132,32 @@ describe('RestaurantService Live API Integration', () => {
     req.flush({ statusCode: 200, message: 'No restaurants', data: [] });
   });
 
-  it('should handle API error gracefully by keeping fallback data and setting error signal', () => {
-    service.fetchRestaurants().subscribe();
+  it('should handle API error cleanly without mock fallback and set error signal', () => {
+    service.fetchRestaurants().subscribe((result) => {
+      expect(result).toEqual([]);
+    });
 
     const req = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
     req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
 
     expect(service.isLoadingRestaurants()).toBe(false);
+    expect(service.isApiLoaded()).toBe(false);
     expect(service.restaurantLoadError()).toBeTruthy();
-    expect(service.restaurants().length).toBeGreaterThan(0);
+    expect(service.restaurants().length).toBe(0);
+    expect(service.cuisines().length).toBe(0);
+  });
+
+  it('should NOT fall back to mock restaurants in getRestaurantById or generate fake reviews', () => {
+    expect(service.getRestaurantById('rest-1')).toBeUndefined();
+    const liveRest = service.restaurants()[0];
+    expect(service.getReviewsForRestaurant(liveRest)).toEqual([]);
+  });
+
+  it('should reuse loaded state in ensureRestaurantsLoaded without duplicate HTTP calls', () => {
+    service.ensureRestaurantsLoaded().subscribe((list) => {
+      expect(list.length).toBe(2);
+    });
+    httpTesting.expectNone(`${environment.apiUrl}/restaurants`);
   });
 
   it('should find restaurant by numeric or string ID', () => {
@@ -302,6 +323,176 @@ describe('RestaurantService Live API Integration', () => {
 
     service.removeFromSaved('1');
     expect(service.isSaved('1')).toBe(false);
+  });
+
+  it('should map missing or zero dto.rating and dto.reviewCount to 0 instead of 4.9 / 12 fallback', () => {
+    const unratedDto: ApiRestaurantDto = {
+      id: 99,
+      name: 'Unrated Kitchen',
+      address: '10 Elm St',
+      city: 'Austin',
+      isActive: true
+    };
+    const zeroRatedDto: ApiRestaurantDto = {
+      id: 100,
+      name: 'Zero Rated Kitchen',
+      address: '12 Elm St',
+      city: 'Austin',
+      rating: 0,
+      reviewCount: 0,
+      isActive: true
+    };
+    const ratedDto: ApiRestaurantDto = {
+      id: 101,
+      name: 'Rated Kitchen',
+      address: '14 Elm St',
+      city: 'Austin',
+      rating: 4.6,
+      reviewCount: 18,
+      isActive: true
+    };
+
+    const unrated = mapApiRestaurantToDomain(unratedDto);
+    const zeroRated = mapApiRestaurantToDomain(zeroRatedDto);
+    const rated = mapApiRestaurantToDomain(ratedDto);
+
+    expect(unrated.rating).toBe(0);
+    expect(unrated.reviewCount).toBe(0);
+    expect(hasActualRating(unrated.rating)).toBe(false);
+    expect(meetsMinimumRating(unrated, 4.5)).toBe(false);
+
+    expect(zeroRated.rating).toBe(0);
+    expect(zeroRated.reviewCount).toBe(0);
+    expect(hasActualRating(zeroRated.rating)).toBe(false);
+
+    expect(rated.rating).toBe(4.6);
+    expect(rated.reviewCount).toBe(18);
+    expect(hasActualRating(rated.rating)).toBe(true);
+    expect(meetsMinimumRating(rated, 4.5)).toBe(true);
+  });
+
+  it('should compute distinct cuisine restaurant counts without double-counting multi-cuisine records and reset to 0 on empty response', () => {
+    service.fetchRestaurants().subscribe();
+    const req = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
+    req.flush({
+      statusCode: 200,
+      message: 'OK',
+      data: [
+        {
+          id: 10,
+          name: 'Roma Bistro',
+          address: '1 Via Roma',
+          city: 'Rome',
+          isActive: true,
+          restaurantCuisines: [
+            { cuisineId: 1, cuisine: { id: 1, name: 'Italian' } },
+            { cuisineId: 2, cuisine: { id: 2, name: 'Italian Woodfired' } }
+          ]
+        },
+        {
+          id: 11,
+          name: 'Trattoria Verde',
+          address: '2 Via Roma',
+          city: 'Rome',
+          isActive: true,
+          restaurantCuisines: [
+            { cuisineId: 1, cuisine: { id: 1, name: 'Italian' } }
+          ]
+        }
+      ]
+    });
+
+    const list = service.restaurants();
+    expect(countDistinctRestaurantsForCuisine(list, 'italian')).toBe(2);
+
+    const italianCuisine = service.cuisines().find((c) => c.slug === 'italian');
+    expect(italianCuisine?.restaurantCount).toBe(2);
+
+    const sorted = sortRestaurantsAlphabetically(list);
+    expect(sorted.map((r) => r.name)).toEqual(['Roma Bistro', 'Trattoria Verde']);
+
+    service.fetchRestaurants().subscribe();
+    const emptyReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
+    emptyReq.flush({ statusCode: 200, message: 'Empty', data: [] });
+
+    expect(service.restaurants().length).toBe(0);
+    expect(service.cuisines().every((c) => c.restaurantCount === 0)).toBe(true);
+  });
+
+  it('should map GET /api/restaurants/{id} scalar DTO accurately without fake slots or assumed navigation properties', () => {
+    service.fetchRestaurantById('1').subscribe((result) => {
+      expect(result.status).toBe('found');
+      expect(result.errorMessage).toBeNull();
+      expect(result.restaurant).toBeTruthy();
+
+      const rest = result.restaurant!;
+      expect(rest.id).toBe('1');
+      expect(rest.name).toBe('Maison Laurent Paris');
+      expect(rest.address).toBe('18 Rue Royale');
+      expect(rest.city).toBe('Paris');
+      expect(rest.phone).toBe('+33 1 42 68 88 00');
+      expect(rest.email).toBe('contact@maisonlaurent.fr');
+      expect(rest.imageUrl).toBe(`${BACKEND_ORIGIN}/uploads/restaurants/1_cover.jpg`);
+      expect(rest.availableSlots).toEqual([]);
+      expect(rest.highlights).toEqual([]);
+      // Cuisine enriched cleanly from Phase 1 loaded list when detail response omits restaurantCuisines
+      expect(rest.cuisine).toBe('French Haute');
+    });
+
+    const detailReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants/1`);
+    expect(detailReq.request.method).toBe('GET');
+    detailReq.flush({
+      statusCode: 200,
+      message: 'Restaurant fetched successfully.',
+      data: {
+        id: 1,
+        ownerUserId: 10,
+        name: 'Maison Laurent Paris',
+        address: '18 Rue Royale',
+        phone: '+33 1 42 68 88 00',
+        email: 'contact@maisonlaurent.fr',
+        isActive: true,
+        city: 'Paris',
+        description: 'Authentic seasonal French cuisine.',
+        coverImagePath: '/uploads/restaurants/1_cover.jpg'
+      }
+    });
+  });
+
+  it('should classify 404 or inactive restaurant in fetchRestaurantById as not-found and 500 as error', () => {
+    service.fetchRestaurantById('999').subscribe((res) => {
+      expect(res.status).toBe('not-found');
+      expect(res.restaurant).toBeNull();
+      expect(res.errorMessage).toBeNull();
+    });
+    httpTesting
+      .expectOne(`${environment.apiUrl}/restaurants/999`)
+      .flush({ statusCode: 404, message: 'Restaurant not found.' }, { status: 404, statusText: 'Not Found' });
+
+    service.fetchRestaurantById('3').subscribe((res) => {
+      expect(res.status).toBe('not-found');
+      expect(res.restaurant).toBeNull();
+    });
+    httpTesting.expectOne(`${environment.apiUrl}/restaurants/3`).flush({
+      statusCode: 200,
+      message: 'OK',
+      data: {
+        id: 3,
+        name: 'Closed Venue',
+        address: '1 Elm St',
+        city: 'Paris',
+        isActive: false
+      }
+    });
+
+    service.fetchRestaurantById('1').subscribe((res) => {
+      expect(res.status).toBe('error');
+      expect(res.restaurant).toBeNull();
+      expect(res.errorMessage).toBeTruthy();
+    });
+    httpTesting
+      .expectOne(`${environment.apiUrl}/restaurants/1`)
+      .flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
   });
 });
 

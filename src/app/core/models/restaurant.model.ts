@@ -78,6 +78,7 @@ export interface ApiRestaurantCuisineDto {
 
 export interface ApiRestaurantDto {
   id: number | string;
+  ownerUserId?: number | null;
   name: string;
   address: string;
   city: string;
@@ -133,19 +134,25 @@ export function mapApiRestaurantToDomain(dto: ApiRestaurantDto): Restaurant {
     cuisineList = dto.cuisine.split(',').map(c => c.trim()).filter(c => c.length > 0);
   }
 
-  const cuisineStr = cuisineList.length > 0 ? cuisineList.join(', ') : 'Fine Dining';
-  if (cuisineList.length === 0) {
-    cuisineList = ['Fine Dining'];
-  }
+  const cuisineStr = cuisineList.length > 0 ? cuisineList.join(', ') : '';
 
   const desc = dto.description && dto.description.trim().length > 0
     ? dto.description.trim()
-    : 'An intimate dining sanctuary offering artisanal seasonal gastronomy and world-class table service.';
+    : '';
 
   const tagline = desc.length > 70 ? `${desc.slice(0, 67)}...` : desc;
 
   const validPriceRange: '$$' | '$$$' | '$$$$' = 
     dto.priceRange === '$$' || dto.priceRange === '$$$$' ? dto.priceRange : '$$$';
+
+  const actualRating =
+    typeof dto.rating === 'number' && Number.isFinite(dto.rating) && dto.rating > 0
+      ? dto.rating
+      : 0;
+  const actualReviewCount =
+    typeof dto.reviewCount === 'number' && Number.isFinite(dto.reviewCount) && dto.reviewCount > 0
+      ? dto.reviewCount
+      : 0;
 
   return {
     id: String(dto.id),
@@ -156,21 +163,21 @@ export function mapApiRestaurantToDomain(dto: ApiRestaurantDto): Restaurant {
     location: dto.address ? `${dto.address}, ${dto.city}` : dto.city,
     neighborhood: dto.city,
     city: dto.city,
-    rating: dto.rating !== undefined && dto.rating > 0 ? dto.rating : 4.9,
-    reviewCount: dto.reviewCount !== undefined && dto.reviewCount > 0 ? dto.reviewCount : 12,
+    rating: actualRating,
+    reviewCount: actualReviewCount,
     priceRange: validPriceRange,
     imageUrl,
-    badge: dto.badge || 'New Sanctuary',
+    badge: dto.badge,
     featured: dto.featured !== undefined ? dto.featured : true,
     description: desc,
-    availableSlots: dto.availableSlots && dto.availableSlots.length > 0 
-      ? dto.availableSlots 
-      : ['5:30 PM', '7:00 PM', '8:30 PM', '9:45 PM'],
-    highlights: dto.highlights && dto.highlights.length > 0 
-      ? dto.highlights 
-      : ["Chef's Seasonal Tasting Menu", 'Sommelier Pairing Selection', 'Private Table Pacing'],
-    dressCode: dto.dressCode || 'Smart Casual & Formal Elegant',
-    galleryImages: [imageUrl, DEFAULT_FALLBACK_RESTAURANT_IMAGE],
+    availableSlots: Array.isArray(dto.availableSlots) && dto.availableSlots.length > 0
+      ? dto.availableSlots
+      : [],
+    highlights: Array.isArray(dto.highlights) && dto.highlights.length > 0
+      ? dto.highlights
+      : [],
+    dressCode: dto.dressCode,
+    galleryImages: [imageUrl],
     phone: dto.phone,
     address: dto.address,
     email: dto.email,
@@ -266,4 +273,117 @@ export function matchesRestaurantCuisine(restaurant: Restaurant, selectedCuisine
   }
 
   return false;
+}
+
+/**
+ * Checks whether a restaurant has an actual user rating (excludes missing, NaN, or zero values).
+ */
+export function hasActualRating(rating?: number | null): boolean {
+  return typeof rating === 'number' && Number.isFinite(rating) && rating > 0;
+}
+
+/**
+ * Checks whether a restaurant meets a minimum actual rating threshold.
+ * Missing or zero ratings are treated as unrated and never match positive thresholds.
+ */
+export function meetsMinimumRating(restaurant: Pick<Restaurant, 'rating'>, minRating: number): boolean {
+  if (!Number.isFinite(minRating) || minRating <= 0) return true;
+  return hasActualRating(restaurant.rating) && restaurant.rating >= minRating;
+}
+
+/**
+ * Normalizes a cuisine display name into a consistent URL slug.
+ */
+export function toCuisineSlug(name: string): string {
+  return (name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
+/**
+ * Counts distinct restaurant records matching a given cuisine identifier or slug.
+ */
+export function countDistinctRestaurantsForCuisine(
+  restaurants: readonly Restaurant[],
+  cuisineIdentifier: string
+): number {
+  const distinctIds = new Set<string>();
+  for (const restaurant of restaurants) {
+    if (matchesRestaurantCuisine(restaurant, cuisineIdentifier)) {
+      distinctIds.add(String(restaurant.id));
+    }
+  }
+  return distinctIds.size;
+}
+
+/**
+ * Returns a new array of restaurants sorted alphabetically (case-insensitive) without mutating the source array.
+ */
+export function sortRestaurantsAlphabetically<T extends Pick<Restaurant, 'name'>>(
+  restaurants: readonly T[],
+  direction: 'asc' | 'desc' = 'asc'
+): T[] {
+  const factor = direction === 'desc' ? -1 : 1;
+  return [...restaurants].sort((a, b) =>
+    factor * (a.name || '').trim().localeCompare((b.name || '').trim(), undefined, { sensitivity: 'base' })
+  );
+}
+
+const CUISINE_VISUAL_DEFAULTS: Record<string, { tagline: string; imageUrl: string }> = {
+  italian: {
+    tagline: 'Handmade pasta, wild truffles & wood-fired heritage',
+    imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=700&q=80'
+  },
+  japanese: {
+    tagline: 'Artisanal omakase, binchotan skewers & prized wagyu',
+    imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=700&q=80'
+  },
+  indian: {
+    tagline: 'Royal Awadhi curries, saffron dum biryani & tandoor smoke',
+    imageUrl: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=700&q=80'
+  },
+  mexican: {
+    tagline: 'Ancestral heirloom moles & artisanal agave cocktail pairings',
+    imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=700&q=80'
+  },
+  continental: {
+    tagline: 'Hearth-grilled cuts, Parisian brasserie & timeless classics',
+    imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=700&q=80'
+  },
+  chinese: {
+    tagline: 'Delicate dim sum mastery, Sichuan spices & lacquered duck',
+    imageUrl: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=700&q=80'
+  },
+  french: {
+    tagline: 'Haute gastronomy, velvety reductions & grand cru cellar pairings',
+    imageUrl: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=700&q=80'
+  },
+  mediterranean: {
+    tagline: 'Aegean seafood, cold-pressed olives & wood-fired flatbreads',
+    imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=700&q=80'
+  }
+};
+
+/**
+ * Provides optional imagery and tagline metadata for known cuisine slugs without creating mock cuisine rows.
+ */
+export function getCuisineVisualMetadata(name: string, slug: string): { tagline: string; imageUrl: string } {
+  const normalizedSlug = (slug || '').trim().toLowerCase();
+  const exact = CUISINE_VISUAL_DEFAULTS[normalizedSlug];
+  if (exact) {
+    return exact;
+  }
+
+  for (const [key, visual] of Object.entries(CUISINE_VISUAL_DEFAULTS)) {
+    if (normalizedSlug.length > 0 && normalizedSlug.includes(key)) {
+      return visual;
+    }
+  }
+
+  return {
+    tagline: `Artisanal ${name} culinary artistry`,
+    imageUrl: DEFAULT_FALLBACK_RESTAURANT_IMAGE
+  };
 }

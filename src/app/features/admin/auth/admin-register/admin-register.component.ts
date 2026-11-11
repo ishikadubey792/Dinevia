@@ -8,6 +8,7 @@ import { CuisineService } from '../../../../core/services/cuisine.service';
 import { OwnerAuthService } from '../../../../core/services/owner-auth.service';
 import { ApiCuisine } from '../../../../core/models/cuisine.model';
 import { OwnerRegisterRequest } from '../../../../core/models/owner-auth.model';
+import { isValidStandardEmail } from '../../../../core/validators/auth-validators';
 
 export const DEFAULT_FALLBACK_CUISINES: ApiCuisine[] = [
   { id: 1, name: 'French Haute', isActive: true },
@@ -35,23 +36,23 @@ export class AdminRegisterComponent implements OnInit {
   private readonly cuisineService = inject(CuisineService);
   private readonly ownerAuthService = inject(OwnerAuthService);
 
-  // Owner credentials
-  ownerName = 'Chef Julien Laurent';
-  ownerEmail = 'julien.laurent@dinevia.fr';
-  password = '••••••••••••';
+  // Owner credentials (initially empty)
+  ownerName = '';
+  ownerEmail = '';
+  password = '';
 
   // 1. Restaurant Name
-  restaurantName = 'Maison Laurent Paris';
+  restaurantName = '';
   // 2. Street Address
-  streetAddress = '18 Rue Royale';
+  streetAddress = '';
   // 3. City
-  city = 'Paris';
+  city = '';
   // 4. Description
-  description = 'An intimate dining sanctuary pairing French terroir gastronomy with master cellar vintages and refined table pacing.';
+  description = '';
   // 5. Phone
-  phone = '+33 1 42 68 88 00';
+  phone = '';
   // 6. Restaurant Email
-  restaurantEmail = 'contact@maisonlaurent.fr';
+  restaurantEmail = '';
 
   // 7. Multiple Cuisines Selection (Live ASP.NET Core API Integration)
   readonly availableCuisines = signal<ApiCuisine[]>(DEFAULT_FALLBACK_CUISINES);
@@ -59,7 +60,7 @@ export class AdminRegisterComponent implements OnInit {
   readonly cuisineLoadError = signal<string | null>(null);
 
   // Stored as numbers for backend List<int> CuisineIds
-  selectedCuisineIds: number[] = [1, 2];
+  selectedCuisineIds: number[] = [];
 
   // Helper for human-readable selected cuisine names
   get selectedCuisineNames(): string[] {
@@ -69,19 +70,17 @@ export class AdminRegisterComponent implements OnInit {
       .map(c => c.name);
   }
 
-  // Getter for backward-compatibility with existing tests and mock data
   get selectedCuisines(): string[] {
-    const names = this.selectedCuisineNames;
-    return names.length > 0 ? names : ['French Haute', 'Contemporary'];
+    return this.selectedCuisineNames;
   }
 
   // 8. One Cover Image Upload with Preview
-  coverImagePreview = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=900&auto=format&fit=crop&q=80';
+  coverImagePreview = '';
   selectedCoverFile: File | null = null;
 
   // Form submission and validation states
   readonly isSubmitting = signal<boolean>(false);
-  readonly termsAccepted = signal<boolean>(true);
+  readonly termsAccepted = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
@@ -100,14 +99,9 @@ export class AdminRegisterComponent implements OnInit {
           const active = response.data.filter(c => c.isActive !== false);
           this.availableCuisines.set(active);
 
-          // If current selections are not in active list, sync with available IDs
+          // Keep only previously chosen IDs that remain active
           const activeIds = new Set(active.map(c => c.id));
-          const validSelected = this.selectedCuisineIds.filter(id => activeIds.has(id));
-          if (validSelected.length > 0) {
-            this.selectedCuisineIds = validSelected;
-          } else if (active.length > 0) {
-            this.selectedCuisineIds = active.slice(0, 2).map(c => c.id);
-          }
+          this.selectedCuisineIds = this.selectedCuisineIds.filter(id => activeIds.has(id));
         }
       },
       error: (err) => {
@@ -142,9 +136,7 @@ export class AdminRegisterComponent implements OnInit {
     if (id === undefined) return;
 
     if (this.selectedCuisineIds.includes(id)) {
-      if (this.selectedCuisineIds.length > 1) {
-        this.selectedCuisineIds = this.selectedCuisineIds.filter(item => item !== id);
-      }
+      this.selectedCuisineIds = this.selectedCuisineIds.filter(item => item !== id);
     } else {
       this.selectedCuisineIds.push(id);
     }
@@ -199,6 +191,11 @@ export class AdminRegisterComponent implements OnInit {
       !this.restaurantEmail.trim()
     ) {
       this.errorMessage.set('Please complete all required fields.');
+      return;
+    }
+
+    if (!isValidStandardEmail(this.ownerEmail) || !isValidStandardEmail(this.restaurantEmail)) {
+      this.errorMessage.set('Please enter valid email addresses for owner and restaurant.');
       return;
     }
 

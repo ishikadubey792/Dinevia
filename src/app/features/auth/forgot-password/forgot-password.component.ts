@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../../shared/components/footer/footer.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { dineviaEmailValidator, getDineviaEmailErrorMessage } from '../../../core/validators/auth-validators';
 
 @Component({
   selector: 'app-forgot-password',
@@ -29,7 +30,7 @@ export class ForgotPasswordComponent {
   readonly errorMessage = signal<string | null>(null);
 
   forgotForm: FormGroup = this.fb.group({
-    email: ['', [Validators.required, Validators.email]]
+    email: ['', [Validators.required, dineviaEmailValidator()]]
   });
 
   isFieldInvalid(fieldName: string): boolean {
@@ -37,12 +38,16 @@ export class ForgotPasswordComponent {
     return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
+  getEmailErrorMessage(): string {
+    return getDineviaEmailErrorMessage(this.forgotForm.get('email')?.errors);
+  }
+
   onSubmit(): void {
     this.errorMessage.set(null);
 
     if (this.forgotForm.invalid) {
       this.forgotForm.markAllAsTouched();
-      this.errorMessage.set('Please enter a valid email address.');
+      this.errorMessage.set(this.getEmailErrorMessage() || 'Please enter a valid email address.');
       return;
     }
 

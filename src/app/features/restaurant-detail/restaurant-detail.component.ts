@@ -1,13 +1,35 @@
-import { Component, inject, signal, computed, OnInit, HostListener } from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, Subject, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { BookingService } from '../../core/services/booking.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Restaurant, MenuItem, DayHours, RestaurantReview } from '../../core/models/restaurant.model';
+import {
+  AvailabilityQuery,
+  AvailableTable,
+  formatDisplayTime,
+  getTodayDateString,
+  prepareAvailabilityRequest
+} from '../../core/models/booking.model';
+
+type AvailabilityTriggerPayload =
+  | { kind: 'clear' }
+  | {
+      kind: 'fetch';
+      restaurantId: string;
+      isActive: boolean;
+      query: AvailabilityQuery;
+      key: string;
+      seq: number;
+    };
 
 @Component({
   selector: 'app-restaurant-detail',
@@ -24,15 +46,50 @@ import { Restaurant, MenuItem, DayHours, RestaurantReview } from '../../core/mod
   styleUrl: './restaurant-detail.component.scss'
 })
 export class RestaurantDetailComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly restaurantService = inject(RestaurantService);
   private readonly bookingService = inject(BookingService);
+  private readonly authService = inject(AuthService);
 
   // Restaurant & Routing state
-  readonly restaurant = signal<Restaurant | null>(null);
+  private readonly rawRestaurant = signal<Restaurant | null>(null);
+  readonly restaurant = computed<Restaurant | null>(() => {
+    const detail = this.rawRestaurant();
+    return detail ? this.restaurantService.enrichFromLoadedList(detail) : null;
+  });
   readonly isNotFound = signal<boolean>(false);
-  readonly similarRestaurants = signal<Restaurant[]>([]);
+  readonly isLoading = signal<boolean>(true);
+  readonly loadError = signal<string | null>(null);
+  readonly similarRestaurants = computed<Restaurant[]>(() => {
+    const found = this.restaurant();
+    if (!found) return [];
+    const all = this.restaurantService.restaurants();
+    const similar = all
+      .filter(r => r.id !== found.id && (Boolean(found.cuisine) && r.cuisine === found.cuisine || r.city === found.city))
+      .slice(0, 3);
+    return similar.length > 0 ? similar : all.filter(r => r.id !== found.id).slice(0, 3);
+  });
+  private currentRestaurantId: string | null = null;
+  private readonly restaurantLoadTrigger$ = new Subject<{ id: string }>();
+
+  // Real-time table availability state
+  private readonly availabilityTrigger$ = new Subject<AvailabilityTriggerPayload>();
+  private availabilitySeq = 0;
+  private activeAvailabilityKey: string | null = null;
+  private lastSuccessAvailabilityKey: string | null = null;
+
+  readonly availableTables = signal<AvailableTable[]>([]);
+  readonly selectedTableId = signal<number | null>(null);
+  readonly selectedTable = computed<AvailableTable | null>(() => {
+    const id = this.selectedTableId();
+    return this.availableTables().find(t => t.id === id) ?? null;
+  });
+  readonly isLoadingAvailability = signal<boolean>(false);
+  readonly availabilityError = signal<string | null>(null);
+  readonly availabilityValidationError = signal<string | null>(null);
+  readonly hasCheckedAvailability = signal<boolean>(false);
 
   // Gallery state
   readonly activeImageIndex = signal<number>(0);
@@ -42,17 +99,48 @@ export class RestaurantDetailComponent implements OnInit {
   // Menu Category Filter state
   readonly selectedMenuCategory = signal<'all' | 'starter' | 'main' | 'dessert' | 'beverage'>('all');
 
-  // Reservation form signals
-  readonly bookingDate = signal<string>('');
-  readonly bookingTime = signal<string>('7:30 PM');
+  // Reservation availability filter signals (submission disabled until Phase 3)
+  readonly minDate = signal<string>(getTodayDateString());
+  readonly bookingDate = signal<string>(getTodayDateString());
+  readonly bookingStartTime = signal<string>('18:30');
+  readonly bookingEndTime = signal<string>('20:00');
   readonly bookingPartySize = signal<number>(2);
   readonly seatingPreference = signal<string>('Chef-Curated Table');
-  readonly guestName = signal<string>('Alexander Wright');
-  readonly guestEmail = signal<string>('a.wright@epicuredining.com');
-  readonly guestPhone = signal<string>('+1 (555) 234-5678');
+  readonly guestName = signal<string>(
+    this.authService.isCustomerAuthenticated()
+      ? (this.authService.currentCustomerSession()?.user.name ?? '')
+      : ''
+  );
+  readonly guestEmail = signal<string>(
+    this.authService.isCustomerAuthenticated()
+      ? (this.authService.currentCustomerSession()?.user.email ?? '')
+      : ''
+  );
+  readonly guestPhone = signal<string>('');
   readonly specialRequests = signal<string>('');
-  readonly bookingConfirmed = signal<boolean>(false);
-  readonly bookingRefCode = signal<string>('');
+  readonly bookingError = signal<string | null>(null);
+
+  readonly formattedTimeWindow = computed(() => {
+    return `${formatDisplayTime(this.bookingStartTime())} – ${formatDisplayTime(this.bookingEndTime())}`;
+  });
+
+  readonly formattedBookingDate = computed(() => {
+    const raw = this.bookingDate();
+    if (!raw) return 'Date not selected';
+    const parts = raw.split('-');
+    if (parts.length === 3) {
+      const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+      }
+    }
+    return raw;
+  });
 
   // UI state
   readonly toastMessage = signal<string | null>(null);
@@ -101,29 +189,11 @@ export class RestaurantDetailComponent implements OnInit {
     return r ? this.restaurantService.isSaved(r.id) : false;
   });
 
-  // Computed: Weekly opening hours schedule
+  // Computed: Weekly opening hours schedule (only when supplied by backend)
   readonly weeklySchedule = computed<DayHours[]>(() => {
     const r = this.restaurant();
-    if (!r) return [];
-    if (r.weeklyHours && r.weeklyHours.length > 0) {
-      return r.weeklyHours.map(item => ({
-        ...item,
-        isToday: item.day.toLowerCase() === this.currentDayName().toLowerCase()
-      }));
-    }
-
-    // Default authentic weekly fine dining schedule
-    const defaultDays = [
-      { day: 'Monday', hours: 'Closed (Private Salon Events Only)' },
-      { day: 'Tuesday', hours: '5:30 PM – 11:00 PM' },
-      { day: 'Wednesday', hours: '5:30 PM – 11:00 PM' },
-      { day: 'Thursday', hours: '5:30 PM – 11:00 PM' },
-      { day: 'Friday', hours: '5:00 PM – 11:30 PM' },
-      { day: 'Saturday', hours: '5:00 PM – 11:30 PM' },
-      { day: 'Sunday', hours: '5:00 PM – 10:00 PM' }
-    ];
-
-    return defaultDays.map(item => ({
+    if (!r || !r.weeklyHours || r.weeklyHours.length === 0) return [];
+    return r.weeklyHours.map(item => ({
       ...item,
       isToday: item.day.toLowerCase() === this.currentDayName().toLowerCase()
     }));
@@ -136,37 +206,14 @@ export class RestaurantDetailComponent implements OnInit {
     if (r.galleryImages && r.galleryImages.length > 0) {
       return r.galleryImages;
     }
-    return [r.imageUrl, this.fallbackImage];
+    return [r.imageUrl];
   });
 
-  // Computed: Filtered menu items
+  // Computed: Filtered menu items (only actual restaurant menu items)
   readonly filteredMenu = computed<MenuItem[]>(() => {
     const r = this.restaurant();
-    if (!r) return [];
-    let items = r.menuHighlights || [];
-
-    // If restaurant has no items in 'beverage', inject pairing items
-    const hasBeverage = items.some(i => i.category === 'beverage');
-    if (!hasBeverage) {
-      const pairings: MenuItem[] = [
-        {
-          name: 'Grand Cru Sommelier Pairing',
-          description: 'Five vintage reserve selections specifically harmonized with seasonal courses.',
-          price: '$95',
-          category: 'beverage',
-          tag: 'Cellar Selection'
-        },
-        {
-          name: 'Botanical Agave & Zero-Proof Flight',
-          description: 'Cold-extracted herbals, house bitters, clarified citrus, and artisanal tonic.',
-          price: '$45',
-          category: 'beverage',
-          tag: 'Non-Alcoholic'
-        }
-      ];
-      items = [...items, ...pairings];
-    }
-
+    if (!r || !r.menuHighlights || r.menuHighlights.length === 0) return [];
+    const items = r.menuHighlights;
     const cat = this.selectedMenuCategory();
     if (cat === 'all') return items;
     return items.filter(i => i.category === cat);
@@ -182,7 +229,17 @@ export class RestaurantDetailComponent implements OnInit {
   // Computed: Review score distribution metrics
   readonly reviewMetrics = computed(() => {
     const r = this.restaurant();
-    const score = r ? r.rating : 4.9;
+    const score = r && typeof r.rating === 'number' && r.rating > 0 ? r.rating : 0;
+    if (score <= 0) {
+      return {
+        overall: 'New',
+        food: '—',
+        service: '—',
+        ambiance: '—',
+        cleanliness: '—',
+        recommendRate: '—'
+      };
+    }
     return {
       overall: score.toFixed(1),
       food: Math.min(5.0, score + 0.05).toFixed(1),
@@ -209,73 +266,223 @@ export class RestaurantDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Set default booking date to today
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    this.bookingDate.set(`${yyyy}-${mm}-${dd}`);
+    const todayStr = getTodayDateString();
+    this.minDate.set(todayStr);
+    this.bookingDate.set(todayStr);
+
+    this.restaurantLoadTrigger$
+      .pipe(
+        switchMap(({ id }) => {
+          this.currentRestaurantId = id;
+          this.isLoading.set(true);
+          this.loadError.set(null);
+          this.isNotFound.set(false);
+          this.rawRestaurant.set(null);
+          this.resetAvailabilityState();
+
+          return this.restaurantService.fetchRestaurantById(id);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(result => {
+        this.isLoading.set(false);
+
+        if (result.status === 'found' && result.restaurant) {
+          this.populateRestaurant(result.restaurant);
+        } else if (result.status === 'not-found') {
+          this.rawRestaurant.set(null);
+          this.isNotFound.set(true);
+          this.loadError.set(null);
+        } else {
+          this.rawRestaurant.set(null);
+          this.isNotFound.set(false);
+          this.loadError.set(
+            result.errorMessage || 'Unable to load restaurant details right now. Please try again.'
+          );
+        }
+      });
+
+    this.availabilityTrigger$
+      .pipe(
+        switchMap(payload => {
+          if (payload.kind === 'clear') {
+            this.activeAvailabilityKey = null;
+            this.isLoadingAvailability.set(false);
+            return EMPTY;
+          }
+
+          this.activeAvailabilityKey = payload.key;
+          this.isLoadingAvailability.set(true);
+          this.availabilityError.set(null);
+
+          return this.bookingService
+            .getAvailableTablesForRestaurant(payload.restaurantId, payload.query, payload.isActive)
+            .pipe(
+              map(tables => ({ status: 'success' as const, tables, payload })),
+              catchError(() =>
+                of({
+                  status: 'error' as const,
+                  message: 'Unable to check table availability right now. Please try again.',
+                  payload
+                })
+              )
+            );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(res => {
+        if (res.payload.seq !== this.availabilitySeq) {
+          return;
+        }
+
+        if (this.activeAvailabilityKey === res.payload.key) {
+          this.activeAvailabilityKey = null;
+        }
+        this.isLoadingAvailability.set(false);
+        this.hasCheckedAvailability.set(true);
+
+        if (res.status === 'success') {
+          this.lastSuccessAvailabilityKey = res.payload.key;
+          this.availableTables.set(res.tables);
+          this.availabilityError.set(null);
+
+          const currentId = this.selectedTableId();
+          if (currentId !== null && !res.tables.some(t => t.id === currentId)) {
+            this.selectedTableId.set(null);
+          }
+        } else {
+          this.lastSuccessAvailabilityKey = null;
+          this.availableTables.set([]);
+          this.selectedTableId.set(null);
+          this.availabilityError.set(res.message);
+        }
+      });
 
     // Subscribe to route parameter changes
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.loadRestaurantData(id);
-      } else {
-        this.isNotFound.set(true);
-      }
-    });
-  }
-
-  loadRestaurantData(id: string): void {
-    const found = this.restaurantService.getRestaurantById(id);
-    if (found) {
-      this.populateRestaurant(found);
-    } else if (!this.restaurantService.isApiLoaded()) {
-      this.restaurantService.fetchRestaurants().subscribe({
-        next: () => {
-          const liveFound = this.restaurantService.getRestaurantById(id);
-          if (liveFound) {
-            this.populateRestaurant(liveFound);
-          } else {
-            this.restaurant.set(null);
-            this.isNotFound.set(true);
-          }
-        },
-        error: () => {
-          this.restaurant.set(null);
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const id = params.get('id');
+        if (id) {
+          this.loadRestaurantData(id);
+        } else {
+          this.isLoading.set(false);
           this.isNotFound.set(true);
         }
       });
-    } else {
-      this.restaurant.set(null);
-      this.isNotFound.set(true);
+  }
+
+  loadRestaurantData(id: string): void {
+    this.restaurantLoadTrigger$.next({ id });
+  }
+
+  retryLoad(): void {
+    if (this.currentRestaurantId) {
+      this.restaurantLoadTrigger$.next({ id: this.currentRestaurantId });
+    }
+    if (this.restaurantService.restaurantLoadError()) {
+      this.restaurantService.fetchRestaurants().subscribe();
     }
   }
 
   private populateRestaurant(found: Restaurant): void {
-    this.restaurant.set(found);
+    this.rawRestaurant.set(found);
     this.isNotFound.set(false);
+    this.loadError.set(null);
     this.activeImageIndex.set(0);
     this.imgErrorOccurred.set(false);
-    this.bookingConfirmed.set(false);
+    this.bookingError.set(null);
     this.selectedMenuCategory.set('all');
 
-    if (found.availableSlots && found.availableSlots.length > 0) {
-      this.bookingTime.set(found.availableSlots[0]);
-    }
-
-    // Find 3 similar restaurants (same cuisine, neighborhood, or city, excluding current)
-    const all = this.restaurantService.restaurants();
-    const similar = all
-      .filter(r => r.id !== found.id && (r.cuisine === found.cuisine || r.city === found.city))
-      .slice(0, 3);
-    this.similarRestaurants.set(similar.length > 0 ? similar : all.filter(r => r.id !== found.id).slice(0, 3));
+    // Fetch availability immediately once restaurant details resolve
+    this.requestAvailabilityRefresh(true);
 
     // Scroll to top
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  }
+
+  private resetAvailabilityState(): void {
+    ++this.availabilitySeq;
+    this.activeAvailabilityKey = null;
+    this.lastSuccessAvailabilityKey = null;
+    this.availableTables.set([]);
+    this.selectedTableId.set(null);
+    this.isLoadingAvailability.set(false);
+    this.availabilityError.set(null);
+    this.availabilityValidationError.set(null);
+    this.hasCheckedAvailability.set(false);
+    this.availabilityTrigger$.next({ kind: 'clear' });
+  }
+
+  requestAvailabilityRefresh(force = false): void {
+    const rest = this.rawRestaurant();
+    if (!rest) return;
+
+    const prepared = prepareAvailabilityRequest(rest.id, {
+      bookingDate: this.bookingDate(),
+      startTime: this.bookingStartTime(),
+      endTime: this.bookingEndTime(),
+      numberOfGuests: this.bookingPartySize()
+    });
+
+    if (!prepared.valid) {
+      ++this.availabilitySeq;
+      this.activeAvailabilityKey = null;
+      this.lastSuccessAvailabilityKey = null;
+      this.availableTables.set([]);
+      this.selectedTableId.set(null);
+      this.availabilityError.set(null);
+      this.availabilityValidationError.set(prepared.error);
+      this.availabilityTrigger$.next({ kind: 'clear' });
+      return;
+    }
+
+    this.availabilityValidationError.set(null);
+
+    if (
+      !force &&
+      (prepared.key === this.activeAvailabilityKey ||
+        prepared.key === this.lastSuccessAvailabilityKey)
+    ) {
+      return;
+    }
+
+    this.lastSuccessAvailabilityKey = null;
+    const seq = ++this.availabilitySeq;
+    this.availabilityTrigger$.next({
+      kind: 'fetch',
+      restaurantId: rest.id,
+      isActive: rest.isActive !== false,
+      query: prepared.query,
+      key: prepared.key,
+      seq
+    });
+  }
+
+  retryAvailability(): void {
+    this.requestAvailabilityRefresh(true);
+  }
+
+  onDateChange(value: string): void {
+    this.bookingDate.set(value);
+    this.requestAvailabilityRefresh(false);
+  }
+
+  onStartTimeChange(value: string): void {
+    this.bookingStartTime.set(value);
+    this.requestAvailabilityRefresh(false);
+  }
+
+  onEndTimeChange(value: string): void {
+    this.bookingEndTime.set(value);
+    this.requestAvailabilityRefresh(false);
+  }
+
+  onPartySizeChange(value: number | string): void {
+    this.bookingPartySize.set(Number(value));
+    this.requestAvailabilityRefresh(false);
   }
 
   // Gallery methods
@@ -321,9 +528,13 @@ export class RestaurantDetailComponent implements OnInit {
     this.selectedMenuCategory.set(cat);
   }
 
-  // Seating & Slot Selection
-  selectSlot(slot: string): void {
-    this.bookingTime.set(slot);
+  // Verified Table Selection (Phase 2: real availability selection only; no booking submission)
+  selectTable(table: AvailableTable): void {
+    this.selectedTableId.set(table.id);
+    this.bookingError.set(null);
+    this.showToast(
+      `Table #${table.tableNumber} (${table.capacity} seats) is available for ${this.formattedTimeWindow()}. Online booking opens in Phase 3.`
+    );
   }
 
   // Smooth scroll to reservation card
@@ -331,7 +542,7 @@ export class RestaurantDetailComponent implements OnInit {
     if (typeof document !== 'undefined') {
       const el = document.getElementById('reservationCard');
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
       }
     }
   }
@@ -343,54 +554,19 @@ export class RestaurantDetailComponent implements OnInit {
     this.router.navigate(['/book', r.id], {
       queryParams: {
         date: this.bookingDate(),
-        time: this.bookingTime(),
+        startTime: this.bookingStartTime(),
+        endTime: this.bookingEndTime(),
         guests: this.bookingPartySize(),
         seating: this.seatingPreference()
       }
     });
   }
 
-  // Submit Table Reservation
+  // Phase 2: Booking submission intentionally disabled (no mock booking or POST /api/bookings)
   submitBooking(): void {
-    const r = this.restaurant();
-    if (!r) return;
-
-    // Register with booking service
-    const booking = this.bookingService.createBooking({
-      restaurantId: r.id,
-      date: this.bookingDate(),
-      time: this.bookingTime(),
-      guests: this.bookingPartySize(),
-      seatingArea: this.seatingPreference(),
-      customer: {
-        fullName: this.guestName(),
-        email: this.guestEmail(),
-        phone: this.guestPhone(),
-        specialRequests: this.specialRequests()
-      }
-    });
-
-    this.bookingRefCode.set(booking.bookingRef);
-    this.bookingConfirmed.set(true);
-    this.showToast('Your table has been reserved with verified confirmation!');
-  }
-
-  resetBooking(): void {
-    this.bookingConfirmed.set(false);
-  }
-
-  // Navigate to Dedicated Booking Confirmation Page
-  goToConfirmation(): void {
-    this.router.navigate(['/booking/confirmation'], {
-      queryParams: { ref: this.bookingRefCode() }
-    });
-  }
-
-  // Navigate to My Bookings
-  goToMyBookings(): void {
-    const r = this.restaurant();
-    const queryParams = r ? { restaurantId: r.id, ref: this.bookingRefCode() } : {};
-    this.router.navigate(['/bookings'], { queryParams });
+    this.bookingError.set(
+      'Online reservation submission is disabled in Phase 2. Real table availability is live; booking creation opens in Phase 3.'
+    );
   }
 
   // Similar restaurant card click

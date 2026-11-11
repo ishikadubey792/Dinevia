@@ -783,6 +783,14 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   .star-icon { color: #E29938; font-size: 1rem; }
   .rating-score { font-size: 0.92rem; font-weight: 700; color: var(--color-charcoal); }
   .review-count { font-size: 0.8rem; color: var(--color-charcoal-light); }
+  .unrated-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-forest);
+    background-color: var(--color-sage-light);
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+  }
 }
 
 .price-tier {

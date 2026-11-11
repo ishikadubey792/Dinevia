@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { OwnerAuthService } from '../../../../core/services/owner-auth.service';
 import { parseJwtClaims } from '../../../../core/models/owner-auth.model';
+import { isValidStandardEmail } from '../../../../core/validators/auth-validators';
 
 @Component({
   selector: 'app-admin-login',
@@ -18,9 +19,9 @@ export class AdminLoginComponent {
   private readonly authService = inject(AuthService);
   private readonly ownerAuthService = inject(OwnerAuthService);
 
-  email = 'chef.julien@legabriel.fr';
+  email = '';
   password = '';
-  rememberMe = true;
+  rememberMe = false;
 
   readonly showPassword = signal<boolean>(false);
   readonly isLoading = signal<boolean>(false);
@@ -29,19 +30,6 @@ export class AdminLoginComponent {
 
   togglePasswordVisibility(): void {
     this.showPassword.update(show => !show);
-  }
-
-  useDemoCredentials(account: 'le-gabriel' | 'arpege' | 'executive'): void {
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
-    if (account === 'le-gabriel') {
-      this.email = 'chef.julien@legabriel.fr';
-    } else if (account === 'arpege') {
-      this.email = 'owner@arpege-paris.fr';
-    } else {
-      this.email = 'marcus.sterling@dinevia.com';
-    }
-    this.password = 'DineviaPass2026!';
   }
 
   onLogin(): void {
@@ -61,9 +49,8 @@ export class AdminLoginComponent {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      this.errorMessage.set('Please enter a valid email address (e.g., owner@your-restaurant.com).');
+    if (!isValidStandardEmail(trimmedEmail)) {
+      this.errorMessage.set('Please enter a valid email address.');
       return;
     }
 

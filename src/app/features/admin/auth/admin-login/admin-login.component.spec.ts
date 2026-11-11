@@ -92,10 +92,42 @@ describe('AdminLoginComponent API Integration & Session Isolation', () => {
     expect(component.showPassword()).toBe(false);
   });
 
-  it('should populate demo credentials on chip click', () => {
-    component.useDemoCredentials('arpege');
-    expect(component.email).toBe('owner@arpege-paris.fr');
-    expect(component.password).toBe('DineviaPass2026!');
+  it('should initialize with empty credentials and without demo credential shortcuts', () => {
+    expect(component.email).toBe('');
+    expect(component.password).toBe('');
+    expect(component.rememberMe).toBe(false);
+    expect(fixture.nativeElement.querySelector('.demo-accounts-strip')).toBeNull();
+
+    const rememberCheckbox = fixture.nativeElement.querySelector('input[name="rememberMe"]') as HTMLInputElement;
+    expect(rememberCheckbox).toBeTruthy();
+    expect(rememberCheckbox.checked).toBe(false);
+    expect(rememberCheckbox.hasAttribute('required')).toBe(false);
+  });
+
+  it('should treat rememberMe as optional and allow owner login whether rememberMe is false or true', () => {
+    const navigateSpy = vi.spyOn(router, 'navigate');
+
+    // 1. With rememberMe unchecked (default false)
+    component.email = 'chef.julien@legabriel.fr';
+    component.password = 'DineviaPass2026!';
+    component.rememberMe = false;
+    component.onLogin();
+
+    expect(ownerAuthServiceMock.login).toHaveBeenCalledTimes(1);
+    expect(authService.isOwnerAuthenticated()).toBe(true);
+    expect(navigateSpy).toHaveBeenCalledWith(['/admin/dashboard']);
+
+    // 2. With rememberMe checked (true)
+    authService.clearOwnerSession();
+    ownerAuthServiceMock.login.mockClear();
+    navigateSpy.mockClear();
+
+    component.rememberMe = true;
+    component.onLogin();
+
+    expect(ownerAuthServiceMock.login).toHaveBeenCalledTimes(1);
+    expect(authService.isOwnerAuthenticated()).toBe(true);
+    expect(navigateSpy).toHaveBeenCalledWith(['/admin/dashboard']);
   });
 
   it('should validate email format and required password before submitting', () => {

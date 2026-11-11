@@ -144,7 +144,10 @@ function isOwnerProtectedEndpoint(path: string, method: string): boolean {
  *
  * Customer-protected endpoints:
  * - POST /bookings (Create customer booking)
+ * - GET /bookings/{id} (Get single booking)
  * - GET /bookings/customer/{customerId} (Customer booking history)
+ * - PUT /bookings/{id} (Update booking)
+ * - POST /bookings/{id}/cancel (Cancel booking)
  * - Explicit customer profile and user endpoints: /customer/*, /profile/*, /users/*
  */
 function isCustomerProtectedEndpoint(path: string, method: string): boolean {
@@ -163,7 +166,31 @@ function isCustomerProtectedEndpoint(path: string, method: string): boolean {
     return true;
   }
 
-  // 3. Explicitly identified customer profile/user endpoints
+  // 3. GET /api/bookings/{id} (Get single booking by ID)
+  if (upperMethod === 'GET') {
+    const singleBookingMatch = path.match(/^\/bookings\/(\d+)$/);
+    if (singleBookingMatch) {
+      return true;
+    }
+  }
+
+  // 4. PUT /api/bookings/{id} (Update booking)
+  if (upperMethod === 'PUT') {
+    const updateMatch = path.match(/^\/bookings\/(\d+)$/);
+    if (updateMatch) {
+      return true;
+    }
+  }
+
+  // 5. POST /api/bookings/{id}/cancel (Cancel booking)
+  if (upperMethod === 'POST') {
+    const cancelMatch = path.match(/^\/bookings\/(\d+)\/cancel$/);
+    if (cancelMatch) {
+      return true;
+    }
+  }
+
+  // 6. Explicitly identified customer profile/user endpoints
   if (
     path === '/customer' || path.startsWith('/customer/') ||
     path === '/profile' || path.startsWith('/profile/') ||

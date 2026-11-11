@@ -1,8 +1,19 @@
-<app-navbar></app-navbar>
+@if (!embedded) {
+  <app-navbar></app-navbar>
 
-<main class="auth-page" role="main">
-  <div class="container auth-container">
-    <div class="auth-card">
+  <main class="auth-page" role="main">
+    <div class="container auth-container">
+      <ng-container *ngTemplateOutlet="loginCardTpl"></ng-container>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+} @else {
+  <ng-container *ngTemplateOutlet="loginCardTpl"></ng-container>
+}
+
+<ng-template #loginCardTpl>
+    <div class="auth-card" [class.modal-embedded-card]="embedded">
       <!-- Brand & Header -->
       <div class="auth-card-header">
         <span class="auth-eyebrow">Member Sanctuary</span>
@@ -48,7 +59,7 @@
               type="email" 
               id="loginEmail" 
               formControlName="email"
-              placeholder="e.g. patron@example.com"
+              placeholder="Enter your email"
               class="auth-input"
               autocomplete="email"
             />
@@ -65,7 +76,13 @@
               <span>Password</span>
               <span class="required-star">*</span>
             </label>
-            <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+            @if (embedded) {
+              <button type="button" class="forgot-link btn-as-link" (click)="onForgotPasswordClick()">
+                Forgot Password?
+              </button>
+            } @else {
+              <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+            }
           </div>
 
           <div class="input-wrapper" [class.input-invalid]="isFieldInvalid('password')">
@@ -132,11 +149,14 @@
       <div class="auth-card-footer">
         <p class="footer-text">
           <span>New to Dinevia's Curated Table Network?</span>
-          <a routerLink="/signup" class="footer-action-link">Create Account</a>
+          @if (embedded) {
+            <button type="button" class="footer-action-link btn-as-link" (click)="switchToSignup.emit()">
+              Create Account
+            </button>
+          } @else {
+            <a routerLink="/signup" class="footer-action-link">Create Account</a>
+          }
         </p>
       </div>
     </div>
-  </div>
-</main>
-
-<app-footer></app-footer>
+</ng-template>

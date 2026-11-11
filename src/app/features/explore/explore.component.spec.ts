@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { ExploreComponent } from './explore.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
+import { CuisineService } from '../../core/services/cuisine.service';
 import { environment } from '../../../environments/environment';
-import { ApiResponse } from '../../core/models/cuisine.model';
+import { ApiCuisine, ApiResponse } from '../../core/models/cuisine.model';
 import { ApiRestaurantDto } from '../../core/models/restaurant.model';
 
 describe('ExploreComponent Search and Filters Integration', () => {
@@ -69,11 +70,23 @@ describe('ExploreComponent Search and Filters Integration', () => {
     ]
   };
 
+  const mockCuisinesData: ApiResponse<ApiCuisine[]> = {
+    statusCode: 200,
+    message: 'Cuisines fetched successfully.',
+    data: [
+      { id: 1, name: 'French Haute', isActive: true },
+      { id: 2, name: 'Italian', isActive: true },
+      { id: 3, name: 'Japanese', isActive: true },
+      { id: 99, name: 'Hidden Inactive', isActive: false }
+    ]
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ExploreComponent],
       providers: [
         RestaurantService,
+        CuisineService,
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting()
@@ -87,6 +100,12 @@ describe('ExploreComponent Search and Filters Integration', () => {
     // Flush initial restaurant service request
     const req = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
     req.flush(mockApiData);
+
+    fixture.detectChanges();
+
+    // Flush initial cuisines API request from ngOnInit
+    const cuisinesReq = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    cuisinesReq.flush(mockCuisinesData);
 
     fixture.detectChanges();
   });
@@ -178,13 +197,68 @@ describe('ExploreComponent Search and Filters Integration', () => {
     expect(results.length).toBe(3);
   });
 
-  it('should filter by price tier', () => {
-    component.setPrice('$$');
+  it('should default to case-insensitive alphabetical A-Z sorting without mutating source order and preserve A-Z order when filtering', () => {
+    expect(component.sortBy()).toBe('name-asc');
+
+    const sortedNames = component.filteredRestaurants().map((r) => r.name);
+    const expectedSorted = [...sortedNames].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
+    expect(sortedNames).toEqual(expectedSorted);
+    expect(sortedNames.length).toBeGreaterThan(1);
+
+    component.setCuisine('italian');
+    fixture.detectChanges();
+    const italianNames = component.filteredRestaurants().map((r) => r.name);
+    expect(italianNames).toEqual(
+      [...italianNames].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    );
+
+    component.setCuisine('all');
+    component.toggleRating45();
+    fixture.detectChanges();
+    const highRatedNames = component.filteredRestaurants().map((r) => r.name);
+    expect(highRatedNames).toEqual(
+      [...highRatedNames].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+    );
+
+    component.resetAllFilters();
+    fixture.detectChanges();
+    expect(component.filteredRestaurants().map((r) => r.name)).toEqual(sortedNames);
+  });
+
+  it('should filter by Rating 4.5+ via toggleRating45() excluding unrated and lower-rated restaurants', () => {
+    component.toggleRating45();
     fixture.detectChanges();
 
     const results = component.filteredRestaurants();
-    expect(results.length).toBe(1);
-    expect(results[0].name).toBe('Trattoria Bella Napoli');
+    expect(component.selectedRating()).toBe(4.5);
+    expect(results.every((r) => r.rating >= 4.5)).toBe(true);
+
+    component.toggleRating45();
+    fixture.detectChanges();
+    expect(component.selectedRating()).toBe(0);
+  });
+
+  it('should clear cuisine filter to restore all matching restaurants', () => {
+    const initialCount = component.filteredRestaurants().length;
+    component.setCuisine('italian');
+    fixture.detectChanges();
+    expect(component.filteredRestaurants().length).toBeLessThan(initialCount);
+
+    component.setCuisine('all');
+    fixture.detectChanges();
+    expect(component.filteredRestaurants().length).toBe(initialCount);
+  });
+
+  it('should omit restaurant price UI/controls and postponed non-backend filters', () => {
+    const text = (fixture.nativeElement.textContent || '').toLowerCase();
+    expect(text).not.toContain('price tier');
+    expect(text).not.toContain('pet friendly');
+    expect(text).not.toContain('outdoor seating');
+    expect(text).not.toContain('serves alcohol');
+    expect(text).not.toContain('open now');
+    expect(text).not.toContain('offers');
   });
 
   it('should filter by minimum rating', () => {
@@ -217,7 +291,7 @@ describe('ExploreComponent Search and Filters Integration', () => {
   it('should combine multiple active filters and reset cleanly', () => {
     component.setCity('Tokyo');
     component.setCuisine('japanese');
-    component.setPrice('$$$$');
+    component.setRating(4.5);
     fixture.detectChanges();
 
     expect(component.activeFilterCount()).toBe(3);
@@ -246,6 +320,63 @@ describe('ExploreComponent Search and Filters Integration', () => {
     fixture.detectChanges();
     results = component.filteredRestaurants();
     expect(results[0].name).toBe('Sakura Omakase Lounge'); // 4.98
+  });
+
+  it('should display only active API cuisines with live restaurant counts and avoid duplicate API calls', () => {
+    const names = component.allCuisines().map(c => c.name);
+    expect(names).toEqual(['French Haute', 'Italian', 'Japanese']);
+    expect(names).not.toContain('Hidden Inactive');
+    expect(component.allCuisines().every(c => c.restaurantCount === 1)).toBe(true);
+
+    // Calling ngOnInit again should reuse cached restaurant & cuisine state without duplicate HTTP requests
+    component.ngOnInit();
+    httpTesting.expectNone(`${environment.apiUrl}/restaurants`);
+    httpTesting.expectNone(`${environment.apiUrl}/cuisines`);
+  });
+
+  it('should handle restaurant API failure cleanly without mock fallback and hide empty no-results state', () => {
+    component.retryLoad();
+
+    const restReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
+    restReq.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+
+    const cuisinesReq = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    cuisinesReq.flush(mockCuisinesData);
+
+    fixture.detectChanges();
+
+    expect(component.allRestaurants().length).toBe(0);
+    expect(component.loadError()).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.restaurants-error-card')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.no-results-card')).toBeNull();
+  });
+
+  it('should handle cuisine API failure cleanly without substituting mock cuisines', () => {
+    const cuisineService = TestBed.inject(CuisineService);
+    cuisineService.loadCuisines(true).subscribe();
+
+    const cuisinesReq = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    cuisinesReq.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+    fixture.detectChanges();
+
+    expect(component.allCuisines().length).toBe(0);
+    expect(component.cuisinesLoadError()).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.cuisines-inline-error')).toBeTruthy();
+  });
+
+  it('should filter live API restaurants when receiving ?cuisine query param and restore all on reset', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigate([], { queryParams: { cuisine: 'italian' } });
+    fixture.detectChanges();
+
+    expect(component.selectedCuisine()).toBe('italian');
+    expect(component.filteredRestaurants().map(r => r.name)).toEqual(['Trattoria Bella Napoli']);
+
+    component.resetAllFilters();
+    fixture.detectChanges();
+
+    expect(component.selectedCuisine()).toBe('all');
+    expect(component.filteredRestaurants().length).toBe(3);
   });
 });
 

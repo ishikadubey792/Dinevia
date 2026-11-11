@@ -222,7 +222,7 @@
                   [class.form-input-error]="isFieldInvalid('email')"
                 />
                 @if (isFieldInvalid('email')) {
-                  <span class="error-hint">Please enter a valid email address.</span>
+                  <span class="error-hint">{{ getEmailErrorMessage() }}</span>
                 }
               </div>
             </div>
@@ -239,10 +239,12 @@
                   id="editPhone" 
                   formControlName="phone"
                   class="styled-input"
+                  maxlength="10"
+                  inputmode="numeric"
                   [class.form-input-error]="isFieldInvalid('phone')"
                 />
                 @if (isFieldInvalid('phone')) {
-                  <span class="error-hint">Please enter a valid telephone format.</span>
+                  <span class="error-hint">{{ getPhoneErrorMessage() }}</span>
                 }
               </div>
 

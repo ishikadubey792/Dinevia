@@ -617,7 +617,8 @@
       cursor: pointer;
       transition: var(--transition-fast);
 
-      &:hover {
+      &:hover,
+      &.active {
         background-color: var(--color-terracotta);
         border-color: var(--color-terracotta);
         color: var(--color-white);

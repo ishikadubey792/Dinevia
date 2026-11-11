@@ -1,7 +1,8 @@
-import { Component, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SearchCriteria } from '../../../../core/models/search-filter.model';
+import { RestaurantService } from '../../../../core/services/restaurant.service';
 
 @Component({
   selector: 'app-search-panel',
@@ -11,28 +12,33 @@ import { SearchCriteria } from '../../../../core/models/search-filter.model';
   styleUrl: './search-panel.component.scss'
 })
 export class SearchPanelComponent implements OnInit {
+  private readonly restaurantService = inject(RestaurantService);
+
   @Output() searchSubmitted = new EventEmitter<SearchCriteria>();
 
   searchForm!: FormGroup;
   minDate: string = '';
 
-  readonly locations = [
-    { label: 'All Destinations', value: '' },
-    { label: 'Manhattan, New York', value: 'New York' },
-    { label: 'SoHo & Tribeca, NY', value: 'SoHo' },
-    { label: 'Mayfair & West End, London', value: 'London' },
-    { label: 'Mission & Financial, San Francisco', value: 'San Francisco' }
-  ];
+  readonly locations = computed(() => {
+    const citySet = new Set<string>();
+    for (const r of this.restaurantService.restaurants()) {
+      if (r.city && r.city.trim().length > 0) {
+        citySet.add(r.city.trim());
+      }
+    }
+    const dynamicCities = Array.from(citySet)
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+      .map(city => ({ label: city, value: city }));
+    return [{ label: 'All Destinations', value: '' }, ...dynamicCities];
+  });
 
-  readonly cuisines = [
-    { label: 'All Cuisines', value: 'all' },
-    { label: 'Italian Fine Dining', value: 'italian' },
-    { label: 'Japanese Omakase', value: 'japanese' },
-    { label: 'Royal Indian', value: 'indian' },
-    { label: 'Modern Mexican', value: 'mexican' },
-    { label: 'Continental & Grill', value: 'continental' },
-    { label: 'Cantonese & Dim Sum', value: 'chinese' }
-  ];
+  readonly cuisines = computed(() => {
+    const activeCuisines = this.restaurantService.cuisines().map(c => ({
+      label: c.name,
+      value: c.slug
+    }));
+    return [{ label: 'All Cuisines', value: 'all' }, ...activeCuisines];
+  });
 
   readonly timeSlots = [
     '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',

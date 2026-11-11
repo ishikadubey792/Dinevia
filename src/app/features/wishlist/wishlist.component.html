@@ -60,8 +60,12 @@
               <div class="card-title-row">
                 <h2 class="card-rest-name">{{ rest.name }}</h2>
                 <div class="rating-badge">
-                  <span class="star-icon">★</span>
-                  <span class="rating-num">{{ rest.rating.toFixed(1) }}</span>
+                  @if (rest.rating > 0) {
+                    <span class="star-icon">★</span>
+                    <span class="rating-num">{{ rest.rating.toFixed(1) }}</span>
+                  } @else {
+                    <span class="rating-num">Unrated</span>
+                  }
                 </div>
               </div>
 
@@ -74,8 +78,6 @@
                   </svg>
                   <span>{{ rest.neighborhood }}, {{ rest.city }}</span>
                 </span>
-                <span class="meta-dot">&bull;</span>
-                <span class="price-tier">{{ rest.priceRange }} Tier</span>
               </div>
 
               <!-- Available Highlights -->

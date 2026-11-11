@@ -53,5 +53,58 @@ describe('CuisineService', () => {
     expect(req.request.method).toBe('GET');
     req.flush(mockResponse);
   });
+
+  it('should filter active cuisines cleanly, share cached/in-flight state without duplicate calls, and support forceRefresh', () => {
+    const activeResults: ApiCuisine[][] = [];
+
+    // Concurrent calls should trigger only one HTTP GET /api/cuisines
+    service.loadCuisines().subscribe(list => activeResults.push(list));
+    service.loadCuisines().subscribe(list => activeResults.push(list));
+
+    expect(service.isLoadingCuisines()).toBe(true);
+    const req = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    req.flush({
+      statusCode: 200,
+      message: 'OK',
+      data: [
+        { id: 1, name: 'Italian', isActive: true },
+        { id: 2, name: '  Italian  ', isActive: true },
+        { id: 3, name: 'Inactive Cuisine', isActive: false },
+        { id: 4, name: 'Japanese', isActive: true }
+      ]
+    });
+
+    expect(service.isLoadingCuisines()).toBe(false);
+    expect(service.isCuisinesLoaded()).toBe(true);
+    expect(service.cuisinesLoadError()).toBeNull();
+    expect(service.apiCuisines().map(c => c.name)).toEqual(['Italian', 'Japanese']);
+    expect(activeResults.length).toBe(2);
+
+    // Subsequent loadCuisines() call reuses cached state with 0 extra HTTP requests
+    let cachedResult: ApiCuisine[] = [];
+    service.loadCuisines().subscribe(list => (cachedResult = list));
+    httpTesting.expectNone(`${environment.apiUrl}/cuisines`);
+    expect(cachedResult.map(c => c.name)).toEqual(['Italian', 'Japanese']);
+
+    // forceRefresh triggers a fresh HTTP request
+    service.loadCuisines(true).subscribe();
+    const refreshReq = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    refreshReq.flush({ statusCode: 200, message: 'OK', data: [{ id: 5, name: 'French', isActive: true }] });
+    expect(service.apiCuisines().map(c => c.name)).toEqual(['French']);
+  });
+
+  it('should clear cuisines without mock fallback and expose error state when /api/cuisines fails', () => {
+    service.loadCuisines().subscribe(list => {
+      expect(list).toEqual([]);
+    });
+
+    const req = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+
+    expect(service.isLoadingCuisines()).toBe(false);
+    expect(service.isCuisinesLoaded()).toBe(false);
+    expect(service.apiCuisines()).toEqual([]);
+    expect(service.cuisinesLoadError()).toBeTruthy();
+  });
 });
 

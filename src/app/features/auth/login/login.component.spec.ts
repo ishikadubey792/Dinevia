@@ -100,6 +100,46 @@ describe('LoginComponent Customer API Integration & Strict Validation', () => {
     expect(component.successMessage()).toBeNull();
     expect(component.isPasswordVisible()).toBe(false);
     expect(component.loginForm.valid).toBe(false);
+    expect(component.loginForm.get('rememberMe')?.value).toBe(false);
+
+    const rememberCheckbox = fixture.nativeElement.querySelector('input[formControlName="rememberMe"]') as HTMLInputElement;
+    expect(rememberCheckbox).toBeTruthy();
+    expect(rememberCheckbox.checked).toBe(false);
+    expect(rememberCheckbox.hasAttribute('required')).toBe(false);
+  });
+
+  it('should treat rememberMe as optional and allow login whether rememberMe is false or true', () => {
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl');
+
+    // 1. Submitted with rememberMe unchecked (default false)
+    component.loginForm.patchValue({
+      email: 'ishika@example.com',
+      password: 'Password@123',
+      rememberMe: false
+    });
+    expect(component.loginForm.get('rememberMe')?.errors).toBeNull();
+    expect(component.loginForm.valid).toBe(true);
+
+    component.onSubmit();
+    expect(customerAuthServiceMock.login).toHaveBeenCalledTimes(1);
+    expect(authService.isCustomerAuthenticated()).toBe(true);
+
+    // 2. Submitted with rememberMe checked (true)
+    authService.logout();
+    customerAuthServiceMock.login.mockClear();
+    navigateSpy.mockClear();
+
+    component.loginForm.patchValue({
+      email: 'ishika@example.com',
+      password: 'Password@123',
+      rememberMe: true
+    });
+    expect(component.loginForm.valid).toBe(true);
+
+    component.onSubmit();
+    expect(customerAuthServiceMock.login).toHaveBeenCalledTimes(1);
+    expect(authService.isCustomerAuthenticated()).toBe(true);
+    expect(navigateSpy).toHaveBeenCalledWith('/profile');
   });
 
   it('should toggle password visibility signal', () => {
