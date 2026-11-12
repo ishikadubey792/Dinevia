@@ -149,6 +149,11 @@ function isOwnerProtectedEndpoint(path: string, method: string): boolean {
  * - PUT /bookings/{id} (Update booking)
  * - POST /bookings/{id}/cancel (Cancel booking)
  * - Explicit customer profile and user endpoints: /customer/*, /profile/*, /users/*
+ * - Customer payment endpoints (Phase 4C.1):
+ *   - POST /payments/initiate/{bookingId}
+ *   - GET /payments/history
+ *   - GET /payments/{paymentId}
+ *   - POST /payments/{paymentId}/process-demo
  */
 function isCustomerProtectedEndpoint(path: string, method: string): boolean {
   const upperMethod = method.toUpperCase();
@@ -197,6 +202,39 @@ function isCustomerProtectedEndpoint(path: string, method: string): boolean {
     path === '/users' || path.startsWith('/users/')
   ) {
     return true;
+  }
+
+  // 7. Customer payment endpoints (Phase 4C.1):
+  // POST /api/payments/initiate/{bookingId}
+  if (upperMethod === 'POST') {
+    const initiatePaymentMatch = path.match(/^\/payments\/initiate\/(\d+)$/);
+    if (initiatePaymentMatch) {
+      return true;
+    }
+  }
+
+  // GET /api/payments/history
+  if (
+    upperMethod === 'GET' &&
+    (path === '/payments/history' || path.startsWith('/payments/history/'))
+  ) {
+    return true;
+  }
+
+  // GET /api/payments/{paymentId}
+  if (upperMethod === 'GET') {
+    const singlePaymentMatch = path.match(/^\/payments\/(\d+)$/);
+    if (singlePaymentMatch) {
+      return true;
+    }
+  }
+
+  // POST /api/payments/{paymentId}/process-demo
+  if (upperMethod === 'POST') {
+    const processDemoMatch = path.match(/^\/payments\/(\d+)\/process-demo$/);
+    if (processDemoMatch) {
+      return true;
+    }
   }
 
   return false;

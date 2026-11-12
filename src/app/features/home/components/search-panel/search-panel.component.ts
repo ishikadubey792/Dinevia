@@ -1,8 +1,9 @@
 import { Component, Output, EventEmitter, OnInit, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { SearchCriteria } from '../../../../core/models/search-filter.model';
 import { RestaurantService } from '../../../../core/services/restaurant.service';
+import { compareTimes, getTodayDateString } from '../../../../core/models/booking.model';
 
 @Component({
   selector: 'app-search-panel',
@@ -40,12 +41,6 @@ export class SearchPanelComponent implements OnInit {
     return [{ label: 'All Cuisines', value: 'all' }, ...activeCuisines];
   });
 
-  readonly timeSlots = [
-    '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
-    '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM',
-    '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM'
-  ];
-
   readonly guestOptions = [
     { label: '1 Guest (Solo Dining)', value: 1 },
     { label: '2 Guests (Date Night / Duo)', value: 2 },
@@ -58,24 +53,51 @@ export class SearchPanelComponent implements OnInit {
   constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    this.minDate = `${yyyy}-${mm}-${dd}`;
+    this.minDate = getTodayDateString();
 
-    this.searchForm = this.fb.group({
-      location: [''],
-      cuisine: ['all'],
-      date: [this.minDate, Validators.required],
-      time: ['7:30 PM', Validators.required],
-      guests: [2, [Validators.required, Validators.min(1)]]
-    });
+    this.searchForm = this.fb.group(
+      {
+        location: [''],
+        cuisine: ['all'],
+        date: [this.minDate, [Validators.required]],
+        startTime: ['18:30', [Validators.required]],
+        endTime: ['20:00', [Validators.required]],
+        guests: [2, [Validators.required, Validators.min(1), Validators.max(20)]]
+      },
+      { validators: [this.timeRangeValidator] }
+    );
+  }
+
+  private timeRangeValidator(group: AbstractControl): ValidationErrors | null {
+    const start = group.get('startTime')?.value;
+    const end = group.get('endTime')?.value;
+    if (!start || !end) return null;
+    const diff = compareTimes(start, end);
+    if (Number.isNaN(diff) || diff >= 0) {
+      return { invalidTimeRange: true };
+    }
+    return null;
+  }
+
+  get timeRangeInvalid(): boolean {
+    return !!(
+      this.searchForm?.errors?.['invalidTimeRange'] &&
+      (this.searchForm.get('startTime')?.touched || this.searchForm.get('endTime')?.touched)
+    );
   }
 
   onSubmit(): void {
     if (this.searchForm.valid) {
-      const criteria: SearchCriteria = this.searchForm.value;
+      const val = this.searchForm.value;
+      const criteria: SearchCriteria = {
+        location: val.location || '',
+        cuisine: val.cuisine || 'all',
+        date: val.date,
+        startTime: val.startTime,
+        endTime: val.endTime,
+        guests: Number(val.guests),
+        time: val.startTime
+      };
       this.searchSubmitted.emit(criteria);
     } else {
       this.searchForm.markAllAsTouched();

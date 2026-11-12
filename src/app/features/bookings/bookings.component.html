@@ -95,6 +95,11 @@
               <span class="status-dot"></span>
               <span>Confirmed</span>
             </span>
+            } @else if (b.status === 'pending') {
+            <span class="status-badge badge-pending">
+              <span class="status-dot dot-pending"></span>
+              <span>Payment Pending</span>
+            </span>
             } @else if (b.status === 'completed') {
             <span class="status-badge badge-completed">
               <span>★ Completed</span>
@@ -181,13 +186,28 @@
             <span>View Details</span>
           </button>
 
+          @if (b.status === 'pending') {
+          <button
+            type="button"
+            class="btn btn-terracotta btn-sm complete-payment-btn"
+            [disabled]="isProcessingPaymentForId() === (b.backendId || 0)"
+            (click)="onCompletePayment(b)">
+            @if (isProcessingPaymentForId() === (b.backendId || 0)) {
+              <span class="spinner-sm" aria-hidden="true"></span>
+              <span>Processing...</span>
+            } @else {
+              <span>Complete Payment</span>
+            }
+          </button>
+          }
+
           @if (canEdit(b)) {
           <button type="button" class="btn btn-outline btn-sm edit-btn" (click)="openEditModal(b)">
             <span>Edit / Reschedule</span>
           </button>
           }
 
-          @if (b.status === 'confirmed') {
+          @if (b.status === 'confirmed' || b.status === 'pending') {
           <button type="button" class="btn btn-ghost btn-sm cancel-btn" (click)="openCancelModal(b)">
             <span>Cancel Reservation</span>
           </button>
@@ -328,6 +348,15 @@
         </div>
 
         <div class="modal-footer">
+          @if (b.status === 'pending') {
+          <button
+            type="button"
+            class="btn btn-terracotta"
+            [disabled]="isProcessingPaymentForId() === (b.backendId || 0)"
+            (click)="onCompletePayment(b)">
+            Complete Payment
+          </button>
+          }
           <a [routerLink]="['/restaurants', b.restaurantId]" class="btn btn-outline" (click)="closeDetails()">
             View Restaurant Page
           </a>

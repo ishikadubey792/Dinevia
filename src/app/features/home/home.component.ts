@@ -11,6 +11,12 @@ import { CuisineService } from '../../core/services/cuisine.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Restaurant } from '../../core/models/restaurant.model';
 import { SearchCriteria } from '../../core/models/search-filter.model';
+import {
+  getTodayDateString,
+  normalizeToTimeInput,
+  compareTimes,
+  parseTimeToParts
+} from '../../core/models/booking.model';
 
 @Component({
   selector: 'app-home',
@@ -55,27 +61,12 @@ export class HomeComponent implements OnInit {
 
   // UI Interactive States
   readonly toastMessage = signal<string | null>(null);
-  readonly selectedRestaurant = signal<Restaurant | null>(null);
-  readonly isReservationModalOpen = signal<boolean>(false);
-  readonly bookingConfirmed = signal<boolean>(false);
-  readonly bookingRefCode = signal<string>('');
 
-  // Booking Modal Form State
+  // Booking schedule state synchronized with search panel
   bookingPartySize = 2;
-  bookingTime = '7:30 PM';
-  bookingDate = '';
-  guestName = this.authService.isCustomerAuthenticated()
-    ? (this.authService.currentCustomerSession()?.user.name ?? '')
-    : '';
-  specialRequests = '';
-
-  constructor() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    this.bookingDate = `${yyyy}-${mm}-${dd}`;
-  }
+  bookingStartTime = '18:30';
+  bookingEndTime = '20:00';
+  bookingDate = getTodayDateString();
 
   ngOnInit(): void {
     this.restaurantService.ensureRestaurantsLoaded().subscribe();
@@ -87,6 +78,11 @@ export class HomeComponent implements OnInit {
   }
 
   onSearch(criteria: SearchCriteria): void {
+    this.bookingDate = criteria.date;
+    this.bookingStartTime = criteria.startTime || '18:30';
+    this.bookingEndTime = criteria.endTime || '20:00';
+    this.bookingPartySize = criteria.guests;
+
     this.restaurantService.searchRestaurants(criteria);
     const locText = criteria.location ? criteria.location : 'all destinations';
     this.showToast(`Updated tables for ${criteria.guests} guests in ${locText}.`);
@@ -117,38 +113,30 @@ export class HomeComponent implements OnInit {
     this.showToast('Filters cleared.');
   }
 
-  openReservation(restaurant: Restaurant, slot?: string): void {
-    this.selectedRestaurant.set(restaurant);
-    if (slot) {
-      this.bookingTime = slot;
-    }
-    this.bookingConfirmed.set(false);
-    this.isReservationModalOpen.set(true);
+  onViewDetails(restaurant: Restaurant): void {
+    this.router.navigate(['/restaurants', restaurant.id]);
   }
 
   onReserveSlot(event: { restaurant: Restaurant; slot: string }): void {
-    this.openReservation(event.restaurant, event.slot);
-  }
+    const startTime = normalizeToTimeInput(event.slot) || this.bookingStartTime;
+    let endTime = this.bookingEndTime;
 
-  closeModal(): void {
-    this.isReservationModalOpen.set(false);
-    this.selectedRestaurant.set(null);
-    this.bookingConfirmed.set(false);
-  }
+    if (compareTimes(startTime, endTime) >= 0) {
+      const parts = parseTimeToParts(startTime);
+      if (parts) {
+        const endHours = Math.min(23, parts.hours + 2);
+        endTime = `${String(endHours).padStart(2, '0')}:${String(parts.minutes).padStart(2, '0')}`;
+      }
+    }
 
-  submitReservation(): void {
-    const rest = this.selectedRestaurant();
-    if (!rest) return;
-
-    const result = this.restaurantService.reserveTable(rest.id, {
-      date: this.bookingDate,
-      time: this.bookingTime,
-      guests: this.bookingPartySize,
-      name: this.guestName
+    this.router.navigate(['/book', event.restaurant.id], {
+      queryParams: {
+        date: this.bookingDate,
+        startTime,
+        endTime,
+        guests: this.bookingPartySize
+      }
     });
-
-    this.bookingRefCode.set(result.bookingRef);
-    this.bookingConfirmed.set(true);
   }
 
   showToast(message: string): void {

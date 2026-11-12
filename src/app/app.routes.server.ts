@@ -20,6 +20,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    path: 'booking/payment/:paymentId',
+    renderMode: RenderMode.Client
+  },
+  {
+    path: 'payment/:paymentId',
+    renderMode: RenderMode.Client
+  },
+  {
     path: 'booking/confirmation',
     renderMode: RenderMode.Client
   },
@@ -53,6 +61,14 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'my-bookings',
+    renderMode: RenderMode.Client
+  },
+  {
+    path: 'payments',
+    renderMode: RenderMode.Client
+  },
+  {
+    path: 'payment-history',
     renderMode: RenderMode.Client
   },
   {

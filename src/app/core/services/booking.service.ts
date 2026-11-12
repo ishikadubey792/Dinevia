@@ -471,6 +471,57 @@ export class BookingService {
   }
 
   /**
+   * Fetch a single customer booking by ID via GET /api/bookings/{id}.
+   * Requires Customer JWT (attached by authInterceptor automatically).
+   */
+  getBookingByIdApi(id: number): Observable<BookingDetails> {
+    return this.http
+      .get<ApiResponse<ApiBookingRecord> | ApiBookingRecord>(`${this.apiUrl}/bookings/${id}`)
+      .pipe(
+        map(res => {
+          const record: ApiBookingRecord =
+            res && typeof res === 'object' && 'data' in res && (res as ApiResponse<ApiBookingRecord>).data !== undefined
+              ? (res as ApiResponse<ApiBookingRecord>).data
+              : (res as ApiBookingRecord);
+
+          const booking = this.mapApiBookingRecord(record);
+          this.setActiveBooking(booking);
+          return booking;
+        }),
+        catchError(err => throwError(() => err))
+      );
+  }
+
+  /**
+   * Set the active booking signal and persist to sessionStorage.
+   */
+  setActiveBooking(booking: BookingDetails | null): void {
+    this.activeBookingSignal.set(booking);
+    if (typeof window !== 'undefined') {
+      try {
+        if (booking) {
+          sessionStorage.setItem('dinevia_active_booking', JSON.stringify(booking));
+        } else {
+          sessionStorage.removeItem('dinevia_active_booking');
+        }
+      } catch (e) {
+        console.warn('Could not persist active booking to sessionStorage', e);
+      }
+    }
+  }
+
+  /**
+   * Update the status of the current active booking in state.
+   */
+  updateBookingStatus(backendId: number, status: BookingDetails['status']): void {
+    const current = this.activeBookingSignal();
+    if (current && current.backendId === backendId) {
+      const updated: BookingDetails = { ...current, status };
+      this.setActiveBooking(updated);
+    }
+  }
+
+  /**
    * Fetch real customer booking history via GET /api/bookings/customer/{customerId}.
    * Requires Customer JWT (attached by authInterceptor automatically).
    *

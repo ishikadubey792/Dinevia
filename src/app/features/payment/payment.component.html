@@ -1,0 +1,240 @@
+<app-navbar></app-navbar>
+
+<main class="payment-page" role="main">
+  <div class="container">
+    <!-- Breadcrumbs -->
+    <nav class="payment-breadcrumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a routerLink="/" class="crumb-anchor">Home</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        <li><a routerLink="/explore" class="crumb-anchor">Explore</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        @if (booking(); as b) {
+          <li><a [routerLink]="['/restaurants', b.restaurantId]" class="crumb-anchor">{{ b.restaurantName }}</a></li>
+          <li class="crumb-sep" aria-hidden="true">/</li>
+        }
+        <li class="crumb-active" aria-current="page">Reservation Payment</li>
+      </ol>
+    </nav>
+
+    <!-- LOADING STATE -->
+    @if (isLoading()) {
+      <div class="payment-loading-card" role="status" aria-label="Loading payment details">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="loading-text">Retrieving reservation payment details...</p>
+      </div>
+    }
+
+    <!-- ERROR STATE (NO PAYMENT OR UNAUTHORIZED) -->
+    @if (!isLoading() && (!payment() || (errorMessage() && !payment()))) {
+      <div class="payment-error-card" role="region" aria-label="Payment record error">
+        <div class="error-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h1 class="error-title">Unable to Resolve Payment</h1>
+        <p class="error-desc">{{ errorMessage() || 'The requested payment reference could not be found or does not belong to your account.' }}</p>
+        <div class="error-actions">
+          <a routerLink="/bookings" class="btn btn-primary btn-lg">View My Reservations</a>
+          <a routerLink="/explore" class="btn btn-outline btn-lg">Explore Restaurants</a>
+        </div>
+      </div>
+    }
+
+    <!-- MAIN PAYMENT CONTENT -->
+    @if (!isLoading() && payment(); as p) {
+      <header class="payment-hero-card">
+        <span class="eyebrow">Phase 4C Mandatory Guarantee</span>
+        <h1 class="payment-hero-title">Table Reservation Payment</h1>
+        <p class="payment-hero-subtitle">
+          Complete the demonstration deposit to secure and confirm your dining reservation.
+        </p>
+      </header>
+
+      <!-- ERROR BANNER (When simulation fails or API returns error) -->
+      @if (errorMessage()) {
+        <div class="payment-alert-banner alert-danger" role="alert">
+          <div class="alert-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="alert-content">
+            <strong>Payment Action Required</strong>
+            <p>{{ errorMessage() }}</p>
+          </div>
+        </div>
+      }
+
+      <div class="payment-layout-grid">
+        <!-- LEFT COLUMN: RESERVATION ITINERARY -->
+        <div class="payment-left-col">
+          <section class="card itinerary-card" aria-label="Reservation Summary">
+            <div class="card-header">
+              <h2 class="card-title">Dining Itinerary</h2>
+              <span class="booking-ref-badge">{{ bookingRef() }}</span>
+            </div>
+
+            @if (booking(); as b) {
+              <div class="restaurant-media-summary">
+                <img [src]="b.restaurantImage" [alt]="b.restaurantName" class="restaurant-thumb" />
+                <div class="restaurant-info">
+                  <h3 class="restaurant-name">{{ b.restaurantName }}</h3>
+                  <p class="restaurant-meta">{{ b.restaurantCuisine }} &bull; {{ b.restaurantLocation }}</p>
+                </div>
+              </div>
+
+              <div class="itinerary-details-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Dining Date</span>
+                  <strong class="detail-value">{{ formattedBookingDate() || b.date }}</strong>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Dining Time Window</span>
+                  <strong class="detail-value">{{ b.time }}</strong>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Party Size</span>
+                  <strong class="detail-value">{{ b.guests }} {{ b.guests === 1 ? 'Guest' : 'Guests' }}</strong>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Seating Area</span>
+                  <strong class="detail-value">{{ b.seatingArea || 'Curated Table' }}</strong>
+                </div>
+              </div>
+            } @else {
+              <div class="itinerary-fallback">
+                <div class="detail-item">
+                  <span class="detail-label">Booking Reference</span>
+                  <strong class="detail-value">DV-{{ p.bookingId }}</strong>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Payment ID</span>
+                  <strong class="detail-value">#{{ p.id }}</strong>
+                </div>
+              </div>
+            }
+          </section>
+
+          <!-- DEMO & CANCELLATION NOTICE -->
+          <aside class="notice-card" role="note">
+            <div class="notice-badge">✦ Architecture Notice</div>
+            <p class="notice-text">
+              <strong>Demo Payment Simulation:</strong> This deposit workflow simulates payment processing for Dinevia's reservation guarantee. No real monetary transactions or charges occur.
+            </p>
+            <p class="notice-subtext">
+              <strong>Cancellation Policy:</strong> Existing reservations may be cancelled per restaurant policy. Note that cancellations in this phase do not include an automated refund workflow.
+            </p>
+          </aside>
+        </div>
+
+        <!-- RIGHT COLUMN: PAYMENT GUARANTEE & ACTIONS -->
+        <div class="payment-right-col">
+          <section class="card payment-summary-card" aria-label="Deposit Breakdown">
+            <div class="card-header">
+              <h2 class="card-title">Payment Guarantee</h2>
+              <span 
+                class="status-pill" 
+                [class.status-pending]="paymentStatus() === 'Pending'"
+                [class.status-success]="paymentStatus() === 'Success'"
+                [class.status-failed]="paymentStatus() === 'Failed'">
+                {{ paymentStatus() }}
+              </span>
+            </div>
+
+            <div class="deposit-breakdown">
+              <div class="breakdown-row">
+                <span class="breakdown-label">Reservation Guarantee Rate</span>
+                <span class="breakdown-value">₹100 / guest</span>
+              </div>
+              <div class="breakdown-row">
+                <span class="breakdown-label">Payment Method</span>
+                <span class="breakdown-value">{{ p.paymentMethod || 'Demo' }}</span>
+              </div>
+              <div class="breakdown-row">
+                <span class="breakdown-label">Payment Reference</span>
+                <span class="breakdown-value">#{{ p.id }}</span>
+              </div>
+              @if (p.transactionId) {
+                <div class="breakdown-row">
+                  <span class="breakdown-label">Transaction ID</span>
+                  <span class="breakdown-value text-mono">{{ p.transactionId }}</span>
+                </div>
+              }
+              <div class="breakdown-divider"></div>
+              <div class="breakdown-row total-row">
+                <span class="total-label">Total Deposit Amount</span>
+                <strong class="total-amount">₹{{ amount() }}</strong>
+              </div>
+            </div>
+
+            <!-- DEMO ACTION CONTROLS -->
+            <div class="demo-actions-container">
+              <div class="actions-header">
+                <span class="actions-title">Interactive Demo Actions</span>
+                <span class="actions-hint">Simulate gateway response</span>
+              </div>
+
+              <div class="actions-button-group">
+                <!-- SUCCESS BUTTON -->
+                <button
+                  type="button"
+                  id="simulate-success-btn"
+                  class="btn btn-simulate-success"
+                  [disabled]="isProcessing() || paymentStatus() === 'Success'"
+                  (click)="onSimulateSuccess()"
+                  aria-label="Simulate Successful Payment">
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="action-icon" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  <span>{{ paymentStatus() === 'Failed' ? 'Retry — Simulate Success' : 'Simulate Successful Payment' }}</span>
+                </button>
+
+                <!-- FAILURE BUTTON -->
+                <button
+                  type="button"
+                  id="simulate-failure-btn"
+                  class="btn btn-simulate-failure"
+                  [disabled]="isProcessing() || paymentStatus() === 'Success'"
+                  (click)="onSimulateFailure()"
+                  aria-label="Simulate Failed Payment">
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="action-icon" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                  <span>{{ paymentStatus() === 'Failed' ? 'Retry — Simulate Failure' : 'Simulate Failed Payment' }}</span>
+                </button>
+              </div>
+
+              <!-- PROCESSING SPINNER -->
+              @if (isProcessing()) {
+                <div class="processing-notice" role="status" aria-live="polite">
+                  <div class="spinner-sm" aria-hidden="true"></div>
+                  <span>Communicating with demo payment processor...</span>
+                </div>
+              }
+
+              @if (paymentStatus() === 'Success') {
+                <div class="confirmed-notice" role="status">
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="confirmed-icon" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                  </svg>
+                  <div>
+                    <strong>Payment Confirmed</strong>
+                    <p>Your table reservation is now confirmed.</p>
+                  </div>
+                  <a routerLink="/booking/confirmation" class="btn btn-outline btn-sm">View Confirmation</a>
+                </div>
+              }
+            </div>
+          </section>
+        </div>
+      </div>
+    }
+  </div>
+</main>
+
+<app-footer></app-footer>
+

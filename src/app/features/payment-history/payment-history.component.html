@@ -1,0 +1,232 @@
+<app-navbar></app-navbar>
+
+<main class="payment-history-page" role="main">
+  <div class="container">
+    <!-- Breadcrumbs -->
+    <nav class="history-breadcrumbs" aria-label="Breadcrumb">
+      <ol>
+        <li><a routerLink="/" class="crumb-anchor">Home</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        <li><a routerLink="/profile" class="crumb-anchor">Member Account</a></li>
+        <li class="crumb-sep" aria-hidden="true">/</li>
+        <li class="crumb-active" aria-current="page">Payment History</li>
+      </ol>
+    </nav>
+
+    <!-- Header -->
+    <header class="history-header">
+      <span class="eyebrow">Financial Audit Trail</span>
+      <h1 class="history-title">Payment History</h1>
+      <p class="history-subtitle">
+        Review your reservation guarantee deposits, transaction receipts, and payment statuses.
+      </p>
+    </header>
+
+    <!-- Metric Summary Cards -->
+    <section class="metrics-grid" aria-label="Payment Summary Metrics">
+      <div class="metric-card">
+        <span class="metric-label">Total Deposits Processed</span>
+        <strong class="metric-value">₹{{ totalPaidAmount() }}</strong>
+        <span class="metric-sub">{{ tabCounts().success }} confirmed reservations</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Successful Payments</span>
+        <strong class="metric-value status-success-text">{{ tabCounts().success }}</strong>
+        <span class="metric-sub">Guaranteed seatings</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Pending Guarantees</span>
+        <strong class="metric-value status-pending-text">{{ tabCounts().pending }}</strong>
+        <span class="metric-sub">Awaiting deposit settlement</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Failed / Retried</span>
+        <strong class="metric-value status-failed-text">{{ tabCounts().failed }}</strong>
+        <span class="metric-sub">Simulation declines</span>
+      </div>
+    </section>
+
+    <!-- Filter Tabs -->
+    <div class="tabs-nav-bar" role="tablist" aria-label="Payment status filter">
+      <button
+        type="button"
+        role="tab"
+        class="tab-btn"
+        [class.active]="activeTab() === 'all'"
+        [attr.aria-selected]="activeTab() === 'all'"
+        (click)="setTab('all')"
+      >
+        <span>All Payments</span>
+        <span class="tab-count">{{ tabCounts().all }}</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="tab-btn"
+        [class.active]="activeTab() === 'success'"
+        [attr.aria-selected]="activeTab() === 'success'"
+        (click)="setTab('success')"
+      >
+        <span>Successful</span>
+        <span class="tab-count active-count">{{ tabCounts().success }}</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="tab-btn"
+        [class.active]="activeTab() === 'pending'"
+        [attr.aria-selected]="activeTab() === 'pending'"
+        (click)="setTab('pending')"
+      >
+        <span>Pending</span>
+        <span class="tab-count">{{ tabCounts().pending }}</span>
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        class="tab-btn"
+        [class.active]="activeTab() === 'failed'"
+        [attr.aria-selected]="activeTab() === 'failed'"
+        (click)="setTab('failed')"
+      >
+        <span>Failed</span>
+        <span class="tab-count">{{ tabCounts().failed }}</span>
+      </button>
+    </div>
+
+    <!-- LOADING STATE -->
+    @if (isLoading()) {
+      <div class="loading-stage" aria-live="polite">
+        <div class="luxury-spinner"></div>
+        <p class="loading-text">Loading your payment records...</p>
+      </div>
+    } @else if (errorMessage()) {
+      <!-- ERROR STATE -->
+      <div class="error-stage" role="alert">
+        <div class="error-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <h2 class="error-title">Unable to Load Payments</h2>
+        <p class="error-message">{{ errorMessage() }}</p>
+        <button type="button" class="btn btn-outline btn-md" (click)="loadPaymentHistory()">
+          Retry Connection
+        </button>
+      </div>
+    } @else if (filteredPayments().length > 0) {
+      <!-- PAYMENTS LIST -->
+      <div class="payments-list" role="feed" aria-label="Customer payments">
+        @for (p of filteredPayments(); track p.id) {
+          <article class="payment-card" [class.payment-card-success]="p.status === 'Success'" [class.payment-card-pending]="p.status === 'Pending'" [class.payment-card-failed]="p.status === 'Failed'">
+            <div class="payment-card-header">
+              <div class="payment-refs">
+                <span class="payment-ref-id">Payment #{{ p.id }}</span>
+                <span class="bullet-sep">&bull;</span>
+                <a [routerLink]="['/booking/confirmation']" [queryParams]="{ id: p.bookingId }" class="booking-ref-link" title="View Reservation Details">
+                  Booking Reference: <strong>DV-{{ p.bookingId }}</strong>
+                </a>
+              </div>
+
+              <!-- Status Badge -->
+              <span class="status-badge" [class.badge-success]="p.status === 'Success'" [class.badge-pending]="p.status === 'Pending'" [class.badge-failed]="p.status === 'Failed'">
+                @if (p.status === 'Success') {
+                  <span class="status-dot dot-success"></span>
+                  <span>Success</span>
+                } @else if (p.status === 'Pending') {
+                  <span class="status-dot dot-pending"></span>
+                  <span>Pending</span>
+                } @else {
+                  <span class="status-dot dot-failed"></span>
+                  <span>Failed</span>
+                }
+              </span>
+            </div>
+
+            <div class="payment-card-body">
+              <div class="payment-detail-col">
+                <span class="detail-label">Amount</span>
+                <strong class="detail-value amount-text">₹{{ p.amount }}</strong>
+              </div>
+
+              <div class="payment-detail-col">
+                <span class="detail-label">Payment Method</span>
+                <span class="detail-value">{{ p.paymentMethod || 'Demo Payment' }}</span>
+              </div>
+
+              <div class="payment-detail-col">
+                <span class="detail-label">Transaction Reference</span>
+                <span class="detail-value font-mono">{{ p.transactionId || '—' }}</span>
+              </div>
+
+              <div class="payment-detail-col">
+                <span class="detail-label">Initiated On</span>
+                <span class="detail-value">{{ p.createdAt | date:'medium' }}</span>
+              </div>
+
+              <div class="payment-detail-col">
+                <span class="detail-label">Settled / Paid At</span>
+                <span class="detail-value">{{ p.paidAt ? (p.paidAt | date:'medium') : 'Awaiting Settlement' }}</span>
+              </div>
+            </div>
+
+            <div class="payment-card-actions">
+              @if (p.status === 'Success') {
+                <a [routerLink]="['/booking/confirmation']" [queryParams]="{ id: p.bookingId }" class="btn btn-outline btn-sm action-btn">
+                  View Booking Receipt
+                </a>
+              } @else if (p.status === 'Pending' || p.status === 'Failed') {
+                <a [routerLink]="['/booking/payment', p.id]" class="btn btn-terracotta btn-sm action-btn">
+                  {{ p.status === 'Failed' ? 'Retry Payment' : 'Complete Payment' }}
+                </a>
+                <a [routerLink]="['/booking/confirmation']" [queryParams]="{ id: p.bookingId }" class="btn btn-outline btn-sm action-btn">
+                  View Booking Details
+                </a>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <!-- EMPTY STATE -->
+      <div class="empty-payments-card" role="region" aria-label="No payments found">
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <line x1="2" y1="10" x2="22" y2="10" />
+          </svg>
+        </div>
+
+        <h2 class="empty-title">
+          @if (activeTab() === 'all') {
+            No Payment Records on File
+          } @else if (activeTab() === 'success') {
+            No Successful Payments
+          } @else if (activeTab() === 'pending') {
+            No Pending Guarantees
+          } @else {
+            No Failed Transactions
+          }
+        </h2>
+
+        <p class="empty-desc">
+          When you reserve tables and complete guarantee deposits at our partner fine-dining establishments, your transactions will appear here.
+        </p>
+
+        <div class="empty-actions">
+          <a routerLink="/bookings" class="btn btn-outline btn-lg">View My Reservations</a>
+          <a routerLink="/explore" class="btn btn-primary btn-lg">Explore Restaurants</a>
+        </div>
+      </div>
+    }
+  </div>
+</main>
+
+<app-footer></app-footer>
+

@@ -10,11 +10,13 @@ import { NavbarComponent } from '../../shared/components/navbar/navbar.component
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { BookingService } from '../../core/services/booking.service';
+import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Restaurant } from '../../core/models/restaurant.model';
 import {
   AvailabilityQuery,
   AvailableTable,
+  BookingDetails,
   CreateBookingRequest,
   formatBookingDateParam,
   formatTimeSpanParam,
@@ -61,6 +63,7 @@ export class BookingComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly restaurantService = inject(RestaurantService);
   private readonly bookingService = inject(BookingService);
+  private readonly paymentService = inject(PaymentService);
   private readonly authService = inject(AuthService);
 
   private readonly rawRestaurant = signal<Restaurant | null>(null);
@@ -73,6 +76,8 @@ export class BookingComponent implements OnInit {
   readonly isNotFound = signal<boolean>(false);
   readonly submissionError = signal<string | null>(null);
   readonly isSubmitting = signal<boolean>(false);
+  readonly createdBookingId = signal<number | null>(null);
+  readonly pendingBooking = signal<BookingDetails | null>(null);
 
   private currentRestaurantId: string | null = null;
   private readonly restaurantLoadTrigger$ = new Subject<{ id: string }>();
@@ -517,6 +522,12 @@ export class BookingComponent implements OnInit {
   onSubmit(): void {
     this.submissionError.set(null);
 
+    // 0. If a booking has already been created (Pending status), do not create duplicate; retry payment initiation
+    if (this.createdBookingId()) {
+      this.retryPaymentInitiation();
+      return;
+    }
+
     // 1. Guard: must have a restaurant loaded
     const rest = this.restaurant();
     if (!rest) {
@@ -596,50 +607,120 @@ export class BookingComponent implements OnInit {
       }
     };
 
-    // 7. Submit
+    // 7. Submit: create booking with Pending status, then initiate payment
     this.isSubmitting.set(true);
     this.bookingService.createBooking(payload, customerContext)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        switchMap(createdBooking => {
+          const bookingId = createdBooking.backendId;
+          if (!bookingId || bookingId <= 0) {
+            throw new Error('A valid booking reference was not returned by the server.');
+          }
+          // Preserve created booking immediately so user never duplicates booking on subsequent clicks
+          this.createdBookingId.set(bookingId);
+          this.pendingBooking.set(createdBooking);
+
+          return this.paymentService.recoverOrInitiatePayment(bookingId);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
-        next: () => {
+        next: (paymentRecord) => {
           this.isSubmitting.set(false);
-          this.router.navigate(['/booking/confirmation']);
+          this.paymentService.setActivePayment(paymentRecord);
+          if (paymentRecord.status === 'Success') {
+            this.router.navigate(['/booking/confirmation'], {
+              queryParams: { id: paymentRecord.bookingId }
+            });
+          } else {
+            this.router.navigate(['/booking/payment', paymentRecord.id]);
+          }
         },
         error: (err) => {
           this.isSubmitting.set(false);
-          this.submissionError.set(this.extractBookingErrorMessage(err));
+          if (this.createdBookingId()) {
+            this.submissionError.set(
+              'Your reservation was saved as Pending (Ref: ' +
+              (this.pendingBooking()?.bookingRef || `DV-${this.createdBookingId()}`) +
+              '), but payment guarantee initiation was interrupted. Please retry payment guarantee below or complete it in My Bookings.'
+            );
+          } else {
+            this.submissionError.set(this.extractBookingErrorMessage(err));
+          }
+        }
+      });
+  }
+
+  /**
+   * Retries payment guarantee initiation for the already created pending reservation.
+   * Prevents creating duplicate booking records.
+   */
+  retryPaymentInitiation(): void {
+    const bookingId = this.createdBookingId();
+    if (!bookingId) return;
+
+    this.isSubmitting.set(true);
+    this.submissionError.set(null);
+
+    this.paymentService.recoverOrInitiatePayment(bookingId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (paymentRecord) => {
+          this.isSubmitting.set(false);
+          this.paymentService.setActivePayment(paymentRecord);
+          if (paymentRecord.status === 'Success') {
+            this.router.navigate(['/booking/confirmation'], {
+              queryParams: { id: bookingId }
+            });
+          } else {
+            this.router.navigate(['/booking/payment', paymentRecord.id]);
+          }
+        },
+        error: (err) => {
+          this.isSubmitting.set(false);
+          this.submissionError.set(
+            'Payment initiation could not be completed at this time. You can retry below or complete payment in My Bookings.'
+          );
         }
       });
   }
 
   /** Extract a user-friendly error message from an HTTP error response */
   private extractBookingErrorMessage(err: unknown): string {
-    if (err && typeof err === 'object' && 'status' in err) {
-      const httpErr = err as { status: number; error?: unknown };
-      if (httpErr.status === 401) {
-        return 'Your session has expired. Please log in again to complete your reservation.';
+    if (err && typeof err === 'object') {
+      if ('message' in err && typeof (err as { message?: unknown }).message === 'string' && !('status' in err)) {
+        return (err as { message: string }).message;
       }
-      if (httpErr.status === 403) {
-        return 'You are not authorized to make this reservation. Please log in with a valid customer account.';
-      }
-      if (httpErr.status === 409) {
-        return 'This table is no longer available for the selected date and time. Please check availability again and select another table.';
-      }
-      if (httpErr.status === 400) {
-        // Try to extract validation message
+      if ('status' in err) {
+        const httpErr = err as { status: number; error?: unknown };
         const body = httpErr.error;
+        let backendMsg = '';
         if (body && typeof body === 'object') {
           const msg = (body as Record<string, unknown>)['message'] ??
                       (body as Record<string, unknown>)['detail'] ??
                       (body as Record<string, unknown>)['title'];
           if (typeof msg === 'string' && msg.trim()) {
-            return msg.trim();
+            backendMsg = msg.trim();
           }
         }
-        return 'Your reservation details are invalid. Please review your inputs and try again.';
-      }
-      if (httpErr.status === 0) {
-        return 'Unable to reach the reservation system. Please check your connection and try again.';
+        if (httpErr.status === 401) {
+          return 'Your session has expired. Please log in again to complete your reservation.';
+        }
+        if (httpErr.status === 403) {
+          return 'You are not authorized to make this reservation. Please log in with a valid customer account.';
+        }
+        if (httpErr.status === 409) {
+          return 'This table is no longer available for the selected date and time. Please check availability again and select another table.';
+        }
+        if (httpErr.status === 400) {
+          return backendMsg || 'Your reservation details are invalid. Please review your inputs and try again.';
+        }
+        if (httpErr.status === 0) {
+          return 'Unable to reach the reservation system. Please check your connection and try again.';
+        }
+        if (backendMsg) {
+          return backendMsg;
+        }
       }
     }
     return 'An unexpected error occurred while processing your reservation. Please try again.';

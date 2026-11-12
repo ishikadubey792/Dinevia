@@ -241,6 +241,83 @@ describe('ownerAuthInterceptor & authInterceptor', () => {
       usersReq.flush({ statusCode: 200, data: {} });
     });
 
+    it('should attach Customer token on POST /payments/initiate/{bookingId} and never attach Owner token', () => {
+      authService.setCustomerSession({
+        id: 1001,
+        name: 'Ishika Patron',
+        email: 'ishika@example.com',
+        role: 'Customer',
+        accessToken: validCustomerJwt,
+        tokenType: 'Bearer',
+        expiresIn: 3600
+      });
+      authService.setOwnerSession({
+        id: 'owner-44',
+        name: 'Chef Julien Laurent',
+        email: 'chef.julien@legabriel.fr',
+        role: 'RestaurantOwner',
+        accessToken: validOwnerJwt,
+        tokenType: 'Bearer',
+        expiresIn: 3600
+      });
+
+      http.post(`${environment.apiUrl}/payments/initiate/42`, {}).subscribe();
+      const req = httpTesting.expectOne(`${environment.apiUrl}/payments/initiate/42`);
+      expect(req.request.headers.get('Authorization')).toBe(`Bearer ${validCustomerJwt}`);
+      expect(req.request.headers.get('Authorization')).not.toContain(validOwnerJwt);
+      req.flush({ statusCode: 200, data: { id: 1, bookingId: 42, amount: 200, status: 'Pending' } });
+    });
+
+    it('should attach Customer token on GET /payments/history and GET /payments/{paymentId}', () => {
+      authService.setCustomerSession({
+        id: 1001,
+        name: 'Ishika Patron',
+        email: 'ishika@example.com',
+        role: 'Customer',
+        accessToken: validCustomerJwt,
+        tokenType: 'Bearer',
+        expiresIn: 3600
+      });
+
+      http.get(`${environment.apiUrl}/payments/history`).subscribe();
+      const historyReq = httpTesting.expectOne(`${environment.apiUrl}/payments/history`);
+      expect(historyReq.request.headers.get('Authorization')).toBe(`Bearer ${validCustomerJwt}`);
+      historyReq.flush({ statusCode: 200, data: [] });
+
+      http.get('/api/payments/99').subscribe();
+      const singleReq = httpTesting.expectOne('/api/payments/99');
+      expect(singleReq.request.headers.get('Authorization')).toBe(`Bearer ${validCustomerJwt}`);
+      singleReq.flush({ statusCode: 200, data: { id: 99 } });
+    });
+
+    it('should attach Customer token on POST /payments/{paymentId}/process-demo with query params', () => {
+      authService.setCustomerSession({
+        id: 1001,
+        name: 'Ishika Patron',
+        email: 'ishika@example.com',
+        role: 'Customer',
+        accessToken: validCustomerJwt,
+        tokenType: 'Bearer',
+        expiresIn: 3600
+      });
+
+      http.post(`${environment.apiUrl}/payments/99/process-demo?simulateSuccess=true`, {}).subscribe();
+      const req = httpTesting.expectOne(`${environment.apiUrl}/payments/99/process-demo?simulateSuccess=true`);
+      expect(req.request.headers.get('Authorization')).toBe(`Bearer ${validCustomerJwt}`);
+      req.flush({ statusCode: 200, data: { id: 99, status: 'Success' } });
+    });
+
+    it('should NOT attach Authorization header on payment endpoints when customer is not authenticated', () => {
+      expect(authService.isCustomerAuthenticated()).toBe(false);
+
+      http.post(`${environment.apiUrl}/payments/initiate/42`, {}).subscribe({
+        error: () => {}
+      });
+      const req = httpTesting.expectOne(`${environment.apiUrl}/payments/initiate/42`);
+      expect(req.request.headers.has('Authorization')).toBe(false);
+      req.flush({ statusCode: 401 }, { status: 401, statusText: 'Unauthorized' });
+    });
+
     it('should NOT attach stale or expired Customer tokens', () => {
       sessionStorage.setItem(
         'dinevia_customer_session',
@@ -709,6 +786,34 @@ describe('ownerAuthInterceptor & authInterceptor', () => {
       // Owner session must remain completely intact
       expect(authService.isOwnerAuthenticated()).toBe(true);
       expect(authService.getOwnerAccessToken()).toBe(validOwnerJwt);
+    });
+
+    it('should intercept 401 on Customer payment request, clear customer session, and redirect to /login', () => {
+      authService.setCustomerSession({
+        id: 1001,
+        name: 'Ishika Patron',
+        email: 'ishika@example.com',
+        role: 'Customer',
+        accessToken: validCustomerJwt,
+        tokenType: 'Bearer',
+        expiresIn: 3600
+      });
+
+      vi.spyOn(router, 'url', 'get').mockReturnValue('/booking/confirmation');
+      const navigateSpy = vi.spyOn(router, 'navigate');
+
+      http.post(`${environment.apiUrl}/payments/initiate/42`, {}).subscribe({
+        next: () => expect.unreachable('Should fail with 401'),
+        error: () => {}
+      });
+
+      const req = httpTesting.expectOne(`${environment.apiUrl}/payments/initiate/42`);
+      req.flush({ statusCode: 401 }, { status: 401, statusText: 'Unauthorized' });
+
+      expect(authService.isCustomerAuthenticated()).toBe(false);
+      expect(navigateSpy).toHaveBeenCalledWith(['/login'], {
+        queryParams: { returnUrl: '/booking/confirmation' }
+      });
     });
 
     it('should avoid redirect loop if already on /login when Customer 401 occurs', () => {

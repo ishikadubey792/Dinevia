@@ -17,8 +17,13 @@
       </ol>
     </nav>
 
-    <!-- NO ACTIVE BOOKING FOUND (Direct Access Guard) -->
-    @if (noBookingFound() || !booking()) {
+    <!-- VERIFYING WITH BACKEND -->
+    @if (isVerifying()) {
+      <div class="confirmation-loading-stage" aria-live="polite">
+        <div class="luxury-spinner"></div>
+        <p class="loading-text">Verifying table reservation with Dinevia concierge...</p>
+      </div>
+    } @else if (noBookingFound() || !booking()) {
       <div class="no-booking-card" role="region" aria-label="No reservation found">
         <div class="no-booking-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -43,42 +48,125 @@
       </div>
     }
 
-    <!-- VALID CONFIRMED RESERVATION -->
-    @if (booking(); as b) {
-      <!-- 1. HERO SUCCESS BANNER -->
-      <header class="confirm-hero-card">
-        <div class="success-badge-glow">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </div>
-
-        <span class="eyebrow">Reservation Verified</span>
-        <h1 class="confirm-hero-title">Table Reservation Confirmed</h1>
-        <p class="confirm-hero-subtitle">
-          We look forward to welcoming you at <strong>{{ b.restaurantName }}</strong>. The kitchen and maître d' have been notified.
-        </p>
-
-        <!-- Reference Code Display Box -->
-        <div class="reference-code-box">
-          <div class="ref-text-col">
-            <span class="ref-label">Booking Reference Number</span>
-            <strong class="ref-code-value">{{ b.bookingRef }}</strong>
+    <!-- VALID RESERVATION (VERIFIED) -->
+    @if (!isVerifying() && booking(); as b) {
+      <!-- 1. HERO BANNER (Status-Aware) -->
+      @if (b.status === 'confirmed') {
+        <header class="confirm-hero-card">
+          <div class="success-badge-glow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
           </div>
 
-          <button 
-            type="button" 
-            class="copy-ref-btn" 
-            (click)="copyReference()" 
-            [attr.aria-label]="'Copy reference code ' + b.bookingRef">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="copy-icon" aria-hidden="true">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-            <span>{{ copiedToClipboard() ? 'Copied!' : 'Copy Code' }}</span>
-          </button>
-        </div>
-      </header>
+          <span class="eyebrow">Reservation Verified</span>
+          <h1 class="confirm-hero-title">Table Reservation Confirmed</h1>
+          <p class="confirm-hero-subtitle">
+            We look forward to welcoming you at <strong>{{ b.restaurantName }}</strong>. The kitchen and maître d' have been notified.
+          </p>
+
+          <!-- Reference Code Display Box -->
+          <div class="reference-code-box">
+            <div class="ref-text-col">
+              <span class="ref-label">Booking Reference Number</span>
+              <strong class="ref-code-value">{{ b.bookingRef }}</strong>
+            </div>
+
+            <button 
+              type="button" 
+              class="copy-ref-btn" 
+              (click)="copyReference()" 
+              [attr.aria-label]="'Copy reference code ' + b.bookingRef">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="copy-icon" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>{{ copiedToClipboard() ? 'Copied!' : 'Copy Code' }}</span>
+            </button>
+          </div>
+        </header>
+      } @else if (b.status === 'pending') {
+        <header class="confirm-hero-card hero-pending-card">
+          <div class="pending-badge-glow">
+            <span class="pending-icon">⏳</span>
+          </div>
+
+          <span class="eyebrow eyebrow-pending">Action Required</span>
+          <h1 class="confirm-hero-title">Payment Guarantee Pending</h1>
+          <p class="confirm-hero-subtitle">
+            Your table reservation at <strong>{{ b.restaurantName }}</strong> is saved as Pending. Seating is <strong>not guaranteed</strong> until payment guarantee deposit is completed.
+          </p>
+
+          <div class="pending-cta-row">
+            <button
+              type="button"
+              class="btn btn-terracotta btn-lg complete-payment-cta-btn"
+              [disabled]="isRecoveringPayment()"
+              (click)="onProceedToPayment()">
+              @if (isRecoveringPayment()) {
+                <span class="spinner-sm" aria-hidden="true"></span>
+                <span>Connecting to Payment Guarantee...</span>
+              } @else {
+                <span>Complete Payment Guarantee</span>
+              }
+            </button>
+          </div>
+
+          <!-- Reference Code Display Box -->
+          <div class="reference-code-box">
+            <div class="ref-text-col">
+              <span class="ref-label">Pending Booking Reference</span>
+              <strong class="ref-code-value">{{ b.bookingRef }}</strong>
+            </div>
+
+            <button 
+              type="button" 
+              class="copy-ref-btn" 
+              (click)="copyReference()" 
+              [attr.aria-label]="'Copy reference code ' + b.bookingRef">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="copy-icon" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>{{ copiedToClipboard() ? 'Copied!' : 'Copy Code' }}</span>
+            </button>
+          </div>
+        </header>
+      } @else if (b.status === 'cancelled') {
+        <header class="confirm-hero-card hero-cancelled-card">
+          <div class="cancelled-badge-glow">✕</div>
+
+          <span class="eyebrow eyebrow-cancelled">Reservation Cancelled</span>
+          <h1 class="confirm-hero-title">Table Reservation Cancelled</h1>
+          <p class="confirm-hero-subtitle">
+            This reservation at <strong>{{ b.restaurantName }}</strong> was cancelled. Table hold has been released.
+          </p>
+
+          <div class="reference-code-box">
+            <div class="ref-text-col">
+              <span class="ref-label">Cancelled Reference</span>
+              <strong class="ref-code-value">{{ b.bookingRef }}</strong>
+            </div>
+          </div>
+        </header>
+      } @else if (b.status === 'completed') {
+        <header class="confirm-hero-card hero-completed-card">
+          <div class="completed-badge-glow">★</div>
+
+          <span class="eyebrow">Dining Experience Completed</span>
+          <h1 class="confirm-hero-title">Reservation Completed</h1>
+          <p class="confirm-hero-subtitle">
+            Thank you for dining at <strong>{{ b.restaurantName }}</strong>. We hope you had an extraordinary experience.
+          </p>
+
+          <div class="reference-code-box">
+            <div class="ref-text-col">
+              <span class="ref-label">Completed Reference</span>
+              <strong class="ref-code-value">{{ b.bookingRef }}</strong>
+            </div>
+          </div>
+        </header>
+      }
 
       <!-- 2. DEMO NOTICE DISCLAIMER (Only shown for mock reservations) -->
       @if (b.isMockReservation) {
@@ -137,7 +225,15 @@
               <!-- Booking Status -->
               <div class="itinerary-row">
                 <span class="itinerary-label">Reservation Status</span>
-                <span class="itinerary-value status-confirmed">✓ Guaranteed Seating</span>
+                @if (b.status === 'confirmed') {
+                  <span class="itinerary-value status-confirmed">✓ Guaranteed Seating</span>
+                } @else if (b.status === 'pending') {
+                  <span class="itinerary-value status-pending">⏳ Payment Guarantee Pending</span>
+                } @else if (b.status === 'cancelled') {
+                  <span class="itinerary-value status-cancelled">✕ Cancelled</span>
+                } @else if (b.status === 'completed') {
+                  <span class="itinerary-value status-completed">★ Completed</span>
+                }
               </div>
             </div>
 
@@ -161,6 +257,43 @@
               </div>
             }
           </section>
+
+          <!-- Payment Guarantee Deposit Card (Shown when Confirmed) -->
+          @if (b.status === 'confirmed') {
+            <section class="itinerary-card payment-details-card">
+              <div class="payment-card-header">
+                <h2 class="itinerary-card-title">Payment Guarantee Deposit</h2>
+                <span class="deposit-guaranteed-badge">✓ Deposit Paid</span>
+              </div>
+
+              @if (payment(); as p) {
+                <div class="itinerary-lines-list">
+                  <div class="itinerary-row">
+                    <span class="itinerary-label">Deposit Amount</span>
+                    <span class="itinerary-value payment-amount-highlight">₹{{ p.amount }}</span>
+                  </div>
+                  <div class="itinerary-row">
+                    <span class="itinerary-label">Payment Method</span>
+                    <span class="itinerary-value">{{ p.paymentMethod || 'Demo Payment Guarantee' }}</span>
+                  </div>
+                  <div class="itinerary-row">
+                    <span class="itinerary-label">Transaction ID</span>
+                    <span class="itinerary-value font-mono">{{ p.transactionId || ('TXN-' + p.id) }}</span>
+                  </div>
+                  @if (p.paidAt) {
+                    <div class="itinerary-row">
+                      <span class="itinerary-label">Paid At</span>
+                      <span class="itinerary-value">{{ p.paidAt | date:'medium' }}</span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="payment-fallback-notice">
+                  <p>Payment deposit details currently unavailable.</p>
+                </div>
+              }
+            </section>
+          }
 
           <!-- Customer Lead Details Card -->
           <section class="itinerary-card">

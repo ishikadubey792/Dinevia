@@ -175,5 +175,27 @@ describe('customerAuthGuard', () => {
     expect(result instanceof UrlTree).toBe(true);
     expect((result as UrlTree).queryParams['returnUrl']).toBe('/profile?tab=security&ref=invite');
   });
+
+  it('should protect /payments route and redirect unauthenticated access to /login?returnUrl=/payments', () => {
+    const paymentState = { url: '/payments' } as RouterStateSnapshot;
+
+    const result = TestBed.runInInjectionContext(() => customerAuthGuard(dummyRoute, paymentState));
+
+    expect(result instanceof UrlTree).toBe(true);
+    expect((result as UrlTree).queryParams['returnUrl']).toBe('/payments');
+
+    // With customer session, it grants access
+    authService.setCustomerSession({
+      id: 1001,
+      name: 'Ishika Patron',
+      email: 'ishika@example.com',
+      accessToken: validCustomerJwt,
+      tokenType: 'Bearer',
+      expiresIn: 3600
+    });
+
+    const allowedResult = TestBed.runInInjectionContext(() => customerAuthGuard(dummyRoute, paymentState));
+    expect(allowedResult).toBe(true);
+  });
 });
 

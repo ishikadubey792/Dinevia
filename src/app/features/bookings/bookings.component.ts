@@ -1,11 +1,12 @@
 import { Component, DestroyRef, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { BookingService } from '../../core/services/booking.service';
+import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
 import {
   BookingDetails,
@@ -34,12 +35,15 @@ import {
 export class BookingsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly bookingService = inject(BookingService);
+  private readonly paymentService = inject(PaymentService);
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   readonly allBookings = signal<BookingDetails[]>([]);
   readonly isLoading = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
   readonly activeTab = signal<'all' | 'upcoming' | 'completed' | 'cancelled'>('all');
+  readonly isProcessingPaymentForId = signal<number | null>(null);
 
   // Selected booking for Details Modal
   readonly selectedBooking = signal<BookingDetails | null>(null);
@@ -478,6 +482,52 @@ export class BookingsComponent implements OnInit {
       }
     }
     return 'An unexpected error occurred while communicating with the reservation system.';
+  }
+
+  /**
+   * Completes payment for an existing pending reservation.
+   * Uses recoverOrInitiatePayment to recover existing Pending/Failed payment or initiate a new one.
+   * If payment has already been completed, refreshes booking history.
+   * Otherwise navigates to the payment demo page.
+   */
+  onCompletePayment(booking: BookingDetails): void {
+    if (this.isProcessingPaymentForId() !== null) {
+      return; // Prevent duplicate clicks
+    }
+
+    const bookingId = booking.backendId ?? (
+      booking.bookingRef.startsWith('DV-')
+        ? Number(booking.bookingRef.replace('DV-', ''))
+        : null
+    );
+
+    if (!bookingId || !Number.isFinite(bookingId) || bookingId <= 0) {
+      this.showToast('Unable to complete payment: invalid reservation ID.');
+      return;
+    }
+
+    this.isProcessingPaymentForId.set(bookingId);
+
+    this.paymentService.recoverOrInitiatePayment(bookingId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (paymentRecord) => {
+          this.isProcessingPaymentForId.set(null);
+          this.paymentService.setActivePayment(paymentRecord);
+
+          if (paymentRecord.status === 'Success') {
+            this.showToast('Payment verified successfully. Booking confirmed.');
+            this.loadBookings();
+          } else {
+            this.router.navigate(['/booking/payment', paymentRecord.id]);
+          }
+        },
+        error: (err) => {
+          this.isProcessingPaymentForId.set(null);
+          const msg = this.extractErrorMessage(err);
+          this.showToast(msg || 'Unable to initiate payment guarantee. Please try again.');
+        }
+      });
   }
 
   private showToast(msg: string): void {

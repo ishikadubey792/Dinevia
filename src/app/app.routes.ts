@@ -44,6 +44,16 @@ export const routes: Routes = [
     redirectTo: 'book/:id'
   },
   {
+    path: 'booking/payment/:paymentId',
+    loadComponent: () => import('./features/payment/payment.component').then(m => m.PaymentComponent),
+    canActivate: [customerAuthGuard],
+    title: 'Reservation Payment Guarantee — Dinevia'
+  },
+  {
+    path: 'payment/:paymentId',
+    redirectTo: 'booking/payment/:paymentId'
+  },
+  {
     path: 'booking/confirmation',
     component: BookingConfirmationComponent,
     title: 'Reservation Confirmed — Dinevia'
@@ -86,6 +96,19 @@ export const routes: Routes = [
   {
     path: 'my-bookings',
     redirectTo: 'bookings'
+  },
+  {
+    path: 'payments',
+    loadComponent: () =>
+      import('./features/payment-history/payment-history.component').then(
+        m => m.PaymentHistoryComponent
+      ),
+    canActivate: [customerAuthGuard],
+    title: 'Payment History — Dinevia'
+  },
+  {
+    path: 'payment-history',
+    redirectTo: 'payments'
   },
   {
     path: 'wishlist',

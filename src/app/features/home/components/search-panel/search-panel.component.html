@@ -56,22 +56,40 @@
       <span id="date-help" class="sr-only">Select your desired reservation date</span>
     </div>
 
-    <!-- Time Slot Picker -->
+    <!-- Start Time Picker -->
     <div class="form-field">
-      <label for="searchTime" class="field-label">
+      <label for="searchStartTime" class="field-label">
         <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
         </svg>
-        <span>Time</span>
+        <span>Start Time</span>
       </label>
-      <div class="select-wrapper">
-        <select id="searchTime" formControlName="time" class="form-select">
-          @for (slot of timeSlots; track slot) {
-            <option [value]="slot">{{ slot }}</option>
-          }
-        </select>
-        <span class="chevron-down" aria-hidden="true">▾</span>
-      </div>
+      <input 
+        id="searchStartTime"
+        type="time" 
+        formControlName="startTime" 
+        class="form-input time-input"
+        aria-label="Reservation start time"
+        required
+      />
+    </div>
+
+    <!-- End Time Picker -->
+    <div class="form-field">
+      <label for="searchEndTime" class="field-label">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+        </svg>
+        <span>End Time</span>
+      </label>
+      <input 
+        id="searchEndTime"
+        type="time" 
+        formControlName="endTime" 
+        class="form-input time-input"
+        aria-label="Reservation end time"
+        required
+      />
     </div>
 
     <!-- Guests Selection -->
@@ -101,5 +119,12 @@
         <span>Find Table</span>
       </button>
     </div>
+
+    <!-- Time Range Error -->
+    @if (timeRangeInvalid) {
+      <div class="time-range-error" role="alert">
+        <span>End time must be later than start time.</span>
+      </div>
+    }
   </form>
 </div>

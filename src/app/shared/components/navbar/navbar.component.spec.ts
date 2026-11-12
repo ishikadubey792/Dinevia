@@ -150,6 +150,7 @@ describe('NavbarComponent Responsive & Auth-Aware Navigation', () => {
       const dropdown = fixture.nativeElement.querySelector('.user-dropdown');
       expect(dropdown.textContent).toContain('Ishika Customer');
       expect(dropdown.querySelector('a[routerLink="/profile"]')).toBeTruthy();
+      expect(dropdown.querySelector('a[routerLink="/payments"]')).toBeTruthy();
 
       const logoutBtn = dropdown.querySelector('.dropdown-item-danger') as HTMLButtonElement;
       expect(logoutBtn.textContent?.trim()).toBe('Logout');
@@ -180,6 +181,7 @@ describe('NavbarComponent Responsive & Auth-Aware Navigation', () => {
       const dropdown = fixture.nativeElement.querySelector('.user-dropdown');
       expect(dropdown.textContent).toContain('Chef Julien');
       expect(dropdown.querySelector('a[routerLink="/admin/dashboard"]')).toBeTruthy();
+      expect(dropdown.querySelector('a[routerLink="/payments"]')).toBeNull();
       expect(dropdown.querySelector('a[routerLink="/login"]')).toBeTruthy();
       expect(dropdown.querySelector('a[routerLink="/signup"]')).toBeTruthy();
 

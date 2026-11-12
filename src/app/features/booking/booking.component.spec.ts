@@ -347,7 +347,7 @@ describe('BookingComponent Phase 2 Details, Direct Refresh & Real Availability',
 
     bookReq.flush({
       statusCode: 200,
-      message: 'Booking confirmed successfully.',
+      message: 'Booking created successfully.',
       data: {
         id: 1042,
         restaurantTableId: tbl.id,
@@ -355,16 +355,132 @@ describe('BookingComponent Phase 2 Details, Direct Refresh & Real Availability',
         startTime: '18:30:00',
         endTime: '20:00:00',
         numberOfGuests: 2,
-        status: 'Confirmed'
+        status: 'Pending'
+      }
+    });
+
+    // Phase 4C.2: Booking creation must be followed immediately by recoverOrInitiatePayment
+    const histReq = httpTesting.expectOne(`${environment.apiUrl}/payments/history`);
+    histReq.flush({ statusCode: 200, message: 'OK', data: [] });
+
+    const payReq = httpTesting.expectOne(`${environment.apiUrl}/payments/initiate/1042`);
+    expect(payReq.request.method).toBe('POST');
+    expect(payReq.request.body).toEqual({});
+
+    payReq.flush({
+      statusCode: 200,
+      message: 'Payment initiated successfully.',
+      data: {
+        id: 301,
+        bookingId: 1042,
+        amount: 200,
+        paymentMethod: 'Demo',
+        status: 'Pending',
+        transactionId: null,
+        createdAt: '2026-11-12T12:00:00Z',
+        paidAt: null
       }
     });
     fixture.detectChanges();
 
     expect(component.isSubmitting()).toBe(false);
     expect(component.submissionError()).toBeNull();
-    expect(navSpy).toHaveBeenCalledWith(['/booking/confirmation']);
+    expect(navSpy).toHaveBeenCalledWith(['/booking/payment', 301]);
     expect(bookingService.activeBooking()?.bookingRef).toBe('DV-1042');
     expect(bookingService.activeBooking()?.isMockReservation).toBe(false);
+  });
+
+  it('should preserve createdBookingId when payment initiation fails and prevent duplicate booking', () => {
+    flushInitialLoad();
+    const authService = TestBed.inject(AuthService);
+    const router = TestBed.inject(Router);
+    const navSpy = vi.spyOn(router, 'navigate');
+
+    authService.setCustomerSession({
+      id: 55,
+      name: 'Ishika Guest',
+      email: 'ishika@example.com',
+      accessToken:
+        'header.' +
+        btoa(JSON.stringify({ role: 'Customer', exp: Math.floor(Date.now() / 1000) + 3600 })) +
+        '.sig'
+    });
+
+    const tbl = component.availableTables()[0];
+    component.selectTable(tbl);
+    fixture.detectChanges();
+
+    component.bookingForm.patchValue({
+      fullName: 'Ishika Guest',
+      email: 'ishika@example.com',
+      phone: '9876543210',
+      agreeTerms: true
+    });
+    component.onSubmit();
+    fixture.detectChanges();
+
+    const bookReq = httpTesting.expectOne(`${environment.apiUrl}/bookings`);
+    bookReq.flush({
+      statusCode: 200,
+      message: 'Booking created successfully.',
+      data: {
+        id: 1045,
+        status: 'Pending'
+      }
+    });
+
+    // recoverOrInitiatePayment checks history first
+    const histReq1 = httpTesting.expectOne(`${environment.apiUrl}/payments/history`);
+    histReq1.flush({ statusCode: 200, message: 'OK', data: [] });
+
+    // Initiation fails
+    const payReq = httpTesting.expectOne(`${environment.apiUrl}/payments/initiate/1045`);
+    payReq.flush(
+      { message: 'Unable to initiate deposit guarantee' },
+      { status: 500, statusText: 'Server Error' }
+    );
+
+    // Fallback re-query history
+    const histReq2 = httpTesting.expectOne(`${environment.apiUrl}/payments/history`);
+    histReq2.flush({ statusCode: 200, message: 'OK', data: [] });
+
+    fixture.detectChanges();
+
+    expect(component.isSubmitting()).toBe(false);
+    expect(component.createdBookingId()).toBe(1045);
+    expect(component.submissionError()).toContain('Your reservation was saved as Pending');
+    expect(navSpy).not.toHaveBeenCalledWith(['/booking/payment', expect.anything()]);
+
+    // UI shows recovery card
+    const recoveryCard = fixture.nativeElement.querySelector('.booking-recovery-card');
+    expect(recoveryCard).toBeTruthy();
+    expect(recoveryCard.textContent).toContain('DV-1045');
+
+    // Duplicate submission guard: calling onSubmit() must NOT call /api/bookings again!
+    component.onSubmit();
+    httpTesting.expectNone(`${environment.apiUrl}/bookings`);
+
+    // It instead triggers retry of payment
+    const retryHistReq = httpTesting.expectOne(`${environment.apiUrl}/payments/history`);
+    retryHistReq.flush({
+      statusCode: 200,
+      message: 'OK',
+      data: [
+        {
+          id: 405,
+          bookingId: 1045,
+          amount: 200,
+          paymentMethod: 'Demo',
+          status: 'Pending',
+          transactionId: null,
+          createdAt: '2026-11-12T12:00:00Z',
+          paidAt: null
+        }
+      ]
+    });
+    fixture.detectChanges();
+
+    expect(navSpy).toHaveBeenCalledWith(['/booking/payment', 405]);
   });
 
   it('should handle 409 conflict and 400 error cleanly on booking submission', () => {
@@ -445,5 +561,35 @@ describe('BookingComponent Phase 2 Details, Direct Refresh & Real Availability',
 
     expect(component.restaurantLoadError()).toBeNull();
     expect(component.restaurant()?.name).toBe('Osteria Recuperata');
+  });
+
+  it('should hydrate both startTime and endTime from query params and query availability with HH:mm:ss', () => {
+    queryParamMap$.next(
+      convertToParamMap({
+        date: '2026-12-25',
+        startTime: '19:30',
+        endTime: '21:30',
+        guests: '4'
+      })
+    );
+
+    fixture.detectChanges();
+    httpTesting.expectOne(`${environment.apiUrl}/restaurants`).flush(mockRestaurantsListResponse);
+    httpTesting.expectOne(`${environment.apiUrl}/restaurants/1`).flush(mockDetailResponse);
+
+    const availReq = httpTesting.expectOne(r => r.url === `${environment.apiUrl}/bookings/availability`);
+    expect(availReq.request.params.get('StartTime')).toBe('19:30:00');
+    expect(availReq.request.params.get('EndTime')).toBe('21:30:00');
+    expect(availReq.request.params.get('BookingDate')).toBe('2026-12-25T00:00:00');
+    expect(availReq.request.params.get('NumberOfGuests')).toBe('4');
+
+    availReq.flush(mockAvailabilityResponse);
+    fixture.detectChanges();
+
+    expect(component.bookingForm.get('startTime')?.value).toBe('19:30');
+    expect(component.bookingForm.get('endTime')?.value).toBe('21:30');
+    expect(component.bookingForm.get('date')?.value).toBe('2026-12-25');
+    expect(component.bookingForm.get('guests')?.value).toBe(4);
+    expect(component.availableTables().length).toBe(1); // Capacity >= 4
   });
 });

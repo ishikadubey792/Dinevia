@@ -134,6 +134,14 @@
               >
                 Profile
               </a>
+              <a
+                routerLink="/payments"
+                class="dropdown-item"
+                role="menuitem"
+                (click)="closeUserMenu()"
+              >
+                Payment History
+              </a>
 
               @if (isOwnerLoggedIn()) {
                 <a
@@ -313,6 +321,9 @@
         </div>
         <a routerLink="/profile" class="btn btn-outline btn-md mobile-full-btn" (click)="closeMobileMenu()">
           Profile
+        </a>
+        <a routerLink="/payments" class="btn btn-outline btn-md mobile-full-btn" (click)="closeMobileMenu()">
+          Payment History
         </a>
         <button type="button" class="btn btn-primary btn-md mobile-full-btn" (click)="logoutCustomer()">
           Logout

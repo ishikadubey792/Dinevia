@@ -908,3 +908,129 @@
     padding: 0.75rem 1rem;
   }
 }
+
+/* 6. SCHEDULE FILTER CONTROLS & DISCOVERY NOTICES */
+.filter-input {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--color-charcoal);
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition-fast);
+
+  &:hover,
+  &:focus {
+    border-color: var(--color-terracotta);
+  }
+}
+
+.date-filter {
+  max-width: 140px;
+}
+
+.time-filter {
+  max-width: 105px;
+}
+
+.filter-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.65rem 1.15rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+
+  .error-banner-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+  }
+}
+
+.discovery-notice-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-terracotta);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+
+  .notice-icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: rgba(200, 121, 90, 0.12);
+    color: var(--color-terracotta);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .notice-text {
+    font-size: 0.88rem;
+    color: var(--color-charcoal);
+    line-height: 1.5;
+
+    strong {
+      color: var(--color-forest-dark);
+      margin-right: 0.35rem;
+    }
+  }
+}
+
+.drawer-schedule-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+
+  .drawer-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    .drawer-field-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-forest-dark);
+    }
+
+    .drawer-input,
+    .drawer-select {
+      background-color: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.65rem;
+      font-size: 0.85rem;
+      color: var(--color-charcoal);
+      outline: none;
+
+      &:focus {
+        border-color: var(--color-terracotta);
+      }
+    }
+  }
+}
+
+.drawer-error-text {
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-top: 0.45rem;
+}

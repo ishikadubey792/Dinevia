@@ -341,6 +341,21 @@
       color: #27AE60;
       font-weight: 700;
     }
+
+    &.status-pending {
+      color: var(--color-terracotta);
+      font-weight: 700;
+    }
+
+    &.status-cancelled {
+      color: #E74C3C;
+      font-weight: 700;
+    }
+
+    &.status-completed {
+      color: var(--color-forest);
+      font-weight: 700;
+    }
   }
 }
 
@@ -547,4 +562,160 @@
       height: 1.1rem;
     }
   }
+}
+
+/* Loading Stage */
+.confirmation-loading-stage {
+  text-align: center;
+  padding: 6rem 1.5rem;
+
+  .luxury-spinner {
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1.5rem auto;
+    border: 3px solid rgba(35, 70, 55, 0.15);
+    border-top-color: var(--color-forest);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .loading-text {
+    font-family: var(--font-serif);
+    font-size: 1.2rem;
+    color: var(--color-forest-dark);
+  }
+}
+
+/* Status-Aware Hero Card Variants */
+.hero-pending-card {
+  border-top: 4px solid var(--color-terracotta);
+
+  .pending-badge-glow {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: var(--radius-pill);
+    background-color: rgba(196, 92, 59, 0.15);
+    color: var(--color-terracotta-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem auto;
+    font-size: 2rem;
+  }
+
+  .eyebrow-pending {
+    color: var(--color-terracotta-dark);
+    background-color: rgba(196, 92, 59, 0.1);
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+  }
+
+  .pending-cta-row {
+    margin: 1.25rem 0 1.5rem 0;
+
+    .complete-payment-cta-btn {
+      padding: 0.85rem 2rem;
+      font-size: 1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+}
+
+.hero-cancelled-card {
+  border-top: 4px solid #E74C3C;
+
+  .cancelled-badge-glow {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: var(--radius-pill);
+    background-color: #FDEDEC;
+    color: #E74C3C;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem auto;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .eyebrow-cancelled {
+    color: #E74C3C;
+  }
+}
+
+.hero-completed-card {
+  border-top: 4px solid var(--color-forest);
+
+  .completed-badge-glow {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-sage);
+    color: var(--color-forest-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem auto;
+    font-size: 2rem;
+  }
+}
+
+/* Payment Details Section */
+.payment-details-card {
+  border-top: 3px solid var(--color-forest);
+
+  .payment-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+
+    .itinerary-card-title {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .deposit-guaranteed-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #27AE60;
+      background-color: rgba(39, 174, 96, 0.1);
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-pill);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  .payment-amount-highlight {
+    font-family: var(--font-serif);
+    font-size: 1.2rem;
+    color: var(--color-terracotta-dark);
+    font-weight: 700;
+  }
+
+  .font-mono {
+    font-family: monospace;
+    font-size: 0.88rem;
+    color: var(--color-charcoal);
+  }
+
+  .payment-fallback-notice {
+    padding: 1rem;
+    background-color: var(--color-ivory-light);
+    border-radius: var(--radius-sm);
+    color: var(--color-charcoal-muted);
+    font-size: 0.88rem;
+    text-align: center;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

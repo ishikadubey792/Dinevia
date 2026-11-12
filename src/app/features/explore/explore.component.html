@@ -99,6 +99,39 @@
       <div class="filter-toolbar">
         <!-- Desktop Filter Group -->
         <div class="desktop-filters">
+          <!-- Dining Schedule: Date, Start Time, End Time, Party Size -->
+          <div class="filter-field schedule-field">
+            <label for="expScheduleDate" class="filter-field-label">Date:</label>
+            <input type="date" id="expScheduleDate" [min]="minDate()" [ngModel]="bookingDate()"
+              (ngModelChange)="setDate($event)" class="filter-input date-filter" aria-label="Reservation date" />
+          </div>
+
+          <div class="filter-field schedule-field">
+            <label for="expScheduleStart" class="filter-field-label">From:</label>
+            <input type="time" id="expScheduleStart" [ngModel]="selectedStartTime()"
+              (ngModelChange)="setStartTime($event)" class="filter-input time-filter"
+              aria-label="Reservation start time" />
+          </div>
+
+          <div class="filter-field schedule-field">
+            <label for="expScheduleEnd" class="filter-field-label">To:</label>
+            <input type="time" id="expScheduleEnd" [ngModel]="selectedEndTime()" (ngModelChange)="setEndTime($event)"
+              class="filter-input time-filter" aria-label="Reservation end time" />
+          </div>
+
+          <div class="filter-field schedule-field">
+            <label for="expScheduleGuests" class="filter-field-label">Party:</label>
+            <div class="select-wrapper">
+              <select id="expScheduleGuests" [ngModel]="selectedGuests()" (ngModelChange)="setGuests(+$event)"
+                class="filter-select">
+                @for (g of guestOptions; track g.value) {
+                <option [value]="g.value">{{ g.label }}</option>
+                }
+              </select>
+              <span class="select-chevron" aria-hidden="true">▾</span>
+            </div>
+          </div>
+
           <!-- Rating 4.5+ Quick Filter -->
           <div class="filter-field">
             <button type="button" class="rating-quick-btn" [class.active]="selectedRating() === 4.5"
@@ -207,6 +240,18 @@
         </div>
       </div>
 
+      <!-- Time Interval Error Banner -->
+      @if (timeRangeError()) {
+      <div class="filter-error-banner" role="alert">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="error-banner-icon" aria-hidden="true">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd" />
+        </svg>
+        <span>{{ timeRangeError() }}</span>
+      </div>
+      }
+
       <!-- Active Filter Chips Row -->
       @if (activeFilterCount() > 0) {
       <div class="active-chips-bar" aria-label="Active filters">
@@ -217,6 +262,30 @@
             <span>"{{ searchQuery() }}"</span>
             <button type="button" class="chip-remove" (click)="clearSearch()"
               aria-label="Remove search filter">×</button>
+          </span>
+          }
+
+          @if (bookingDate() !== minDate()) {
+          <span class="chip">
+            <span>Date: {{ bookingDate() }}</span>
+            <button type="button" class="chip-remove" (click)="setDate(minDate())"
+              aria-label="Reset date to today">×</button>
+          </span>
+          }
+
+          @if (selectedStartTime() !== '18:30' || selectedEndTime() !== '20:00') {
+          <span class="chip">
+            <span>Window: {{ formatTimeDisplay(selectedStartTime()) }} – {{ formatTimeDisplay(selectedEndTime())
+              }}</span>
+            <button type="button" class="chip-remove" (click)="setStartTime('18:30'); setEndTime('20:00')"
+              aria-label="Reset time window">×</button>
+          </span>
+          }
+
+          @if (selectedGuests() !== 2) {
+          <span class="chip">
+            <span>Party: {{ selectedGuests() }} Guests</span>
+            <button type="button" class="chip-remove" (click)="setGuests(2)" aria-label="Reset party size">×</button>
           </span>
           }
 
@@ -264,6 +333,17 @@
         </div>
       </div>
       }
+
+      <!-- Discovery vs Real Availability Notice -->
+      <div class="discovery-notice-banner" role="status">
+        <div class="notice-icon-circle">✦</div>
+        <div class="notice-text">
+          <strong>Curated Dining Discovery:</strong>
+          <span>Showing culinary destinations for {{ bookingDate() }} ({{ formatTimeDisplay(selectedStartTime()) }} – {{
+            formatTimeDisplay(selectedEndTime()) }} &bull; {{ selectedGuests() }} {{ selectedGuests() === 1 ? 'Guest' :
+            'Guests' }}). Real table availability is checked live upon booking.</span>
+        </div>
+      </div>
 
       <!-- Results Count Status -->
       <div class="results-meta-bar">
@@ -397,6 +477,40 @@
     </div>
 
     <div class="drawer-body">
+      <!-- Dining Schedule Selection -->
+      <div class="drawer-section">
+        <h4 class="drawer-section-title">Dining Schedule & Time Window</h4>
+        <div class="drawer-schedule-grid">
+          <div class="drawer-field">
+            <label for="mobScheduleDate" class="drawer-field-label">Date</label>
+            <input type="date" id="mobScheduleDate" [min]="minDate()" [ngModel]="bookingDate()"
+              (ngModelChange)="setDate($event)" class="drawer-input" />
+          </div>
+          <div class="drawer-field">
+            <label for="mobScheduleStart" class="drawer-field-label">Start Time</label>
+            <input type="time" id="mobScheduleStart" [ngModel]="selectedStartTime()"
+              (ngModelChange)="setStartTime($event)" class="drawer-input" />
+          </div>
+          <div class="drawer-field">
+            <label for="mobScheduleEnd" class="drawer-field-label">End Time</label>
+            <input type="time" id="mobScheduleEnd" [ngModel]="selectedEndTime()" (ngModelChange)="setEndTime($event)"
+              class="drawer-input" />
+          </div>
+          <div class="drawer-field">
+            <label for="mobScheduleGuests" class="drawer-field-label">Guests</label>
+            <select id="mobScheduleGuests" [ngModel]="selectedGuests()" (ngModelChange)="setGuests(+$event)"
+              class="drawer-select">
+              @for (g of guestOptions; track g.value) {
+              <option [value]="g.value">{{ g.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        @if (timeRangeError()) {
+        <p class="drawer-error-text">{{ timeRangeError() }}</p>
+        }
+      </div>
+
       <!-- Cuisine selection -->
       <div class="drawer-section">
         <h4 class="drawer-section-title">Cuisine</h4>
@@ -465,104 +579,7 @@
   </div>
   }
 
-  <!-- 6. QUICK TABLE RESERVATION MODAL -->
-  @if (isBookingModalOpen() && selectedRestaurant()) {
-  <div class="modal-backdrop" (click)="closeModal()" aria-hidden="true"></div>
-  <div class="reservation-modal" role="dialog" aria-modal="true"
-    [attr.aria-labelledby]="'modal-title-' + selectedRestaurant()!.id">
-    @if (!bookingConfirmed()) {
-    <div class="modal-header">
-      <div>
-        <span class="badge badge-terracotta">Table Reservation</span>
-        <h3 class="modal-restaurant-name" [id]="'modal-title-' + selectedRestaurant()!.id">{{ selectedRestaurant()!.name
-          }}</h3>
-        <p class="modal-location">{{ selectedRestaurant()!.neighborhood }}, {{ selectedRestaurant()!.city }}</p>
-      </div>
-      <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close reservation dialog">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
-    <p class="modal-summary">
-      Experience world-class culinary artistry. Choose your party details below to secure your dining reservation.
-    </p>
-
-    <form (ngSubmit)="submitReservation()">
-      <div class="modal-field-grid">
-        <div class="modal-field">
-          <label for="expPartySize">Party Size</label>
-          <select id="expPartySize" [ngModel]="bookingPartySize()" (ngModelChange)="bookingPartySize.set(+$event)"
-            name="partySize" class="form-select">
-            <option [value]="1">1 Guest</option>
-            <option [value]="2">2 Guests (Couple)</option>
-            <option [value]="3">3 Guests</option>
-            <option [value]="4">4 Guests</option>
-            <option [value]="6">6 Guests (Party)</option>
-            <option [value]="8">8+ Guests (Vault)</option>
-          </select>
-        </div>
-
-        <div class="modal-field">
-          <label for="expBookingDate">Reservation Date</label>
-          <input type="date" id="expBookingDate" [ngModel]="bookingDate()" (ngModelChange)="bookingDate.set($event)"
-            name="date" class="form-input" required />
-        </div>
-      </div>
-
-      <div class="modal-field">
-        <label for="expBookingTime">Seating Time</label>
-        <select id="expBookingTime" [ngModel]="bookingTime()" (ngModelChange)="bookingTime.set($event)" name="time"
-          class="form-select">
-          @for (slot of selectedRestaurant()!.availableSlots; track slot) {
-          <option [value]="slot">{{ slot }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="modal-field">
-        <label for="expGuestName">Guest Full Name</label>
-        <input type="text" id="expGuestName" [ngModel]="guestName()" (ngModelChange)="guestName.set($event)"
-          name="guestName" class="form-input" placeholder="e.g. Lorde Evelyn Wright" required />
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
-        <button type="submit" class="btn btn-terracotta">Confirm Table Reservation</button>
-      </div>
-    </form>
-    } @else {
-    <!-- Booking Confirmation State -->
-    <div class="confirmation-success">
-      <div class="success-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-          stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      </div>
-      <h3 class="conf-title">Reservation Confirmed</h3>
-      <p class="conf-ref">Reference Code: <strong>{{ bookingRefCode() }}</strong></p>
-
-      <div class="conf-details-box">
-        <p><strong>Restaurant:</strong> {{ selectedRestaurant()!.name }}</p>
-        <p><strong>Location:</strong> {{ selectedRestaurant()!.location }}</p>
-        <p><strong>Date & Time:</strong> {{ bookingDate() }} at {{ bookingTime() }}</p>
-        <p><strong>Party Size:</strong> {{ bookingPartySize() }} {{ bookingPartySize() === 1 ? 'Guest' : 'Guests' }}</p>
-        <p><strong>Guest:</strong> {{ guestName() }}</p>
-      </div>
-
-      <p class="conf-note">A luxury booking verification has been dispatched to your membership account.</p>
-
-      <button type="button" class="btn btn-primary" (click)="closeModal()">Done</button>
-    </div>
-    }
-  </div>
-  }
-
-  <!-- 7. TOAST NOTIFICATION -->
+  <!-- 6. TOAST NOTIFICATION -->
   @if (toastMessage()) {
   <div class="toast-notification" role="status" aria-live="polite">
     <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">

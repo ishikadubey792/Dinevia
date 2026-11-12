@@ -420,19 +420,50 @@
                 </div>
               }
 
-              <div class="form-submit-row">
-                <button
-                  type="submit"
-                  [disabled]="isSubmitting()"
-                  class="btn btn-terracotta btn-lg book-now-submit-btn">
-                  @if (isSubmitting()) {
-                    <span class="spinner" aria-hidden="true"></span>
-                    <span>Confirming Reservation...</span>
-                  } @else {
-                    <span>Confirm Table Reservation</span>
-                  }
-                </button>
-              </div>
+              @if (createdBookingId()) {
+                <div class="booking-recovery-card" role="region" aria-label="Pending Reservation Recovery">
+                  <div class="recovery-status-pill">
+                    <span class="status-dot dot-pending"></span>
+                    <span>Reservation Pending Guarantee</span>
+                  </div>
+                  <h3 class="recovery-title">Reservation Reference: {{ pendingBooking()?.bookingRef || ('DV-' + createdBookingId()) }}</h3>
+                  <p class="recovery-desc">
+                    Your table reservation is secured as Pending, but payment guarantee was not completed.
+                    To guarantee your seating, please retry payment guarantee or view it in My Bookings.
+                  </p>
+                  <div class="recovery-btn-row">
+                    <button
+                      type="button"
+                      [disabled]="isSubmitting()"
+                      (click)="retryPaymentInitiation()"
+                      class="btn btn-terracotta btn-lg retry-payment-btn">
+                      @if (isSubmitting()) {
+                        <span class="spinner" aria-hidden="true"></span>
+                        <span>Initiating Guarantee...</span>
+                      } @else {
+                        <span>Retry Payment Guarantee</span>
+                      }
+                    </button>
+                    <a routerLink="/bookings" class="btn btn-outline btn-lg view-bookings-btn">
+                      Go to My Bookings
+                    </a>
+                  </div>
+                </div>
+              } @else {
+                <div class="form-submit-row">
+                  <button
+                    type="submit"
+                    [disabled]="isSubmitting()"
+                    class="btn btn-terracotta btn-lg book-now-submit-btn">
+                    @if (isSubmitting()) {
+                      <span class="spinner" aria-hidden="true"></span>
+                      <span>Confirming Reservation...</span>
+                    } @else {
+                      <span>Confirm Table Reservation</span>
+                    }
+                  </button>
+                </div>
+              }
             </section>
           </form>
         </div>

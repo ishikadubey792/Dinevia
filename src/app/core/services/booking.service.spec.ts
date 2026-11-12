@@ -279,6 +279,37 @@ describe('BookingService Real Availability API & Filtering', () => {
       req.flush(null, { status: 200, statusText: 'OK' });
       expect(completed).toBe(true);
     });
+
+    it('should fetch single booking via GET /api/bookings/{id} and set active booking', () => {
+      let result: any;
+      service.getBookingByIdApi(105).subscribe(res => {
+        result = res;
+      });
+
+      const req = httpTesting.expectOne(`${environment.apiUrl}/bookings/105`);
+      expect(req.request.method).toBe('GET');
+
+      req.flush({
+        statusCode: 200,
+        message: 'Booking fetched successfully.',
+        data: {
+          id: 105,
+          restaurantTableId: 2,
+          bookingDate: '2026-12-25T00:00:00',
+          startTime: '18:30:00',
+          endTime: '20:00:00',
+          numberOfGuests: 2,
+          status: 'Confirmed'
+        }
+      });
+
+      expect(result.backendId).toBe(105);
+      expect(result.status).toBe('confirmed');
+      expect(service.activeBooking()?.backendId).toBe(105);
+
+      service.updateBookingStatus(105, 'completed');
+      expect(service.activeBooking()?.status).toBe('completed');
+    });
   });
 });
 

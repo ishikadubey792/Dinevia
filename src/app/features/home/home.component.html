@@ -4,19 +4,21 @@
 <main id="main-content">
   <!-- Toast Notification Pill -->
   @if (toastMessage()) {
-    <div class="toast-notification" role="status" aria-live="polite">
-      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-      </svg>
-      <span>{{ toastMessage() }}</span>
-    </div>
+  <div class="toast-notification" role="status" aria-live="polite">
+    <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
+      <path fill-rule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+        clip-rule="evenodd" />
+    </svg>
+    <span>{{ toastMessage() }}</span>
+  </div>
   }
 
   <!-- B. HERO SECTION -->
   <section class="hero-section" aria-labelledby="hero-heading">
     <div class="container hero-container">
       <div class="hero-grid">
-        
+
         <!-- Hero Text Column -->
         <div class="hero-content">
           <div class="hero-badge-wrap">
@@ -28,14 +30,17 @@
           </h1>
 
           <p class="hero-subtitle">
-            Discover intimate chef counters, Michelin-starred institutions, and hidden neighborhood bistros. Secure your perfect table with seamless precision.
+            Discover intimate chef counters, Michelin-starred institutions, and hidden neighborhood bistros. Secure your
+            perfect table with seamless precision.
           </p>
 
           <div class="hero-actions">
             <button type="button" class="btn btn-primary btn-lg" (click)="scrollTo('featured-section')">
               <span>Explore Restaurants</span>
               <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
-                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                <path fill-rule="evenodd"
+                  d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
               </svg>
             </button>
 
@@ -66,19 +71,19 @@
         <!-- Hero Visual Column -->
         <div class="hero-visual">
           <div class="visual-frame">
-            <img 
-              src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=1200&q=85" 
+            <img src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=1200&q=85"
               alt="Fine dining table set with crystal stemware, warm ambient candles, and seasonal gastronomy"
-              class="hero-img"
-              loading="eager"
-            />
+              class="hero-img" loading="eager" />
             <div class="hero-img-overlay"></div>
 
             <!-- Floating Luxury Dining Card -->
             <div class="floating-dining-card">
               <div class="floating-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" aria-hidden="true">
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+                  </path>
                 </svg>
               </div>
               <div class="floating-info">
@@ -107,67 +112,68 @@
         <span class="eyebrow">Culinary Traditions</span>
         <h2 id="cuisines-heading" class="section-title">Explore by Taste</h2>
         <p class="section-subtitle">
-          From handmade artisanal pasta to Edomae omakase, embark on a sensory voyage through world-class kitchen artistry.
+          From handmade artisanal pasta to Edomae omakase, embark on a sensory voyage through world-class kitchen
+          artistry.
         </p>
       </div>
 
       @if (isLoadingCuisines() || isLoading()) {
-        <div class="restaurants-loading-stage" aria-live="polite">
-          <div class="luxury-spinner"></div>
-          <p class="loading-text">Calculating available restaurants per cuisine...</p>
-        </div>
+      <div class="restaurants-loading-stage" aria-live="polite">
+        <div class="luxury-spinner"></div>
+        <p class="loading-text">Calculating available restaurants per cuisine...</p>
+      </div>
       } @else if (cuisinesLoadError()) {
-        <div class="restaurants-error-card" role="alert">
-          <div class="error-icon-wrap">
-            <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg" aria-hidden="true">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-          </div>
-          <div class="error-content">
-            <h3 class="error-title">Connection Notice</h3>
-            <p class="error-message">{{ cuisinesLoadError() }}</p>
-          </div>
-          <button type="button" class="btn btn-outline btn-sm retry-button" (click)="retryCuisines()">
-            Retry Connection
-          </button>
+      <div class="restaurants-error-card" role="alert">
+        <div class="error-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg" aria-hidden="true">
+            <path fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd" />
+          </svg>
         </div>
+        <div class="error-content">
+          <h3 class="error-title">Connection Notice</h3>
+          <p class="error-message">{{ cuisinesLoadError() }}</p>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm retry-button" (click)="retryCuisines()">
+          Retry Connection
+        </button>
+      </div>
       } @else if (cuisines().length === 0) {
-        <div class="empty-state" role="region" aria-label="No cuisines available">
-          <p class="empty-title">No cuisines currently available</p>
-          <p class="empty-desc">Browse all available destinations or refresh to check again.</p>
-          <a routerLink="/explore" class="btn btn-outline">Explore All Restaurants</a>
-        </div>
+      <div class="empty-state" role="region" aria-label="No cuisines available">
+        <p class="empty-title">No cuisines currently available</p>
+        <p class="empty-desc">Browse all available destinations or refresh to check again.</p>
+        <a routerLink="/explore" class="btn btn-outline">Explore All Restaurants</a>
+      </div>
       } @else {
-        <div class="cuisines-grid">
-          @for (c of cuisines(); track c.id) {
-            <article 
-              class="cuisine-card" 
-              [class.active]="currentCuisine() === c.slug"
-              (click)="onSelectCuisine(c.slug)"
-              (keydown.enter)="onSelectCuisine(c.slug)"
-              (keydown.space)="onSelectCuisine(c.slug); $event.preventDefault()"
-              tabindex="0"
-              role="button"
-              [attr.aria-label]="c.name + ' cuisine. ' + (c.restaurantCount === 1 ? '1 restaurant' : c.restaurantCount + ' restaurants') + ' available. Explore restaurants.'">
-              <div class="cuisine-img-wrap">
-                <img [src]="c.imageUrl" [alt]="c.name + ' specialty dishes and presentation'" loading="lazy" class="cuisine-img" />
-                <div class="cuisine-overlay"></div>
-              </div>
-              <div class="cuisine-info">
-                <span class="cuisine-count">
-                  {{ c.restaurantCount === 1 ? '1 Restaurant' : c.restaurantCount + ' Restaurants' }}
-                </span>
-                <h3 class="cuisine-name">{{ c.name }}</h3>
-                <p class="cuisine-tagline">{{ c.tagline }}</p>
-                <div class="cuisine-arrow" aria-hidden="true">
-                  <svg viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-              </div>
-            </article>
-          }
-        </div>
+      <div class="cuisines-grid">
+        @for (c of cuisines(); track c.id) {
+        <article class="cuisine-card" [class.active]="currentCuisine() === c.slug" (click)="onSelectCuisine(c.slug)"
+          (keydown.enter)="onSelectCuisine(c.slug)" (keydown.space)="onSelectCuisine(c.slug); $event.preventDefault()"
+          tabindex="0" role="button"
+          [attr.aria-label]="c.name + ' cuisine. ' + (c.restaurantCount === 1 ? '1 restaurant' : c.restaurantCount + ' restaurants') + ' available. Explore restaurants.'">
+          <div class="cuisine-img-wrap">
+            <img [src]="c.imageUrl" [alt]="c.name + ' specialty dishes and presentation'" loading="lazy"
+              class="cuisine-img" />
+            <div class="cuisine-overlay"></div>
+          </div>
+          <div class="cuisine-info">
+            <span class="cuisine-count">
+              {{ c.restaurantCount === 1 ? '1 Restaurant' : c.restaurantCount + ' Restaurants' }}
+            </span>
+            <h3 class="cuisine-name">{{ c.name }}</h3>
+            <p class="cuisine-tagline">{{ c.tagline }}</p>
+            <div class="cuisine-arrow" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </article>
+        }
+      </div>
       }
     </div>
   </section>
@@ -187,82 +193,82 @@
       <div class="filter-tabs-wrapper">
         <div class="filter-tabs" role="tablist" aria-label="Restaurant categories">
           @for (tab of categoryTabs; track tab.id) {
-            <button 
-              type="button" 
-              role="tab"
-              [class.active]="currentCategory() === tab.id"
-              [attr.aria-selected]="currentCategory() === tab.id"
-              (click)="onCategoryChange(tab.id)"
-              class="filter-tab">
-              {{ tab.label }}
-            </button>
+          <button type="button" role="tab" [class.active]="currentCategory() === tab.id"
+            [attr.aria-selected]="currentCategory() === tab.id" (click)="onCategoryChange(tab.id)" class="filter-tab">
+            {{ tab.label }}
+          </button>
           }
         </div>
 
         @if (currentCuisine() !== 'all' || currentCategory() !== 'all') {
-          <button type="button" class="btn btn-ghost btn-sm clear-filter-btn" (click)="resetAllFilters()">
-            <span>Clear Filters</span>
-            <svg viewBox="0 0 20 20" fill="currentColor" class="clear-icon" aria-hidden="true">
-              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
-          </button>
+        <button type="button" class="btn btn-ghost btn-sm clear-filter-btn" (click)="resetAllFilters()">
+          <span>Clear Filters</span>
+          <svg viewBox="0 0 20 20" fill="currentColor" class="clear-icon" aria-hidden="true">
+            <path fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd" />
+          </svg>
+        </button>
         }
       </div>
 
       <!-- Loading State -->
       @if (isLoading()) {
-        <div class="restaurants-loading-stage" aria-live="polite">
-          <div class="luxury-spinner"></div>
-          <p class="loading-text">Retrieving fine dining establishments...</p>
-        </div>
+      <div class="restaurants-loading-stage" aria-live="polite">
+        <div class="luxury-spinner"></div>
+        <p class="loading-text">Retrieving fine dining establishments...</p>
+      </div>
       } @else if (loadError()) {
-        <!-- Error State with Retry -->
-        <div class="restaurants-error-card" role="alert">
-          <div class="error-icon-wrap">
-            <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-          </div>
-          <div class="error-content">
-            <h3 class="error-title">Connection Notice</h3>
-            <p class="error-message">{{ loadError() }}</p>
-          </div>
-          <button type="button" class="btn btn-outline btn-sm retry-button" (click)="retryLoad()">
-            Retry Connection
-          </button>
+      <!-- Error State with Retry -->
+      <div class="restaurants-error-card" role="alert">
+        <div class="error-icon-wrap">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg">
+            <path fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd" />
+          </svg>
         </div>
+        <div class="error-content">
+          <h3 class="error-title">Connection Notice</h3>
+          <p class="error-message">{{ loadError() }}</p>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm retry-button" (click)="retryLoad()">
+          Retry Connection
+        </button>
+      </div>
       } @else if (restaurants().length > 0) {
-        <!-- Restaurant Cards Grid -->
-        <div class="restaurants-grid">
-          @for (restaurant of restaurants(); track restaurant.id) {
-            <app-restaurant-card 
-              [restaurant]="restaurant"
-              (viewDetails)="openReservation($event)"
-              (reserveSlot)="onReserveSlot($event)">
-            </app-restaurant-card>
-          }
-        </div>
+      <!-- Restaurant Cards Grid -->
+      <div class="restaurants-grid">
+        @for (restaurant of restaurants(); track restaurant.id) {
+        <app-restaurant-card [restaurant]="restaurant" (viewDetails)="onViewDetails($event)"
+          (reserveSlot)="onReserveSlot($event)">
+        </app-restaurant-card>
+        }
+      </div>
 
-        <div class="explore-all-cta" style="text-align: center; margin-top: 3rem;">
-          <a routerLink="/explore" class="btn btn-outline btn-lg">
-            <span>Explore All Dining Destinations</span>
-            <svg viewBox="0 0 20 20" fill="currentColor" style="width: 1.15rem; height: 1.15rem; margin-left: 0.35rem;" aria-hidden="true">
-              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
-          </a>
-        </div>
+      <div class="explore-all-cta" style="text-align: center; margin-top: 3rem;">
+        <a routerLink="/explore" class="btn btn-outline btn-lg">
+          <span>Explore All Dining Destinations</span>
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width: 1.15rem; height: 1.15rem; margin-left: 0.35rem;"
+            aria-hidden="true">
+            <path fill-rule="evenodd"
+              d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+              clip-rule="evenodd" />
+          </svg>
+        </a>
+      </div>
       } @else {
-        <div class="empty-state">
-          @if (currentCuisine() !== 'all' || currentCategory() !== 'all') {
-            <p class="empty-title">No tables matched your precise criteria</p>
-            <p class="empty-desc">Try clearing your filters or exploring our other world-class dining destinations.</p>
-            <button type="button" class="btn btn-outline" (click)="resetAllFilters()">View All Restaurants</button>
-          } @else {
-            <p class="empty-title">No restaurants are currently available</p>
-            <p class="empty-desc">Check back soon or refresh to load live destinations.</p>
-            <button type="button" class="btn btn-outline" (click)="retryLoad()">Refresh Destinations</button>
-          }
-        </div>
+      <div class="empty-state">
+        @if (currentCuisine() !== 'all' || currentCategory() !== 'all') {
+        <p class="empty-title">No tables matched your precise criteria</p>
+        <p class="empty-desc">Try clearing your filters or exploring our other world-class dining destinations.</p>
+        <button type="button" class="btn btn-outline" (click)="resetAllFilters()">View All Restaurants</button>
+        } @else {
+        <p class="empty-title">No restaurants are currently available</p>
+        <p class="empty-desc">Check back soon or refresh to load live destinations.</p>
+        <button type="button" class="btn btn-outline" (click)="retryLoad()">Refresh Destinations</button>
+        }
+      </div>
       }
     </div>
   </section>
@@ -277,7 +283,8 @@
             Unlock Priority Access to the World's Most Coveted Tables.
           </h2>
           <p class="promo-desc">
-            With Dinevia Reserve, bypass waiting lists with 14-day priority booking releases, direct sommelier cellar consultations, and personalized maître d' introductions.
+            With Dinevia Reserve, bypass waiting lists with 14-day priority booking releases, direct sommelier cellar
+            consultations, and personalized maître d' introductions.
           </p>
 
           <ul class="promo-features">
@@ -304,12 +311,8 @@
         </div>
 
         <div class="promo-visual">
-          <img 
-            src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80" 
-            alt="Intimate wine cellar tasting and chef table setting"
-            loading="lazy" 
-            class="promo-img"
-          />
+          <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80"
+            alt="Intimate wine cellar tasting and chef table setting" loading="lazy" class="promo-img" />
         </div>
       </div>
     </div>
@@ -328,138 +331,35 @@
 
       <div class="testimonials-grid">
         @for (item of testimonials(); track item.id) {
-          <article class="testimonial-card">
-            <div class="stars-row" aria-label="5 out of 5 stars">
-              @for (star of [1, 2, 3, 4, 5]; track star) {
-                <span class="star-gold">★</span>
-              }
+        <article class="testimonial-card">
+          <div class="stars-row" aria-label="5 out of 5 stars">
+            @for (star of [1, 2, 3, 4, 5]; track star) {
+            <span class="star-gold">★</span>
+            }
+          </div>
+          <h3 class="test-title">"{{ item.title }}"</h3>
+          <p class="test-quote">{{ item.reviewText }}</p>
+          <div class="test-author">
+            <div class="author-avatar">{{ item.reviewerName.charAt(0) }}</div>
+            <div class="author-info">
+              <span class="author-name">{{ item.reviewerName }}</span>
+              <span class="author-context">Dined at {{ item.restaurantName }} &bull; {{ item.location }}</span>
             </div>
-            <h3 class="test-title">"{{ item.title }}"</h3>
-            <p class="test-quote">{{ item.reviewText }}</p>
-            <div class="test-author">
-              <div class="author-avatar">{{ item.reviewerName.charAt(0) }}</div>
-              <div class="author-info">
-                <span class="author-name">{{ item.reviewerName }}</span>
-                <span class="author-context">Dined at {{ item.restaurantName }} &bull; {{ item.location }}</span>
-              </div>
-            </div>
-          </article>
+          </div>
+        </article>
         }
       </div>
 
       <p class="demo-content-note">
-        * Demonstration testimonials illustrating guest experiences. Verified reservations will appear here once live service launches.
+        * Demonstration testimonials illustrating guest experiences. Verified reservations will appear here once live
+        service launches.
       </p>
     </div>
   </section>
 </main>
 
-<!-- RESERVATION MODAL / PREVIEW DIALOG -->
-@if (isReservationModalOpen() && selectedRestaurant()) {
-  <div class="modal-backdrop" (click)="closeModal()" aria-hidden="true"></div>
-  <div 
-    class="reservation-modal" 
-    role="dialog" 
-    aria-modal="true" 
-    [attr.aria-labelledby]="'modal-title-' + selectedRestaurant()?.id">
-    
-    <div class="modal-header">
-      <div>
-        <span class="badge badge-forest">{{ selectedRestaurant()?.cuisine }}</span>
-        <h3 [id]="'modal-title-' + selectedRestaurant()?.id" class="modal-restaurant-name">
-          {{ selectedRestaurant()?.name }}
-        </h3>
-        <p class="modal-location">{{ selectedRestaurant()?.location }}</p>
-      </div>
-      <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close dialog">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
-    <div class="modal-body">
-      @if (bookingConfirmed()) {
-        <div class="confirmation-success">
-          <div class="success-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-          <h4 class="conf-title">Reservation Confirmed</h4>
-          <p class="conf-ref">Booking Reference: <strong>{{ bookingRefCode() }}</strong></p>
-          <div class="conf-details-box">
-            <p><strong>Restaurant:</strong> {{ selectedRestaurant()?.name }}</p>
-            <p><strong>Date &amp; Time:</strong> {{ bookingDate }} at {{ bookingTime }}</p>
-            <p><strong>Party Size:</strong> {{ bookingPartySize }} Guests</p>
-            <p><strong>Guest Name:</strong> {{ guestName }}</p>
-          </div>
-          <p class="conf-note">A confirmation email and SMS notification have been sent to your profile.</p>
-          <button type="button" class="btn btn-primary" (click)="closeModal()">Done</button>
-        </div>
-      } @else {
-        <form (ngSubmit)="submitReservation()" class="modal-form">
-          <p class="modal-summary">
-            Select your reservation preferences for an exquisite dining experience.
-          </p>
-
-          <div class="modal-field-grid">
-            <div class="modal-field">
-              <label for="modalGuests">Number of Guests</label>
-              <select id="modalGuests" [(ngModel)]="bookingPartySize" name="partySize" class="form-select">
-                <option [ngValue]="1">1 Guest (Solo)</option>
-                <option [ngValue]="2">2 Guests (Couple)</option>
-                <option [ngValue]="3">3 Guests</option>
-                <option [ngValue]="4">4 Guests</option>
-                <option [ngValue]="6">6 Guests</option>
-                <option [ngValue]="8">8+ Guests (Private Salon)</option>
-              </select>
-            </div>
-
-            <div class="modal-field">
-              <label for="modalTime">Preferred Seating Time</label>
-              <select id="modalTime" [(ngModel)]="bookingTime" name="timeSlot" class="form-select">
-                @for (slot of selectedRestaurant()?.availableSlots; track slot) {
-                  <option [value]="slot">{{ slot }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <div class="modal-field">
-            <label for="modalGuestName">Primary Guest Name</label>
-            <input 
-              id="modalGuestName" 
-              type="text" 
-              [(ngModel)]="guestName" 
-              name="guestName" 
-              required 
-              class="form-input" 
-            />
-          </div>
-
-          <div class="modal-field">
-            <label for="modalRequests">Dietary Preferences or Special Occasion</label>
-            <input 
-              id="modalRequests" 
-              type="text" 
-              [(ngModel)]="specialRequests" 
-              name="requests" 
-              placeholder="e.g. Celebrating Anniversary, Truffle preference, Gluten-free" 
-              class="form-input" 
-            />
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-terracotta">Confirm Table Reservation</button>
-          </div>
-        </form>
-      }
-    </div>
-  </div>
-}
+<!-- Footer -->
+<app-footer></app-footer>
 
 <!-- Footer -->
 <app-footer></app-footer>

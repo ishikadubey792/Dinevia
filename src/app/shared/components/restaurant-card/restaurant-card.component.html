@@ -69,7 +69,7 @@
     <!-- Quick Seating Time Slots -->
     @if (restaurant.availableSlots && restaurant.availableSlots.length > 0) {
       <div class="seating-section">
-        <span class="seating-label">Available Today:</span>
+        <span class="seating-label">Popular Dining Times:</span>
         <div class="slots-row">
           @for (slot of restaurant.availableSlots.slice(0, 3); track slot) {
             <button 

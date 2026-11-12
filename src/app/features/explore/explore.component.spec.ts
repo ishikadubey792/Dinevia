@@ -378,5 +378,116 @@ describe('ExploreComponent Search and Filters Integration', () => {
     expect(component.selectedCuisine()).toBe('all');
     expect(component.filteredRestaurants().length).toBe(3);
   });
+
+  // ---- Phase 4A: Time Standardization & Real Booking Redirect Tests ----
+
+  it('should initialize with default Start Time (18:30) and End Time (20:00) and today as date', () => {
+    expect(component.selectedStartTime()).toBe('18:30');
+    expect(component.selectedEndTime()).toBe('20:00');
+    expect(component.selectedGuests()).toBe(2);
+    expect(component.timeRangeError()).toBeNull();
+  });
+
+  it('should compute timeRangeError when End Time is earlier than or equal to Start Time', () => {
+    component.setStartTime('20:00');
+    component.setEndTime('19:00');
+    fixture.detectChanges();
+
+    expect(component.timeRangeError()).toBe('End time must be later than start time.');
+
+    // Equal times
+    component.setStartTime('19:00');
+    component.setEndTime('19:00');
+    fixture.detectChanges();
+
+    expect(component.timeRangeError()).toBe('End time must be later than start time.');
+
+    // Valid again
+    component.setStartTime('18:00');
+    component.setEndTime('19:30');
+    fixture.detectChanges();
+
+    expect(component.timeRangeError()).toBeNull();
+  });
+
+  it('should hydrate date, startTime, endTime, and guests from route query parameters', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigate([], {
+      queryParams: {
+        date: '2026-11-25',
+        startTime: '19:00',
+        endTime: '21:00',
+        guests: 4
+      }
+    });
+    fixture.detectChanges();
+
+    expect(component.bookingDate()).toBe('2026-11-25');
+    expect(component.selectedStartTime()).toBe('19:00');
+    expect(component.selectedEndTime()).toBe('21:00');
+    expect(component.selectedGuests()).toBe(4);
+  });
+
+  it('should navigate to /book/:id with supported query params when onReserveSlot is called', () => {
+    const router = TestBed.inject(Router);
+    const navSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    const targetRestaurant = component.allRestaurants()[0];
+    component.setDate('2026-12-01');
+    component.setStartTime('19:00');
+    component.setEndTime('21:00');
+    component.setGuests(4);
+
+    component.onReserveSlot({
+      restaurant: targetRestaurant,
+      slot: '7:00 PM'
+    });
+
+    expect(navSpy).toHaveBeenCalledWith(['/book', targetRestaurant.id], {
+      queryParams: {
+        date: '2026-12-01',
+        startTime: '19:00',
+        endTime: '21:00',
+        guests: 4
+      }
+    });
+  });
+
+  it('should block navigation and display toast when onReserveSlot is called with an invalid time range', () => {
+    const router = TestBed.inject(Router);
+    const navSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    component.setStartTime('21:00');
+    component.setEndTime('19:00');
+    fixture.detectChanges();
+    navSpy.mockClear();
+
+    const targetRestaurant = component.allRestaurants()[0];
+    component.onReserveSlot({
+      restaurant: targetRestaurant,
+      slot: '9:00 PM'
+    });
+
+    expect(navSpy).not.toHaveBeenCalled();
+    expect(component.toastMessage()).toContain('End time must be later than start time');
+  });
+
+  it('should restore default date and time values when resetAllFilters is called', () => {
+    component.setDate('2026-12-15');
+    component.setStartTime('17:00');
+    component.setEndTime('18:30');
+    component.setGuests(6);
+
+    expect(component.activeFilterCount()).toBeGreaterThan(0);
+
+    component.resetAllFilters();
+    fixture.detectChanges();
+
+    expect(component.bookingDate()).toBe(component.minDate());
+    expect(component.selectedStartTime()).toBe('18:30');
+    expect(component.selectedEndTime()).toBe('20:00');
+    expect(component.selectedGuests()).toBe(2);
+    expect(component.activeFilterCount()).toBe(0);
+  });
 });
 

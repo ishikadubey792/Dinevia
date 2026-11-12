@@ -15,6 +15,13 @@ import {
   meetsMinimumRating,
   sortRestaurantsAlphabetically
 } from '../../core/models/restaurant.model';
+import {
+  getTodayDateString,
+  normalizeToTimeInput,
+  compareTimes,
+  parseTimeToParts,
+  formatDisplayTime
+} from '../../core/models/booking.model';
 
 export type SortOption = 'name-asc' | 'name-desc' | 'rating-desc' | 'reviews-desc' | 'recommended';
 
@@ -54,6 +61,24 @@ export class ExploreComponent implements OnInit {
   readonly sortBy = signal<SortOption>('name-asc');
   readonly viewMode = signal<'grid' | 'compact'>('grid');
 
+  // Booking Schedule Signals
+  readonly minDate = signal<string>(getTodayDateString());
+  readonly bookingDate = signal<string>(getTodayDateString());
+  readonly selectedStartTime = signal<string>('18:30');
+  readonly selectedEndTime = signal<string>('20:00');
+  readonly selectedGuests = signal<number>(2);
+
+  readonly timeRangeError = computed<string | null>(() => {
+    const start = this.selectedStartTime();
+    const end = this.selectedEndTime();
+    if (!start || !end) return 'Start and end times are required.';
+    const diff = compareTimes(start, end);
+    if (Number.isNaN(diff) || diff >= 0) {
+      return 'End time must be later than start time.';
+    }
+    return null;
+  });
+
   private lastRouteCuisineParam: string | null | undefined = undefined;
 
   // Interactive UI Signals
@@ -72,20 +97,6 @@ export class ExploreComponent implements OnInit {
   retryCuisines(): void {
     this.cuisineService.loadCuisines(true).subscribe();
   }
-
-  // Quick Table Booking Modal State
-  readonly isBookingModalOpen = signal<boolean>(false);
-  readonly selectedRestaurant = signal<Restaurant | null>(null);
-  readonly bookingTime = signal<string>('7:30 PM');
-  readonly bookingDate = signal<string>('');
-  readonly bookingPartySize = signal<number>(2);
-  readonly guestName = signal<string>(
-    this.authService.isCustomerAuthenticated()
-      ? (this.authService.currentCustomerSession()?.user.name ?? '')
-      : ''
-  );
-  readonly bookingConfirmed = signal<boolean>(false);
-  readonly bookingRefCode = signal<string>('');
 
   // Rating options
   readonly ratingOptions = [
@@ -111,6 +122,15 @@ export class ExploreComponent implements OnInit {
     { label: 'Highest Rated (5.0 → 1.0)', value: 'rating-desc' },
     { label: 'Most Reviewed', value: 'reviews-desc' },
     { label: 'Curated & Featured', value: 'recommended' }
+  ];
+
+  readonly guestOptions = [
+    { label: '1 Guest', value: 1 },
+    { label: '2 Guests', value: 2 },
+    { label: '3 Guests', value: 3 },
+    { label: '4 Guests', value: 4 },
+    { label: '6 Guests', value: 6 },
+    { label: '8+ Guests', value: 8 }
   ];
 
   // Human-readable active cuisine label
@@ -217,6 +237,9 @@ export class ExploreComponent implements OnInit {
     if (this.selectedRating() > 0) count++;
     if (this.selectedBadge() !== 'all') count++;
     if (this.selectedCity() !== 'all') count++;
+    if (this.bookingDate() !== this.minDate()) count++;
+    if (this.selectedStartTime() !== '18:30' || this.selectedEndTime() !== '20:00') count++;
+    if (this.selectedGuests() !== 2) count++;
     return count;
   });
 
@@ -225,12 +248,9 @@ export class ExploreComponent implements OnInit {
     this.restaurantService.ensureRestaurantsLoaded().subscribe();
     this.cuisineService.loadCuisines().subscribe();
 
-    // Initialize default booking date to today
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    this.bookingDate.set(`${yyyy}-${mm}-${dd}`);
+    const todayStr = getTodayDateString();
+    this.minDate.set(todayStr);
+    this.bookingDate.set(todayStr);
 
     // Read route query parameters (e.g. /explore?cuisine=italian or ?search=sushi)
     this.route.queryParamMap.subscribe(params => {
@@ -255,6 +275,32 @@ export class ExploreComponent implements OnInit {
       }
       if (badgeParam) {
         this.selectedBadge.set(badgeParam.toLowerCase());
+      }
+
+      const dateParam = params.get('date');
+      if (dateParam) {
+        this.bookingDate.set(dateParam);
+      }
+
+      const startParam = params.get('startTime') || params.get('time');
+      if (startParam) {
+        const norm = normalizeToTimeInput(startParam);
+        if (norm) {
+          this.selectedStartTime.set(norm);
+        }
+      }
+
+      const endParam = params.get('endTime');
+      if (endParam) {
+        const norm = normalizeToTimeInput(endParam);
+        if (norm) {
+          this.selectedEndTime.set(norm);
+        }
+      }
+
+      const guestsParam = params.get('guests');
+      if (guestsParam && !Number.isNaN(+guestsParam) && +guestsParam >= 1 && +guestsParam <= 20) {
+        this.selectedGuests.set(+guestsParam);
       }
     });
   }
@@ -296,6 +342,34 @@ export class ExploreComponent implements OnInit {
     this.simulateBriefLoading();
   }
 
+  setDate(date: string): void {
+    this.bookingDate.set(date);
+    this.syncScheduleQueryParams({ date });
+    this.simulateBriefLoading();
+  }
+
+  setStartTime(time: string): void {
+    this.selectedStartTime.set(time);
+    this.syncScheduleQueryParams({ startTime: time });
+    this.simulateBriefLoading();
+  }
+
+  setEndTime(time: string): void {
+    this.selectedEndTime.set(time);
+    this.syncScheduleQueryParams({ endTime: time });
+    this.simulateBriefLoading();
+  }
+
+  setGuests(guests: number): void {
+    this.selectedGuests.set(guests);
+    this.syncScheduleQueryParams({ guests });
+    this.simulateBriefLoading();
+  }
+
+  formatTimeDisplay(timeStr: string): string {
+    return formatDisplayTime(timeStr);
+  }
+
   setSort(sort: SortOption): void {
     this.sortBy.set(sort);
   }
@@ -311,7 +385,16 @@ export class ExploreComponent implements OnInit {
     this.selectedBadge.set('all');
     this.selectedCity.set('all');
     this.sortBy.set('name-asc');
-    this.syncCuisineQueryParam('all');
+    this.bookingDate.set(this.minDate());
+    this.selectedStartTime.set('18:30');
+    this.selectedEndTime.set('20:00');
+    this.selectedGuests.set(2);
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {}
+    });
+
     this.showToast('All filters have been reset.');
     this.simulateBriefLoading();
   }
@@ -327,6 +410,14 @@ export class ExploreComponent implements OnInit {
     }
   }
 
+  private syncScheduleQueryParams(params: Record<string, string | number | null>): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: params,
+      queryParamsHandling: 'merge'
+    });
+  }
+
   toggleMobileFilters(): void {
     this.isMobileFilterOpen.update(open => !open);
   }
@@ -340,33 +431,32 @@ export class ExploreComponent implements OnInit {
     this.router.navigate(['/restaurants', restaurant.id]);
   }
 
-  // Reservation handling
+  // Reservation handling: redirects directly to real-time table booking
   onReserveSlot(event: { restaurant: Restaurant; slot: string }): void {
-    this.selectedRestaurant.set(event.restaurant);
-    this.bookingTime.set(event.slot);
-    this.bookingConfirmed.set(false);
-    this.isBookingModalOpen.set(true);
-  }
+    if (this.timeRangeError()) {
+      this.showToast('Please select a valid time window: End time must be later than start time.');
+      return;
+    }
 
-  closeModal(): void {
-    this.isBookingModalOpen.set(false);
-    this.selectedRestaurant.set(null);
-    this.bookingConfirmed.set(false);
-  }
+    const startTime = normalizeToTimeInput(event.slot) || this.selectedStartTime();
+    let endTime = this.selectedEndTime();
 
-  submitReservation(): void {
-    const rest = this.selectedRestaurant();
-    if (!rest) return;
+    if (compareTimes(startTime, endTime) >= 0) {
+      const parts = parseTimeToParts(startTime);
+      if (parts) {
+        const endHours = Math.min(23, parts.hours + 2);
+        endTime = `${String(endHours).padStart(2, '0')}:${String(parts.minutes).padStart(2, '0')}`;
+      }
+    }
 
-    const result = this.restaurantService.reserveTable(rest.id, {
-      date: this.bookingDate(),
-      time: this.bookingTime(),
-      guests: this.bookingPartySize(),
-      name: this.guestName()
+    this.router.navigate(['/book', event.restaurant.id], {
+      queryParams: {
+        date: this.bookingDate(),
+        startTime,
+        endTime,
+        guests: this.selectedGuests()
+      }
     });
-
-    this.bookingRefCode.set(result.bookingRef);
-    this.bookingConfirmed.set(true);
   }
 
   private simulateBriefLoading(): void {

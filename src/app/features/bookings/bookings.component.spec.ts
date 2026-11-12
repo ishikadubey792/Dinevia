@@ -1,13 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { BookingsComponent } from './bookings.component';
 import { BookingService } from '../../core/services/booking.service';
+import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { BookingDetails } from '../../core/models/booking.model';
+import { PaymentRecord } from '../../core/models/payment.model';
 
 describe('BookingsComponent Customer History & Cancellation', () => {
   let fixture: ComponentFixture<BookingsComponent>;
@@ -343,6 +345,111 @@ describe('BookingsComponent Customer History & Cancellation', () => {
       component.confirmUpdate();
 
       expect(updateSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Pending Booking Recovery & Payment', () => {
+    const pendingBooking: BookingDetails = {
+      bookingRef: 'DV-104',
+      backendId: 104,
+      restaurantId: '1',
+      restaurantName: 'Bella Napoli',
+      restaurantImage: 'napoli.jpg',
+      restaurantCuisine: 'Italian',
+      restaurantLocation: 'Rome',
+      date: '2026-12-25',
+      time: '07:00 PM – 09:00 PM',
+      guests: 2,
+      seatingArea: 'Table #4',
+      customer: {
+        fullName: 'Ishika Guest',
+        email: 'ishika@test.com',
+        phone: '9876543210'
+      },
+      createdAt: '2026-11-10T10:00:00Z',
+      status: 'pending',
+      isMockReservation: false
+    };
+
+    it('should display Payment Pending badge and Complete Payment button for pending bookings', () => {
+      loginCustomer(88);
+      vi.spyOn(bookingService, 'getCustomerBookings').mockReturnValue(of([pendingBooking]));
+
+      fixture.detectChanges();
+
+      const badge = fixture.nativeElement.querySelector('.badge-pending');
+      expect(badge).toBeTruthy();
+      expect(badge.textContent).toContain('Payment Pending');
+
+      const payBtn = fixture.nativeElement.querySelector('.complete-payment-btn');
+      expect(payBtn).toBeTruthy();
+      expect(payBtn.textContent).toContain('Complete Payment');
+    });
+
+    it('should navigate to payment page when Complete Payment is clicked and payment is pending', () => {
+      loginCustomer(88);
+      vi.spyOn(bookingService, 'getCustomerBookings').mockReturnValue(of([pendingBooking]));
+      fixture.detectChanges();
+
+      const paymentService = TestBed.inject(PaymentService);
+      const router = TestBed.inject(Router);
+      const navSpy = vi.spyOn(router, 'navigate');
+
+      const mockPayment: PaymentRecord = {
+        id: 701,
+        bookingId: 104,
+        amount: 200,
+        paymentMethod: 'Demo',
+        status: 'Pending',
+        transactionId: null,
+        createdAt: '2026-11-12T10:00:00Z',
+        paidAt: null
+      };
+      vi.spyOn(paymentService, 'recoverOrInitiatePayment').mockReturnValue(of(mockPayment));
+
+      component.onCompletePayment(pendingBooking);
+
+      expect(paymentService.recoverOrInitiatePayment).toHaveBeenCalledWith(104);
+      expect(component.isProcessingPaymentForId()).toBeNull();
+      expect(navSpy).toHaveBeenCalledWith(['/booking/payment', 701]);
+    });
+
+    it('should refresh booking list if recoverOrInitiatePayment returns already Success payment', () => {
+      loginCustomer(88);
+      const getSpy = vi.spyOn(bookingService, 'getCustomerBookings').mockReturnValue(of([pendingBooking]));
+      fixture.detectChanges();
+
+      const paymentService = TestBed.inject(PaymentService);
+      const router = TestBed.inject(Router);
+      const navSpy = vi.spyOn(router, 'navigate');
+
+      const mockPayment: PaymentRecord = {
+        id: 701,
+        bookingId: 104,
+        amount: 200,
+        paymentMethod: 'Demo',
+        status: 'Success',
+        transactionId: 'TXN-701',
+        createdAt: '2026-11-12T10:00:00Z',
+        paidAt: '2026-11-12T10:05:00Z'
+      };
+      vi.spyOn(paymentService, 'recoverOrInitiatePayment').mockReturnValue(of(mockPayment));
+
+      component.onCompletePayment(pendingBooking);
+
+      expect(component.toastMessage()).toContain('Payment verified successfully. Booking confirmed.');
+      expect(getSpy).toHaveBeenCalledTimes(2); // Initial + reload
+      expect(navSpy).not.toHaveBeenCalled();
+    });
+
+    it('should prevent duplicate Complete Payment clicks while processing', () => {
+      const paymentService = TestBed.inject(PaymentService);
+      const recSpy = vi.spyOn(paymentService, 'recoverOrInitiatePayment');
+
+      component.isProcessingPaymentForId.set(104);
+      component.onCompletePayment(pendingBooking);
+
+      expect(recSpy).not.toHaveBeenCalled();
     });
   });
 });
