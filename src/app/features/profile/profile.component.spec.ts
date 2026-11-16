@@ -78,9 +78,15 @@ describe('ProfileComponent Form Validation & Clean Defaults', () => {
     emailCtrl?.setValue('member@yahoo.in');
     expect(emailCtrl?.valid).toBe(true);
 
-    emailCtrl?.setValue('member@company.org');
+    emailCtrl?.setValue('user@example.co.in');
+    expect(emailCtrl?.valid).toBe(true);
+
+    emailCtrl?.setValue('1user@example.com');
+    expect(emailCtrl?.valid).toBe(true);
+
+    emailCtrl?.setValue('invalid-email');
     expect(emailCtrl?.valid).toBe(false);
-    expect(component.getEmailErrorMessage()).toContain('.com or .in');
+    expect(component.getEmailErrorMessage()).toContain('valid email address');
 
     phoneCtrl?.setValue('9876543210');
     expect(phoneCtrl?.valid).toBe(true);

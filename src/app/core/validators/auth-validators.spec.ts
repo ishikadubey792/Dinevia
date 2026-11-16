@@ -7,7 +7,7 @@ import {
   standardEmailValidator
 } from './auth-validators';
 
-describe('Auth Validators (Indian Phone & .com/.in Email)', () => {
+describe('Auth Validators (Indian Phone & General Email Syntax)', () => {
   describe('indianPhoneValidator', () => {
     it('should accept valid 10-digit Indian mobile numbers starting with 6, 7, 8, or 9', () => {
       const validNumbers = ['9876543210', '8765432109', '7123456789', '6000000001'];
@@ -52,9 +52,13 @@ describe('Auth Validators (Indian Phone & .com/.in Email)', () => {
     });
   });
 
-  describe('dineviaEmailValidator (.com and .in only)', () => {
-    it('should accept valid emails ending with .com or .in', () => {
+  describe('dineviaEmailValidator', () => {
+    it('should accept valid emails across standard and multi-level domains including Indian extensions and leading digits', () => {
       const validEmails = [
+        '1user@example.com',
+        'user@example.co.in',
+        'user@example.org.in',
+        'user@example.edu.in',
         'user@gmail.com',
         'ishika@yahoo.in',
         'person@example.com',
@@ -68,35 +72,35 @@ describe('Auth Validators (Indian Phone & .com/.in Email)', () => {
       }
     });
 
-    it('should reject unsupported TLDs, malformed strings, and compound .com.in domains', () => {
-      const invalidEmails = [
-        'user@gmail.org',
-        'user@gmail.net',
-        'user@example.co',
-        'user@university.edu',
-        'invalid-email',
-        'user@gmail.com.in',
-        'user@.com',
-        '@gmail.com',
-        'user@gmail..com'
-      ];
+      it('should reject malformed email strings, missing parts, and invalid structures', () => {
+        const invalidEmails = [
+          'invalid-email',
+          '@gmail.com',
+          'user@',
+          'user@.com',
+        'user@localhost',
+          'user@example',
+          'user@gmail..com',
+          'user..name@example.com',
+          'user@example.c'
+        ];
 
-      for (const email of invalidEmails) {
-        const control = new FormControl(email, [Validators.required, dineviaEmailValidator()]);
-        expect(control.valid).toBe(false);
-        expect(control.errors?.['invalidEmailDomain']).toBe(true);
-        expect(getDineviaEmailErrorMessage(control.errors)).toContain('.com or .in');
-      }
+        for (const email of invalidEmails) {
+          const control = new FormControl(email, [Validators.required, dineviaEmailValidator()]);
+          expect(control.valid).toBe(false);
+          expect(control.errors?.['invalidEmailDomain'] || control.errors?.['invalidEmail']).toBe(true);
+          expect(getDineviaEmailErrorMessage(control.errors)).toContain('valid email address');
+        }
+      });
+    });
+
+    describe('standardEmailValidator', () => {
+      it('should validate complete standard email syntax across international TLDs and reject incomplete ones', () => {
+        expect(new FormControl('chef.julien@legabriel.fr', [standardEmailValidator()]).valid).toBe(true);
+        expect(new FormControl('user@gmail.com', [standardEmailValidator()]).valid).toBe(true);
+        expect(new FormControl('invalid-email', [standardEmailValidator()]).valid).toBe(false);
+        expect(new FormControl('user@localhost', [standardEmailValidator()]).valid).toBe(false);
+      });
     });
   });
-
-  describe('standardEmailValidator', () => {
-    it('should validate complete standard email syntax across international TLDs and reject incomplete ones', () => {
-      expect(new FormControl('chef.julien@legabriel.fr', [standardEmailValidator()]).valid).toBe(true);
-      expect(new FormControl('user@gmail.com', [standardEmailValidator()]).valid).toBe(true);
-      expect(new FormControl('invalid-email', [standardEmailValidator()]).valid).toBe(false);
-      expect(new FormControl('user@localhost', [standardEmailValidator()]).valid).toBe(false);
-    });
-  });
-});
 

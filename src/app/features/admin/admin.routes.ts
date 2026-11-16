@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './layout/admin-layout.component';
 import { AdminDashboardComponent } from './dashboard/admin-dashboard.component';
 import { AdminRestaurantsComponent } from './restaurants/admin-restaurants.component';
+import { OwnerBookingsComponent } from './bookings/owner-bookings.component';
 import { AdminPlaceholderComponent } from './placeholder/admin-placeholder.component';
 import { AdminLoginComponent } from './auth/admin-login/admin-login.component';
 import { AdminRegisterComponent } from './auth/admin-register/admin-register.component';
@@ -41,23 +42,50 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'bookings',
+        component: OwnerBookingsComponent,
+        title: 'Bookings Ledger — Dinevia Owner Portal'
+      },
+      {
+        path: 'tables',
         component: AdminPlaceholderComponent,
-        title: 'Bookings — Dinevia Owner Portal',
+        title: 'Table Management — Dinevia Owner Portal',
         data: {
-          title: 'Guest Table Bookings Ledger',
-          kicker: 'RESTAURANT OPERATIONS',
-          badge: 'Live Reservations',
-          description: 'Review confirmed and seated reservations, party details, and special guest requests across your dining rooms.',
+          title: 'Table Management & Dining Room Layout',
+          kicker: 'OPERATIONAL SEATING',
+          badge: 'Dining Rooms',
+          description: 'Configure dining room floor plans, table numbers, guest capacities, and active seating sections across your restaurants.',
           stats: [
-            { label: 'Active Reservations', value: '148' },
-            { label: 'Confirmed Today', value: '38' },
-            { label: 'Average Party', value: '3.4 Guests' }
+            { label: 'Active Zones', value: 'Main Hall, Patio, PDR' },
+            { label: 'Table Capacity', value: 'Configurable' },
+            { label: 'Status', value: 'Operational' }
           ],
           upcomingFeatures: [
-            'Real-time SMS & email guest confirmation notifications',
-            'Table assignment and turn pacing manager',
-            'Direct reservation synchronization with POS',
-            'Guest arrival status check-in'
+            'Visual floor plan layout drag & drop designer',
+            'Dynamic table combination for large banquets',
+            'Table turn pace timing alerts',
+            'Service section waitstaff assignment'
+          ]
+        }
+      },
+      {
+        path: 'operating-hours',
+        component: AdminPlaceholderComponent,
+        title: 'Operating Hours — Dinevia Owner Portal',
+        data: {
+          title: 'Operating Hours & Service Shifts',
+          kicker: 'OPERATIONAL TIMINGS',
+          badge: 'Service Shifts',
+          description: 'Define daily operating hours, lunch and dinner service shifts, and special festival or holiday schedules.',
+          stats: [
+            { label: 'Lunch Service', value: '12:00 PM – 3:30 PM' },
+            { label: 'Dinner Service', value: '7:00 PM – 11:30 PM' },
+            { label: 'Weekly Shifts', value: '7 Days Active' }
+          ],
+          upcomingFeatures: [
+            'Custom holiday and festive blackout calendars',
+            'Split-shift timing with afternoon kitchen reset',
+            'Last reservation seating buffer control',
+            'Temporary closure broadcast to customer explore'
           ]
         }
       },

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { RestaurantDetailComponent } from './restaurant-detail.component';
 import { BookingService } from '../../core/services/booking.service';
@@ -168,8 +168,9 @@ describe('RestaurantDetailComponent Phase 2 Details & Real Availability', () => 
     expect(component.availableTables().map(t => t.id)).toEqual([10]);
   });
 
-  it('should keep reservation submission disabled in Phase 2 and never call createBooking or POST /api/bookings', () => {
-    const createSpy = vi.spyOn(bookingService, 'createBooking');
+  it('should navigate to /book/:id with selected parameters when Reserve Table is submitted', () => {
+    const router = TestBed.inject(Router);
+    const navSpy = vi.spyOn(router, 'navigate');
     const firstTable = component.availableTables()[0];
     component.selectTable(firstTable);
     fixture.detectChanges();
@@ -178,13 +179,15 @@ describe('RestaurantDetailComponent Phase 2 Details & Real Availability', () => 
     component.submitBooking();
     fixture.detectChanges();
 
-    expect(createSpy).not.toHaveBeenCalled();
-    httpTesting.expectNone(
-      r => r.url === `${environment.apiUrl}/bookings` && r.method === 'POST'
-    );
+    expect(navSpy).toHaveBeenCalledWith(['/book', '1'], expect.objectContaining({
+      queryParams: expect.objectContaining({
+        guests: 2,
+        tableId: firstTable.id
+      })
+    }));
 
     const submitBtn: HTMLButtonElement | null = fixture.nativeElement.querySelector('.reserve-submit-btn');
-    expect(submitBtn?.disabled).toBe(true);
+    expect(submitBtn?.disabled).toBe(false);
   });
 
   it('should expose 404 not-found and retryable error states for GET /api/restaurants/{id}', () => {

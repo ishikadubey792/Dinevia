@@ -189,7 +189,7 @@ export class ProfileComponent implements OnInit {
 
       this.isSaving.set(false);
       this.isEditMode.set(false);
-      this.showToast('Profile information successfully updated in mock session.');
+      this.showToast('Profile preferences successfully updated.');
     }, 500);
   }
 

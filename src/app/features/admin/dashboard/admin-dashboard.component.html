@@ -1,16 +1,6 @@
 <div class="dashboard-container">
-  <!-- Toast Message -->
-  @if (notificationToast()) {
-    <div class="admin-toast" role="status" aria-live="polite">
-      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-      </svg>
-      <span>{{ notificationToast() }}</span>
-    </div>
-  }
-
-  <!-- SECTION 1: Welcome Header & Quick Actions -->
-  <section class="welcome-header">
+  <!-- SECTION 1: Welcome Header & Navigation Quick Actions -->
+  <header class="welcome-header">
     <div class="welcome-text">
       <div class="executive-pill">
         <span class="sparkle-icon">✦</span>
@@ -18,7 +8,7 @@
       </div>
       <h1 class="welcome-title">Welcome back, <span class="highlight-serif">{{ ownerName() }}.</span></h1>
       <p class="welcome-desc">
-        Here is your operational overview across your dining establishments and upcoming table reservations.
+        Real-time operational intelligence, reservation metrics, and dining analytics across your culinary portfolio.
       </p>
     </div>
 
@@ -28,7 +18,7 @@
         <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
           <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
         </svg>
-        <span>Add Restaurant</span>
+        <span>Register Restaurant</span>
       </a>
 
       <a routerLink="/admin/restaurants" class="btn btn-outline btn-md">
@@ -36,9 +26,61 @@
       </a>
 
       <a routerLink="/admin/bookings" class="btn btn-ghost btn-md">
-        <span>View All Bookings</span>
+        <span>Bookings Ledger</span>
       </a>
     </div>
+  </header>
+
+  <!-- SECTION 2: Dashboard Analytics Filter Bar -->
+  <section class="analytics-filter-card" aria-label="Dashboard Analytics Filters">
+    <form class="filter-row" (ngSubmit)="applyFilters()">
+      <div class="filter-field">
+        <label for="filter-rest" class="filter-label">Filter Establishment</label>
+        <select 
+          id="filter-rest" 
+          name="filterRest"
+          class="filter-select" 
+          [(ngModel)]="filterRestaurantId">
+          <option [ngValue]="null">All Owned Restaurants</option>
+          @for (r of restaurants(); track r.id) {
+            <option [ngValue]="r.id">{{ r.name }} ({{ r.city }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-from" class="filter-label">From Date</label>
+        <input 
+          id="filter-from" 
+          name="filterFrom"
+          type="date" 
+          class="filter-input" 
+          [(ngModel)]="filterFromDate" />
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-to" class="filter-label">To Date</label>
+        <input 
+          id="filter-to" 
+          name="filterTo"
+          type="date" 
+          class="filter-input" 
+          [(ngModel)]="filterToDate" />
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary btn-sm" [disabled]="isLoading()">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z" clip-rule="evenodd" />
+          </svg>
+          <span>Apply Filter</span>
+        </button>
+
+        <button type="button" class="btn btn-outline btn-sm" (click)="resetFilters()" [disabled]="isLoading()">
+          <span>Reset</span>
+        </button>
+      </div>
+    </form>
   </section>
 
   <!-- Loading State Banner -->
@@ -46,8 +88,8 @@
     <div class="state-banner loading-banner" role="status" aria-live="polite">
       <div class="loading-spinner" aria-hidden="true"></div>
       <div class="state-text">
-        <strong class="state-title">Synchronizing Establishment Data</strong>
-        <p class="state-desc">Fetching your restaurant portfolio from the Dinevia API...</p>
+        <strong class="state-title">Aggregating Owner Analytics</strong>
+        <p class="state-desc">Retrieving live booking metrics and payment summaries from the Dinevia API...</p>
       </div>
     </div>
   }
@@ -59,10 +101,10 @@
         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
       </svg>
       <div class="state-text">
-        <strong class="state-title">Unable to Load Your Restaurants</strong>
+        <strong class="state-title">Unable to Load Dashboard Analytics</strong>
         <p class="state-desc">{{ err }}</p>
       </div>
-      <button type="button" class="retry-btn" (click)="retryLoad()" aria-label="Retry loading restaurants">
+      <button type="button" class="retry-btn" (click)="retryLoad()" aria-label="Retry loading dashboard">
         <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
         </svg>
@@ -71,317 +113,281 @@
     </div>
   }
 
-  <!-- SECTION 2: 4 Owner-Focused Metric Cards -->
-  <section class="metrics-grid" aria-label="Key Performance Indicators">
-    @for (card of adminData.statCards; track card.title) {
+  <!-- SECTION 3: 7 Live KPI Metric Summary Cards -->
+  @if (metrics(); as m) {
+    <section class="metrics-grid" aria-label="Key Performance Indicators">
+      <!-- 1. Total Restaurants -->
       <div class="metric-card">
         <div class="card-top">
-          <span class="card-title">{{ card.title }}</span>
-          <div class="card-icon-badge" [class]="card.icon">
-            @switch (card.icon) {
-              @case ('restaurant') {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
-                  <path d="M6 2v20"></path>
-                  <path d="M3 6h6"></path>
-                  <path d="M3 10h6"></path>
-                </svg>
-              }
-              @case ('booking') {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-              }
-              @case ('guests') {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              }
-              @case ('rating') {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
-              }
-              @default {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="9"></circle>
-                </svg>
-              }
-            }
-          </div>
-        </div>
-
-        <div class="card-value-row">
-          <span class="card-val">{{ card.value }}</span>
-          <span class="card-change" [class.positive]="card.isPositive">
-            {{ card.change }}
-          </span>
-        </div>
-
-        <div class="card-footer">
-          <span class="card-badge">{{ card.badge }}</span>
-          <span class="card-sub">{{ card.subtitle }}</span>
-        </div>
-      </div>
-    }
-  </section>
-
-  <!-- Empty Establishments Callout -->
-  @if (!isLoading() && !loadError() && ownerRestaurants().length === 0) {
-    <section class="empty-establishments-card">
-      <div class="empty-icon-box">🏛️</div>
-      <div class="empty-content">
-        <h3 class="empty-heading">No Dining Establishments Registered</h3>
-        <p class="empty-subheading">
-          You haven't registered any restaurants under your owner account yet. Register your first culinary sanctuary to start managing tables and receiving guest reservations.
-        </p>
-      </div>
-      <a routerLink="/admin/register" class="btn btn-primary btn-md">
-        <span>Register Restaurant</span>
-      </a>
-    </section>
-  }
-
-  <!-- SECTION 3: Main Dashboard Content (Simplified) -->
-  <div class="dashboard-main-grid single-column-grid">
-    <!-- 3A. Booking Trends Interactive Chart (Preserved Structure with Authentic Unavailable State) -->
-    <section class="panel-card chart-panel">
-      <div class="panel-header">
-        <div>
-          <span class="panel-kicker">RESERVATION ANALYTICS</span>
-          <h2 class="panel-title">Booking &amp; Reservation Trends</h2>
-        </div>
-
-        <!-- Timeframe Selector -->
-        <div class="view-toggles" role="tablist">
-          <button 
-            type="button" 
-            class="toggle-btn" 
-            [class.active]="trendView() === 'weekly'"
-            (click)="setTrendView('weekly')"
-            role="tab"
-            [attr.aria-selected]="trendView() === 'weekly'">
-            7 Days
-          </button>
-          <button 
-            type="button" 
-            class="toggle-btn" 
-            [class.active]="trendView() === 'monthly'"
-            (click)="setTrendView('monthly')"
-            role="tab"
-            [attr.aria-selected]="trendView() === 'monthly'">
-            6 Months
-          </button>
-        </div>
-      </div>
-
-      <!-- Clean Unavailable Placeholder Stage -->
-      <div class="chart-stage">
-        <div class="chart-unavailable-container">
-          <div class="unavailable-icon-circle">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-              <path d="M3 3v18h18" stroke-linecap="round"></path>
-              <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" stroke-linecap="round" stroke-linejoin="round"></path>
+          <span class="card-title">Total Restaurants</span>
+          <div class="card-icon-badge restaurant">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
+              <path d="M6 2v20"></path>
+              <path d="M3 6h6"></path>
+              <path d="M3 10h6"></path>
             </svg>
           </div>
-          <h3 class="unavailable-heading">Reservation Trend Analytics Pending</h3>
-          <p class="unavailable-message">
-            Visual reservation analytics, cover pacing, and dining room telemetry will activate once table booking management is connected for your establishments.
-          </p>
-          <span class="badge-pending">Phase 2 Backend Integration</span>
+        </div>
+        <div class="card-value-row">
+          <span class="card-val">{{ m.totalRestaurants }}</span>
+          <span class="card-change positive">Establishments</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-badge">Portfolio</span>
+          <span class="card-sub">Active dining venues</span>
         </div>
       </div>
 
-      <div class="chart-legend-row">
-        <div class="legend-item">
-          <span class="legend-bullet forest"></span>
-          <span>Table Reservations</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-bullet terracotta"></span>
-          <span>Peak Dinner Window</span>
-        </div>
-        <div class="legend-note">
-          <span>Awaiting live booking telemetry from dining rooms</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3B. Recent Bookings Table -->
-    <section class="panel-card bookings-panel">
-      <div class="panel-header">
-        <div>
-          <span class="panel-kicker">REAL-TIME SERVICE</span>
-          <h2 class="panel-title">Recent Dining Bookings</h2>
-        </div>
-
-        <a routerLink="/admin/bookings" class="panel-link">View Full Ledger &rarr;</a>
-      </div>
-
-      @if (filteredBookings().length > 0) {
-        <!-- Filter Tabs -->
-        <div class="table-filter-pills">
-          <button 
-            type="button" 
-            class="filter-pill" 
-            [class.active]="bookingStatusFilter() === 'all'"
-            (click)="setBookingFilter('all')">
-            All ({{ filteredBookings().length }})
-          </button>
-          <button 
-            type="button" 
-            class="filter-pill" 
-            [class.active]="bookingStatusFilter() === 'seated'"
-            (click)="setBookingFilter('seated')">
-            Seated Now
-          </button>
-          <button 
-            type="button" 
-            class="filter-pill" 
-            [class.active]="bookingStatusFilter() === 'confirmed'"
-            (click)="setBookingFilter('confirmed')">
-            Confirmed
-          </button>
-          <button 
-            type="button" 
-            class="filter-pill" 
-            [class.active]="bookingStatusFilter() === 'pending'"
-            (click)="setBookingFilter('pending')">
-            Pending
-          </button>
-        </div>
-
-        <!-- Bookings Data Table -->
-        <div class="table-responsive">
-          <table class="admin-data-table">
-            <thead>
-              <tr>
-                <th>Booking Ref</th>
-                <th>Guest</th>
-                <th>Dining Sanctuary</th>
-                <th>Date &amp; Time</th>
-                <th>Guests</th>
-                <th>Status</th>
-                <th class="text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (bk of filteredBookings(); track bk.id) {
-                <tr class="table-row">
-                  <td class="cell-ref">
-                    <code>{{ bk.bookingRef }}</code>
-                  </td>
-                  <td class="cell-guest">
-                    <strong class="guest-name">{{ bk.customerName }}</strong>
-                    <span class="guest-contact">{{ bk.customerEmail }}</span>
-                  </td>
-                  <td class="cell-restaurant">
-                    <span class="rest-name">{{ bk.restaurantName }}</span>
-                    <span class="rest-area">{{ bk.seatingArea }}</span>
-                  </td>
-                  <td class="cell-datetime">
-                    <span class="date">{{ bk.date }}</span>
-                    <span class="time">{{ bk.time }}</span>
-                  </td>
-                  <td class="cell-guests">
-                    <span class="party-pill">{{ bk.guests }} Guests</span>
-                  </td>
-                  <td class="cell-status">
-                    <span class="status-badge" [class]="'status-' + bk.status">
-                      {{ bk.status }}
-                    </span>
-                  </td>
-                  <td class="cell-action text-right">
-                    <button type="button" class="btn-inspect" (click)="viewBookingDetails(bk)" aria-label="View booking details">
-                      Inspect
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      } @else {
-        <!-- Authentic Empty State matching requirements -->
-        <div class="empty-bookings-notice">
-          <div class="empty-icon-circle">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+      <!-- 2. Total Bookings -->
+      <div class="metric-card">
+        <div class="card-top">
+          <span class="card-title">Total Bookings</span>
+          <div class="card-icon-badge bookings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="4" width="18" height="18" rx="2"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
               <line x1="8" y1="2" x2="8" y2="6"></line>
               <line x1="3" y1="10" x2="21" y2="10"></line>
             </svg>
           </div>
-          <h3 class="notice-title">No Recent Bookings</h3>
-          <p class="notice-message">Booking analytics will appear here once booking management is connected.</p>
-          <span class="badge-pending">Phase 2 Backend Integration</span>
         </div>
-      }
-    </section>
-  </div>
-
-  <!-- DETAIL MODAL: Selected Booking Inspection -->
-  @if (selectedBooking(); as bk) {
-    <div class="modal-backdrop" (click)="closeBookingDetails()" aria-hidden="true"></div>
-    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="modal-header">
-        <div>
-          <span class="modal-kicker">RESERVATION DOSSIER</span>
-          <h3 id="modal-title" class="modal-title">{{ bk.bookingRef }} — {{ bk.restaurantName }}</h3>
+        <div class="card-value-row">
+          <span class="card-val">{{ m.totalBookings }}</span>
+          <span class="card-change">All Time</span>
         </div>
-        <button type="button" class="modal-close" (click)="closeBookingDetails()" aria-label="Close dossier">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+        <div class="card-footer">
+          <span class="card-badge">Reservations</span>
+          <span class="card-sub">Recorded table reservations</span>
+        </div>
       </div>
 
-      <div class="modal-body">
-        <div class="modal-meta-grid">
-          <div class="meta-item">
-            <span class="label">Primary Patron</span>
-            <strong class="val">{{ bk.customerName }}</strong>
-            <span class="sub">{{ bk.customerEmail }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="label">Date &amp; Service Time</span>
-            <strong class="val">{{ bk.date }} at {{ bk.time }}</strong>
-            <span class="sub">{{ bk.guests }} Guests &bull; {{ bk.seatingArea }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="label">Deposit Ledger</span>
-            <strong class="val">${{ bk.depositAmount }} USD</strong>
-            <span class="sub">Guaranteed Reservation</span>
-          </div>
-          <div class="meta-item">
-            <span class="label">Current Status</span>
-            <span class="status-badge" [class]="'status-' + bk.status">{{ bk.status }}</span>
+      <!-- 3. Pending Bookings -->
+      <div class="metric-card highlight-pending">
+        <div class="card-top">
+          <span class="card-title">Pending Bookings</span>
+          <div class="card-icon-badge pending">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
           </div>
         </div>
+        <div class="card-value-row">
+          <span class="card-val">{{ m.pendingBookings }}</span>
+          <span class="card-change warning">Action Required</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-badge">Pending Review</span>
+          <span class="card-sub">Awaiting confirmation</span>
+        </div>
+      </div>
 
-        @if (bk.specialRequests) {
-          <div class="modal-notes-box">
-            <span class="notes-label">Maître D' &amp; Kitchen Notes:</span>
-            <p class="notes-text">{{ bk.specialRequests }}</p>
+      <!-- 4. Confirmed Bookings -->
+      <div class="metric-card">
+        <div class="card-top">
+          <span class="card-title">Confirmed Bookings</span>
+          <div class="card-icon-badge confirmed">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="card-value-row">
+          <span class="card-val">{{ m.confirmedBookings }}</span>
+          <span class="card-change positive">Secured</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-badge">Confirmed</span>
+          <span class="card-sub">Ready for service</span>
+        </div>
+      </div>
+
+      <!-- 5. Upcoming Bookings -->
+      <div class="metric-card">
+        <div class="card-top">
+          <span class="card-title">Upcoming Bookings</span>
+          <div class="card-icon-badge upcoming">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <path d="M12 14v4"></path>
+              <path d="M10 16h4"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="card-value-row">
+          <span class="card-val">{{ m.upcomingBookings }}</span>
+          <span class="card-change positive">Upcoming</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-badge">Future Shifts</span>
+          <span class="card-sub">Scheduled dining arrivals</span>
+        </div>
+      </div>
+
+      <!-- 6. Completed Bookings -->
+      <div class="metric-card">
+        <div class="card-top">
+          <span class="card-title">Completed Bookings</span>
+          <div class="card-icon-badge completed">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="card-value-row">
+          <span class="card-val">{{ m.completedBookings }}</span>
+          <span class="card-change">Seated &amp; Served</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-badge">Fulfilled</span>
+          <span class="card-sub">Past dining visits</span>
+        </div>
+      </div>
+
+      <!-- 7. Cancelled Bookings -->
+      <div class="metric-card">
+        <div class="card-top">
+          <span class="card-title">Cancelled Bookings</span>
+          <div class="card-icon-badge cancelled">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </div>
+        </div>
+        <div class="card-value-row">
+          <span class="card-val">{{ m.cancelledBookings }}</span>
+          <span class="card-change">Cancelled</span>
+        </div>
+        <div class="card-footer">
+          <span class="card-badge">Void</span>
+          <span class="card-sub">Released table inventory</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Zero Data State Callout -->
+    @if (isZeroState()) {
+      <section class="empty-establishments-card" aria-label="No Establishments Notice">
+        <div class="empty-icon-box">🏛️</div>
+        <div class="empty-content">
+          <h3 class="empty-heading">Welcome to Dinevia Owner Portal</h3>
+          <p class="empty-subheading">
+            You currently have no registered dining establishments or guest bookings. Register your first culinary venue to begin receiving reservations and tracking operational revenue.
+          </p>
+        </div>
+        <a routerLink="/admin/register" class="btn btn-primary btn-md">
+          <span>Register Restaurant</span>
+        </a>
+      </section>
+    }
+
+    <!-- SECTION 4: Restaurant-Wise Breakdown & Payment Intelligence Grid -->
+    <div class="dashboard-analytics-grid">
+      <!-- 4A. Restaurant-Wise Booking Summaries -->
+      <section class="panel-card rest-summaries-panel" aria-label="Establishment Summaries">
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">VENUE OPERATIONAL METRICS</span>
+            <h2 class="panel-title">Restaurant Booking Summaries</h2>
+          </div>
+          <a routerLink="/admin/restaurants" class="panel-link">Manage Venues &rarr;</a>
+        </div>
+
+        @if (m.restaurantSummaries && m.restaurantSummaries.length > 0) {
+          <div class="table-responsive">
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th scope="col">Restaurant</th>
+                  <th scope="col" class="text-center">Total</th>
+                  <th scope="col" class="text-center">Pending</th>
+                  <th scope="col" class="text-center">Confirmed</th>
+                  <th scope="col" class="text-center">Completed</th>
+                  <th scope="col" class="text-center">Cancelled</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (rs of m.restaurantSummaries; track rs.restaurantId) {
+                  <tr>
+                    <td class="cell-venue-name">
+                      <strong>{{ rs.restaurantName }}</strong>
+                      <span class="venue-id">ID: #{{ rs.restaurantId }}</span>
+                    </td>
+                    <td class="text-center font-bold">{{ rs.totalBookings }}</td>
+                    <td class="text-center">
+                      <span class="badge-count pending">{{ rs.pendingBookings }}</span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge-count confirmed">{{ rs.confirmedBookings }}</span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge-count completed">{{ rs.completedBookings }}</span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge-count cancelled">{{ rs.cancelledBookings }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-panel-notice">
+            <p>No restaurant summaries found for the selected filter period.</p>
           </div>
         }
-      </div>
+      </section>
 
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline btn-sm" (click)="closeBookingDetails()">
-          Close
-        </button>
-        <button type="button" class="btn btn-primary btn-sm" (click)="triggerQuickAction('Table assignment updated for ' + bk.bookingRef); closeBookingDetails()">
-          Assign Table
-        </button>
-      </div>
+      <!-- 4B. Payment Guarantee Intelligence -->
+      <section class="panel-card payment-analytics-panel" aria-label="Payment Guarantee Summary">
+        <div class="panel-header">
+          <div>
+            <span class="panel-kicker">RESERVATION GUARANTEES</span>
+            <h2 class="panel-title">Payment Summary</h2>
+          </div>
+          <span class="badge-brass">Demo Mode</span>
+        </div>
+
+        <!-- Total Successful Revenue Callout -->
+        <div class="revenue-banner">
+          <div class="revenue-info">
+            <span class="revenue-label">Total Successful Guarantee Revenue</span>
+            <strong class="revenue-amount">{{ formattedRevenue() }}</strong>
+            <span class="revenue-currency-note">Indian Rupee (INR) &bull; Verified Successful Guarantees</span>
+          </div>
+        </div>
+
+        <!-- Status Breakdown List -->
+        <div class="payment-breakdown-list">
+          <h3 class="breakdown-title">Guarantee Status Breakdown</h3>
+          @for (ps of m.paymentSummaries; track ps.status) {
+            <div class="breakdown-item">
+              <div class="item-status-group">
+                <span class="status-indicator" [class]="getPaymentStatusClass(ps.status)"></span>
+                <strong class="status-name">{{ ps.status }}</strong>
+                <span class="status-count">({{ ps.count }} {{ ps.count === 1 ? 'transaction' : 'transactions' }})</span>
+              </div>
+              <strong class="item-amount">{{ formatCurrency(ps.totalAmount) }}</strong>
+            </div>
+          }
+        </div>
+
+        <!-- Demo Payment Disclaimer Callout -->
+        <div class="demo-payment-note" role="note">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="note-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+          </svg>
+          <div class="note-text">
+            <strong>Demonstration Mode Notice:</strong>
+            <p>{{ m.paymentNote }}</p>
+          </div>
+        </div>
+      </section>
     </div>
   }
 </div>

@@ -20,6 +20,7 @@ import {
 } from '../models/booking.model';
 import { ApiResponse } from '../models/cuisine.model';
 import { RestaurantService } from './restaurant.service';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -27,6 +28,7 @@ import { RestaurantService } from './restaurant.service';
 export class BookingService {
   private readonly http = inject(HttpClient);
   private readonly restaurantService = inject(RestaurantService);
+  private readonly authService = inject(AuthService);
   private readonly apiUrl = environment.apiUrl;
 
   private readonly activeBookingSignal = signal<BookingDetails | null>(this.loadInitialActiveBooking());
@@ -462,6 +464,27 @@ export class BookingService {
             }
           }
 
+          // Persist to booking history signal and localStorage so it is preserved across views
+          const currentHistory = this.bookingsHistorySignal();
+          const existingIdx = currentHistory.findIndex(
+            b => b.backendId === booking.backendId || b.bookingRef === booking.bookingRef
+          );
+          let nextHistory: BookingDetails[];
+          if (existingIdx >= 0) {
+            nextHistory = [...currentHistory];
+            nextHistory[existingIdx] = booking;
+          } else {
+            nextHistory = [booking, ...currentHistory];
+          }
+          this.bookingsHistorySignal.set(nextHistory);
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('dinevia_booking_history', JSON.stringify(nextHistory));
+            } catch (e) {
+              console.warn('Could not persist booking history to localStorage', e);
+            }
+          }
+
           return booking;
         }),
         catchError(err => {
@@ -606,8 +629,18 @@ export class BookingService {
     };
     const status: BookingDetails['status'] = statusMap[rawStatus] ?? 'confirmed';
 
-    // Try to enrich restaurant info from Phase 1 list via restaurantId on table
-    const restaurantId = r.restaurantTable?.restaurantId ?? 0;
+    // Check if we have this booking cached in bookingHistory (e.g. from creation in this browser)
+    const cachedBooking = this.bookingsHistorySignal().find(
+      b => b.backendId === backendId || b.bookingRef === bookingRef
+    );
+
+    // Try to enrich restaurant info: first from table's restaurantId, then from cached booking
+    const restaurantId =
+      r.restaurantTable?.restaurantId ??
+      (cachedBooking?.restaurantId && !isNaN(Number(cachedBooking.restaurantId))
+        ? Number(cachedBooking.restaurantId)
+        : 0);
+
     const enriched = restaurantId
       ? this.restaurantService.enrichFromLoadedList({ id: restaurantId } as any)
       : null;
@@ -615,31 +648,63 @@ export class BookingService {
     const fallbackImage =
       'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80';
 
+    // Resolve restaurant name without ever rendering "Restaurant #0"
+    let resolvedRestaurantName: string;
+    if (cachedBooking?.restaurantName && !cachedBooking.restaurantName.startsWith('Restaurant #0')) {
+      resolvedRestaurantName = cachedBooking.restaurantName;
+    } else if (enriched?.name) {
+      resolvedRestaurantName = enriched.name;
+    } else if (restaurantId > 0) {
+      resolvedRestaurantName = `Sanctuary Table #${r.restaurantTableId ?? restaurantId}`;
+    } else {
+      resolvedRestaurantName = 'Curated Dining Sanctuary';
+    }
+
+    // Resolve customer details from cache or current auth session
+    const currentCustomer = this.authService.currentCustomerSession()?.user;
+    const customerUser = this.authService.currentUser();
+    const resolvedCustomer: BookingCustomer = {
+      fullName:
+        cachedBooking?.customer?.fullName ||
+        currentCustomer?.name ||
+        customerUser?.fullName ||
+        'Valued Patron',
+      email:
+        cachedBooking?.customer?.email ||
+        currentCustomer?.email ||
+        customerUser?.email ||
+        '',
+      phone:
+        cachedBooking?.customer?.phone ||
+        customerUser?.phone ||
+        '',
+      specialRequests: r.specialRequest ?? cachedBooking?.customer?.specialRequests ?? undefined
+    };
+
     return {
       bookingRef,
       backendId,
-      restaurantId: String(restaurantId || ''),
-      restaurantName: enriched?.name ?? `Restaurant #${restaurantId}`,
-      restaurantImage: enriched?.imageUrl ?? fallbackImage,
-      restaurantCuisine: enriched?.cuisine ?? 'Fine Dining',
-      restaurantLocation: enriched ? `${enriched.neighborhood ?? ''}, ${enriched.city ?? ''}`.replace(/^,\s*/, '') : '',
-      restaurantAddress: enriched?.address ?? enriched?.location,
-      restaurantPhone: enriched?.phone,
+      restaurantId: String(restaurantId || cachedBooking?.restaurantId || ''),
+      restaurantName: resolvedRestaurantName,
+      restaurantImage: cachedBooking?.restaurantImage || enriched?.imageUrl || fallbackImage,
+      restaurantCuisine: cachedBooking?.restaurantCuisine || enriched?.cuisine || 'Fine Dining',
+      restaurantLocation:
+        cachedBooking?.restaurantLocation ||
+        (enriched ? `${enriched.neighborhood ?? ''}, ${enriched.city ?? ''}`.replace(/^,\s*/, '') : ''),
+      restaurantAddress: cachedBooking?.restaurantAddress || enriched?.address || enriched?.location,
+      restaurantPhone: cachedBooking?.restaurantPhone || enriched?.phone,
       date: datePart,
       time: timeDisplay,
-      guests: r.numberOfGuests ?? 1,
-      seatingArea: r.restaurantTable ? `Table #${r.restaurantTable.tableNumber}` : 'Chef-Curated Table',
-      customer: {
-        fullName: '',
-        email: '',
-        phone: '',
-        specialRequests: r.specialRequest ?? undefined
-      },
-      createdAt: r.createdAt ?? new Date().toISOString(),
+      guests: r.numberOfGuests ?? cachedBooking?.guests ?? 1,
+      seatingArea:
+        cachedBooking?.seatingArea ||
+        (r.restaurantTable ? `Table #${r.restaurantTable.tableNumber}` : 'Chef-Curated Table'),
+      customer: resolvedCustomer,
+      createdAt: r.createdAt ?? cachedBooking?.createdAt ?? new Date().toISOString(),
       status,
       isMockReservation: false,
-      restaurantTableId: r.restaurantTableId ?? r.restaurantTable?.id,
-      tableCapacity: r.restaurantTable?.capacity
+      restaurantTableId: r.restaurantTableId ?? r.restaurantTable?.id ?? cachedBooking?.restaurantTableId,
+      tableCapacity: r.restaurantTable?.capacity ?? cachedBooking?.tableCapacity
     };
   }
 }

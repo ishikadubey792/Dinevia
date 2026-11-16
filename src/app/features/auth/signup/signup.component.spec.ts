@@ -461,17 +461,25 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
       expect(component.getPhoneErrorMessage().length).toBeGreaterThan(0);
     }
 
-    // Valid .com and .in emails
-    for (const validEmail of ['user@gmail.com', 'ishika@yahoo.in', 'person@example.com']) {
+    // Valid emails across single and multi-level domains
+    for (const validEmail of [
+      'user@gmail.com',
+      'ishika@yahoo.in',
+      'person@example.com',
+      '1user@example.com',
+      'user@example.co.in',
+      'user@example.org.in',
+      'user@example.edu.in'
+    ]) {
       emailCtrl?.setValue(validEmail);
       expect(emailCtrl?.valid).toBe(true);
     }
 
-    // Rejected email domains & malformed emails
-    for (const badEmail of ['user@domain.org', 'user@domain.net', 'user@domain.co', 'user@gmail.com.in', 'invalid-email']) {
+    // Malformed emails
+    for (const badEmail of ['invalid-email', '@gmail.com', 'user@', 'user@.com', 'user@domain..com']) {
       emailCtrl?.setValue(badEmail);
       expect(emailCtrl?.valid).toBe(false);
-      expect(component.getEmailErrorMessage()).toContain('.com or .in');
+      expect(component.getEmailErrorMessage()).toContain('valid email address');
     }
   });
 

@@ -265,6 +265,11 @@ export class BookingComponent implements OnInit {
           patch['seatingArea'] = qSeating;
         }
 
+        const qTable = queryParams.get('tableId');
+        if (qTable && !Number.isNaN(+qTable)) {
+          this.selectedTableId.set(+qTable);
+        }
+
         if (Object.keys(patch).length > 0) {
           this.bookingForm.patchValue(patch, { emitEvent: false });
           this.lastObservedAvailabilitySignature = this.getAvailabilityInputSignature();
@@ -491,9 +496,14 @@ export class BookingComponent implements OnInit {
   }
 
   selectTable(table: AvailableTable): void {
+    if (this.selectedTableId() === table.id) {
+      this.selectedTableId.set(null);
+      this.slotNotice.set(null);
+      return;
+    }
     this.selectedTableId.set(table.id);
     this.slotNotice.set(
-      `Table #${table.tableNumber} (Seats ${table.capacity}) selected for ${this.formattedTimeWindow()}. Online reservation submission opens in Phase 3.`
+      `Table #${table.tableNumber} (Seats ${table.capacity}) selected for ${this.formattedTimeWindow()}.`
     );
   }
 

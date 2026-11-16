@@ -6,17 +6,23 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 export const INDIAN_PHONE_REGEX = /^[6-9][0-9]{9}$/;
 
 /**
- * Complete email format accepting strictly `.com` or `.in` single-level domains.
- * Rejects other TLDs (.org, .net, .edu, .co, etc.) as well as compound `.com.in`.
+ * General complete email format accepting single and multi-level domain extensions (.com, .in, .co.in, .org.in, .edu.in, etc.).
+ * Accepts local parts starting with letters or digits (e.g. 1user@example.com).
+ * Rejects malformed email structures (missing '@', missing TLD, consecutive dots, leading/trailing invalid chars).
  */
-export const COM_IN_EMAIL_REGEX =
-  /^[a-zA-Z0-9]+(?:[._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*\.(?:com|in)$/i;
+export const GENERAL_EMAIL_REGEX =
+  /^[a-zA-Z0-9]+(?:[._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
 
 /**
- * Standard complete email format (requires a valid TLD, without restricting TLD to .com/.in).
+ * Standard complete email format alias.
  */
-export const STANDARD_EMAIL_REGEX =
-  /^[a-zA-Z0-9]+(?:[._%+-][a-zA-Z0-9]+)*@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
+export const STANDARD_EMAIL_REGEX = GENERAL_EMAIL_REGEX;
+
+/**
+ * Backwards-compatibility alias for legacy imports.
+ * Previously restricted to .com/.in only, now supports all valid domain extensions.
+ */
+export const COM_IN_EMAIL_REGEX = GENERAL_EMAIL_REGEX;
 
 /**
  * Validates Indian mobile numbers:
@@ -53,17 +59,11 @@ export function indianPhoneValidator(): ValidatorFn {
 }
 
 /**
- * Validates email addresses strictly ending in `.com` or `.in`.
+ * Validates complete email syntax across general single and multi-level TLDs.
+ * Backward-compatible alias for existing consumers.
  */
 export function isValidComOrInEmail(val: unknown): boolean {
-  if (typeof val !== 'string') {
-    return false;
-  }
-  const trimmed = val.trim();
-  if (trimmed.length === 0) {
-    return false;
-  }
-  return COM_IN_EMAIL_REGEX.test(trimmed);
+  return isValidStandardEmail(val);
 }
 
 /**
@@ -77,11 +77,12 @@ export function isValidStandardEmail(val: unknown): boolean {
   if (trimmed.length === 0) {
     return false;
   }
-  return STANDARD_EMAIL_REGEX.test(trimmed);
+  return GENERAL_EMAIL_REGEX.test(trimmed);
 }
 
 /**
- * Angular Reactive Forms validator accepting only complete email addresses ending in `.com` or `.in`.
+ * Angular Reactive Forms validator enforcing general valid email syntax.
+ * Supports multi-level domains (.co.in, .org.in, .edu.in) and numbers in local parts.
  */
 export function dineviaEmailValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -91,8 +92,8 @@ export function dineviaEmailValidator(): ValidatorFn {
     }
 
     const value = String(raw).trim();
-    if (!isValidComOrInEmail(value)) {
-      return { invalidEmailDomain: true };
+    if (!isValidStandardEmail(value)) {
+      return { invalidEmail: true, invalidEmailDomain: true };
     }
 
     return null;
@@ -144,7 +145,7 @@ export function getIndianPhoneErrorMessage(errors: ValidationErrors | null | und
 }
 
 /**
- * Returns a descriptive user-facing error message for .com / .in email validation errors.
+ * Returns a descriptive user-facing error message for email validation errors.
  */
 export function getDineviaEmailErrorMessage(errors: ValidationErrors | null | undefined): string {
   if (!errors) {
@@ -153,6 +154,6 @@ export function getDineviaEmailErrorMessage(errors: ValidationErrors | null | un
   if (errors['required']) {
     return 'Email address is required.';
   }
-  return 'Please enter a valid email address ending with .com or .in (e.g. user@gmail.com or name@yahoo.in).';
+  return 'Please enter a valid email address (e.g. user@example.com or user@example.co.in).';
 }
 

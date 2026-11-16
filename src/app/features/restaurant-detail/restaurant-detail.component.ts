@@ -99,7 +99,7 @@ export class RestaurantDetailComponent implements OnInit {
   // Menu Category Filter state
   readonly selectedMenuCategory = signal<'all' | 'starter' | 'main' | 'dessert' | 'beverage'>('all');
 
-  // Reservation availability filter signals (submission disabled until Phase 3)
+  // Reservation availability filter signals
   readonly minDate = signal<string>(getTodayDateString());
   readonly bookingDate = signal<string>(getTodayDateString());
   readonly bookingStartTime = signal<string>('18:30');
@@ -528,12 +528,17 @@ export class RestaurantDetailComponent implements OnInit {
     this.selectedMenuCategory.set(cat);
   }
 
-  // Verified Table Selection (Phase 2: real availability selection only; no booking submission)
+  // Verified Table Selection
   selectTable(table: AvailableTable): void {
+    if (this.selectedTableId() === table.id) {
+      this.selectedTableId.set(null);
+      this.bookingError.set(null);
+      return;
+    }
     this.selectedTableId.set(table.id);
     this.bookingError.set(null);
     this.showToast(
-      `Table #${table.tableNumber} (${table.capacity} seats) is available for ${this.formattedTimeWindow()}. Online booking opens in Phase 3.`
+      `Table #${table.tableNumber} (${table.capacity} seats) selected for ${this.formattedTimeWindow()}.`
     );
   }
 
@@ -551,22 +556,22 @@ export class RestaurantDetailComponent implements OnInit {
   navigateToBooking(): void {
     const r = this.restaurant();
     if (!r) return;
-    this.router.navigate(['/book', r.id], {
-      queryParams: {
-        date: this.bookingDate(),
-        startTime: this.bookingStartTime(),
-        endTime: this.bookingEndTime(),
-        guests: this.bookingPartySize(),
-        seating: this.seatingPreference()
-      }
-    });
+    const queryParams: Record<string, string | number> = {
+      date: this.bookingDate(),
+      startTime: this.bookingStartTime(),
+      endTime: this.bookingEndTime(),
+      guests: this.bookingPartySize(),
+      seating: this.seatingPreference()
+    };
+    if (this.selectedTableId()) {
+      queryParams['tableId'] = this.selectedTableId()!;
+    }
+    this.router.navigate(['/book', r.id], { queryParams });
   }
 
-  // Phase 2: Booking submission intentionally disabled (no mock booking or POST /api/bookings)
+  // Submit reservation form: routes directly into the booking confirmation flow
   submitBooking(): void {
-    this.bookingError.set(
-      'Online reservation submission is disabled in Phase 2. Real table availability is live; booking creation opens in Phase 3.'
-    );
+    this.navigateToBooking();
   }
 
   // Similar restaurant card click

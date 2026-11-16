@@ -1,0 +1,610 @@
+<div class="bookings-management-container">
+  <!-- Toast Message -->
+  @if (successToast()) {
+    <div class="admin-toast success-toast" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ successToast() }}</span>
+    </div>
+  }
+
+  <!-- Header & Executive Summary -->
+  <header class="page-header">
+    <div class="header-content">
+      <div class="executive-pill">
+        <span class="sparkle-icon">✦</span>
+        <span>OPERATIONAL CONSOLE</span>
+      </div>
+      <h1 class="page-title">Guest Reservations <span class="highlight-serif">Ledger</span></h1>
+      <p class="page-subtitle">
+        Manage live table reservations, guest dining requests, and operational seating across your dining establishments.
+      </p>
+    </div>
+
+    <!-- Status Summary Quick Badges -->
+    <div class="header-badges">
+      <div class="summary-pill total">
+        <span class="pill-label">Total</span>
+        <strong class="pill-val">{{ totalBookingsCount() }}</strong>
+      </div>
+      <div class="summary-pill pending">
+        <span class="pill-label">Pending</span>
+        <strong class="pill-val">{{ pendingCount() }}</strong>
+      </div>
+      <div class="summary-pill confirmed">
+        <span class="pill-label">Confirmed</span>
+        <strong class="pill-val">{{ confirmedCount() }}</strong>
+      </div>
+      <div class="summary-pill completed">
+        <span class="pill-label">Completed</span>
+        <strong class="pill-val">{{ completedCount() }}</strong>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter & Controls Section -->
+  <section class="filters-card" aria-label="Reservation Filters">
+    <!-- Status Filter Tabs -->
+    <div class="status-tab-group" role="tablist">
+      <button 
+        type="button" 
+        class="tab-btn" 
+        [class.active]="filterStatus === 'all'"
+        (click)="setStatusTab('all')"
+        role="tab">
+        All Reservations ({{ totalBookingsCount() }})
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn pending" 
+        [class.active]="filterStatus.toLowerCase() === 'pending'"
+        (click)="setStatusTab('Pending')"
+        role="tab">
+        Pending ({{ pendingCount() }})
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn confirmed" 
+        [class.active]="filterStatus.toLowerCase() === 'confirmed'"
+        (click)="setStatusTab('Confirmed')"
+        role="tab">
+        Confirmed ({{ confirmedCount() }})
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn completed" 
+        [class.active]="filterStatus.toLowerCase() === 'completed'"
+        (click)="setStatusTab('Completed')"
+        role="tab">
+        Completed ({{ completedCount() }})
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn cancelled" 
+        [class.active]="filterStatus.toLowerCase() === 'cancelled'"
+        (click)="setStatusTab('Cancelled')"
+        role="tab">
+        Cancelled ({{ cancelledCount() }})
+      </button>
+    </div>
+
+    <!-- Multi-Filter Row -->
+    <form class="filters-form" (ngSubmit)="applyFilters()">
+      <div class="filter-field">
+        <label for="filter-restaurant" class="filter-label">Establishment</label>
+        <select 
+          id="filter-restaurant" 
+          name="filterRestaurant"
+          class="filter-select"
+          [(ngModel)]="filterRestaurantId">
+          <option [ngValue]="null">All Restaurants</option>
+          @for (r of restaurants(); track r.id) {
+            <option [ngValue]="r.id">{{ r.name }} ({{ r.city }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-booking-date" class="filter-label">Specific Date</label>
+        <input 
+          id="filter-booking-date" 
+          name="filterBookingDate"
+          type="date" 
+          class="filter-input"
+          [(ngModel)]="filterBookingDate" />
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-from-date" class="filter-label">From Date</label>
+        <input 
+          id="filter-from-date" 
+          name="filterFromDate"
+          type="date" 
+          class="filter-input"
+          [(ngModel)]="filterFromDate" />
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-to-date" class="filter-label">To Date</label>
+        <input 
+          id="filter-to-date" 
+          name="filterToDate"
+          type="date" 
+          class="filter-input"
+          [(ngModel)]="filterToDate" />
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary btn-filter" [disabled]="isLoading()">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z" clip-rule="evenodd" />
+          </svg>
+          <span>Apply Filters</span>
+        </button>
+        <button type="button" class="btn btn-outline btn-clear" (click)="clearFilters()" [disabled]="isLoading()">
+          <span>Clear</span>
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Loading State Banner -->
+  @if (isLoading()) {
+    <div class="state-banner loading-banner" role="status" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <div class="state-text">
+        <strong class="state-title">Retrieving Reservations</strong>
+        <p class="state-desc">Fetching real-time dining reservations for your establishments...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Error State Banner with Retry -->
+  @if (errorMessage(); as err) {
+    <div class="state-banner error-banner" role="alert">
+      <svg class="state-icon error-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+      </svg>
+      <div class="state-text">
+        <strong class="state-title">Unable to Load Reservations</strong>
+        <p class="state-desc">{{ err }}</p>
+      </div>
+      <button type="button" class="retry-btn" (click)="loadBookings()" aria-label="Retry loading bookings">
+        <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+        </svg>
+        <span>Retry Connection</span>
+      </button>
+    </div>
+  }
+
+  <!-- Main Content: Bookings Ledger -->
+  @if (!isLoading() && !errorMessage()) {
+    @if (bookings().length === 0) {
+      <!-- Empty State -->
+      <section class="empty-state-card" aria-label="No Bookings Found">
+        <div class="empty-icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <h3 class="empty-title">No Reservations Found</h3>
+        <p class="empty-desc">
+          No table reservations match your current filter criteria. Try clearing or expanding your date and status filters.
+        </p>
+        <button type="button" class="btn btn-outline btn-sm" (click)="clearFilters()">
+          <span>Clear All Filters</span>
+        </button>
+      </section>
+    } @else {
+      <!-- Bookings Table (Desktop / Tablet) -->
+      <div class="table-container">
+        <table class="admin-data-table" aria-label="Bookings Ledger Table">
+          <thead>
+            <tr>
+              <th scope="col">Booking Ref</th>
+              <th scope="col">Establishment</th>
+              <th scope="col">Primary Guest</th>
+              <th scope="col">Date &amp; Service Time</th>
+              <th scope="col">Party Size</th>
+              <th scope="col">Table #</th>
+              <th scope="col">Payment</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bk of bookings(); track bk.bookingId) {
+              <tr class="table-row">
+                <!-- Ref -->
+                <td class="cell-ref">
+                  <span class="ref-badge">#{{ bk.bookingId }}</span>
+                </td>
+
+                <!-- Restaurant -->
+                <td class="cell-restaurant">
+                  <strong class="rest-name">{{ bk.restaurantName }}</strong>
+                </td>
+
+                <!-- Guest -->
+                <td class="cell-guest">
+                  <strong class="guest-name">{{ bk.customerName }}</strong>
+                  <span class="guest-contact">{{ bk.customerPhone || bk.customerEmail }}</span>
+                </td>
+
+                <!-- Date & Time -->
+                <td class="cell-datetime">
+                  <span class="date">{{ formatDisplayDate(bk.bookingDate) }}</span>
+                  <span class="time">{{ formatDisplayTime(bk.startTime) }} &ndash; {{ formatDisplayTime(bk.endTime) }}</span>
+                </td>
+
+                <!-- Party Size -->
+                <td class="cell-party">
+                  <span class="party-pill">{{ bk.numberOfGuests }} {{ bk.numberOfGuests === 1 ? 'Guest' : 'Guests' }}</span>
+                </td>
+
+                <!-- Table # -->
+                <td class="cell-table">
+                  @if (bk.tableNumber) {
+                    <span class="table-assigned">Table {{ bk.tableNumber }}</span>
+                  } @else {
+                    <span class="table-unassigned">Unassigned</span>
+                  }
+                </td>
+
+                <!-- Payment Details -->
+                <td class="cell-payment">
+                  @if (bk.paymentAmount !== null && bk.paymentAmount !== undefined) {
+                    <strong class="payment-amount">{{ formatCurrency(bk.paymentAmount) }}</strong>
+                    <span class="payment-status-pill" [class]="'pay-' + (bk.paymentStatus || 'pending').toLowerCase()">
+                      {{ bk.paymentStatus || 'Pending' }}
+                    </span>
+                  } @else {
+                    <span class="payment-none">No Payment</span>
+                  }
+                </td>
+
+                <!-- Status Badge -->
+                <td class="cell-status">
+                  <span class="status-badge" [class]="'status-' + (bk.status || 'pending').toLowerCase()">
+                    {{ bk.status }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="cell-actions text-right">
+                  <div class="action-buttons-group">
+                    <button 
+                      type="button" 
+                      class="btn-action inspect" 
+                      (click)="viewBookingDetails(bk.bookingId)"
+                      title="Inspect full reservation dossier">
+                      Inspect
+                    </button>
+
+                    @if (isConfirmEligible(bk)) {
+                      <button 
+                        type="button" 
+                        class="btn-action confirm" 
+                        (click)="promptConfirm(bk, $event)"
+                        title="Confirm reservation">
+                        Confirm
+                      </button>
+                    }
+
+                    @if (isCancelEligible(bk)) {
+                      <button 
+                        type="button" 
+                        class="btn-action cancel" 
+                        (click)="promptCancel(bk, $event)"
+                        title="Cancel reservation">
+                        Cancel
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards Grid -->
+      <div class="mobile-cards-grid" aria-label="Bookings List (Mobile)">
+        @for (bk of bookings(); track bk.bookingId) {
+          <article class="booking-card">
+            <div class="card-header-row">
+              <span class="ref-badge">#{{ bk.bookingId }}</span>
+              <span class="status-badge" [class]="'status-' + (bk.status || 'pending').toLowerCase()">
+                {{ bk.status }}
+              </span>
+            </div>
+
+            <div class="card-rest-row">
+              <strong class="rest-name">{{ bk.restaurantName }}</strong>
+            </div>
+
+            <div class="card-meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">Guest</span>
+                <span class="meta-val">{{ bk.customerName }}</span>
+                <span class="meta-sub">{{ bk.customerPhone || bk.customerEmail }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Schedule</span>
+                <span class="meta-val">{{ formatDisplayDate(bk.bookingDate) }}</span>
+                <span class="meta-sub">{{ formatDisplayTime(bk.startTime) }} ({{ bk.numberOfGuests }} Guests)</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Table</span>
+                <span class="meta-val">{{ bk.tableNumber ? 'Table ' + bk.tableNumber : 'Unassigned' }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Payment</span>
+                <span class="meta-val">
+                  {{ bk.paymentAmount !== null && bk.paymentAmount !== undefined ? formatCurrency(bk.paymentAmount) : 'None' }}
+                </span>
+                @if (bk.paymentStatus) {
+                  <span class="payment-status-pill" [class]="'pay-' + bk.paymentStatus.toLowerCase()">
+                    {{ bk.paymentStatus }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            @if (bk.specialRequest) {
+              <div class="card-notes">
+                <span class="notes-label">Special Request:</span>
+                <p class="notes-text">{{ bk.specialRequest }}</p>
+              </div>
+            }
+
+            <div class="card-actions-row">
+              <button 
+                type="button" 
+                class="btn btn-outline btn-sm" 
+                (click)="viewBookingDetails(bk.bookingId)">
+                Inspect Dossier
+              </button>
+
+              @if (isConfirmEligible(bk)) {
+                <button 
+                  type="button" 
+                  class="btn btn-primary btn-sm btn-confirm" 
+                  (click)="promptConfirm(bk)">
+                  Confirm
+                </button>
+              }
+
+              @if (isCancelEligible(bk)) {
+                <button 
+                  type="button" 
+                  class="btn btn-cancel btn-sm" 
+                  (click)="promptCancel(bk)">
+                  Cancel
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  }
+
+  <!-- MODAL: Booking Dossier Detail View -->
+  @if (selectedBooking(); as bk) {
+    <div class="modal-backdrop" (click)="closeBookingDetails()" aria-hidden="true"></div>
+    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="modal-booking-title">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">RESERVATION DOSSIER</span>
+          <h3 id="modal-booking-title" class="modal-title">Booking #{{ bk.bookingId }} &mdash; {{ bk.restaurantName }}</h3>
+        </div>
+        <button type="button" class="modal-close" (click)="closeBookingDetails()" aria-label="Close booking details">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (isLoadingDetails()) {
+          <div class="modal-loading">
+            <div class="loading-spinner"></div>
+            <span>Fetching updated reservation details...</span>
+          </div>
+        } @else {
+          <!-- Dossier Information Grid -->
+          <div class="dossier-grid">
+            <div class="dossier-card">
+              <h4 class="card-section-title">Primary Patron</h4>
+              <div class="info-row">
+                <span class="label">Name:</span>
+                <strong class="value">{{ bk.customerName }}</strong>
+              </div>
+              <div class="info-row">
+                <span class="label">Email:</span>
+                <span class="value">{{ bk.customerEmail || '—' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Phone:</span>
+                <span class="value">{{ bk.customerPhone || '—' }}</span>
+              </div>
+            </div>
+
+            <div class="dossier-card">
+              <h4 class="card-section-title">Dining Schedule</h4>
+              <div class="info-row">
+                <span class="label">Date:</span>
+                <strong class="value">{{ formatDisplayDate(bk.bookingDate) }}</strong>
+              </div>
+              <div class="info-row">
+                <span class="label">Service Window:</span>
+                <span class="value">{{ formatDisplayTime(bk.startTime) }} &ndash; {{ formatDisplayTime(bk.endTime) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Party Size:</span>
+                <span class="value">{{ bk.numberOfGuests }} Guests</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Table Assignment:</span>
+                <span class="value">{{ bk.tableNumber ? 'Table #' + bk.tableNumber : 'Not assigned' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status & Special Request -->
+          <div class="status-summary-bar">
+            <div class="status-col">
+              <span class="label">Reservation Status:</span>
+              <span class="status-badge" [class]="'status-' + (bk.status || 'pending').toLowerCase()">
+                {{ bk.status }}
+              </span>
+            </div>
+            <div class="created-col">
+              <span class="label">Booked At:</span>
+              <span class="value">{{ formatDisplayDate(bk.createdAt) }}</span>
+            </div>
+          </div>
+
+          @if (bk.specialRequest) {
+            <div class="modal-notes-box">
+              <span class="notes-label">Maître D' &amp; Kitchen Notes:</span>
+              <p class="notes-text">{{ bk.specialRequest }}</p>
+            </div>
+          }
+
+          <!-- Payment Guarantee Details (Demo Mode) -->
+          <div class="payment-dossier-card">
+            <div class="payment-header-row">
+              <h4 class="card-section-title">Payment Guarantee</h4>
+              <span class="badge-demo">Demo Mode</span>
+            </div>
+
+            <div class="payment-info-grid">
+              <div class="info-item">
+                <span class="label">Payment Status:</span>
+                <span class="payment-status-pill" [class]="'pay-' + (bk.paymentStatus || 'pending').toLowerCase()">
+                  {{ bk.paymentStatus || 'No Payment Record' }}
+                </span>
+              </div>
+              <div class="info-item">
+                <span class="label">Guarantee Amount:</span>
+                <strong class="value price">{{ formatCurrency(bk.paymentAmount) }}</strong>
+              </div>
+              <div class="info-item">
+                <span class="label">Payment Method:</span>
+                <span class="value">{{ bk.paymentMethod || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Paid At:</span>
+                <span class="value">{{ formatDisplayDate(bk.paidAt) }}</span>
+              </div>
+            </div>
+
+            <!-- Clear Demo Mode Disclaimer -->
+            <div class="demo-payment-disclaimer" role="note">
+              <svg viewBox="0 0 20 20" fill="currentColor" class="disclaimer-icon" aria-hidden="true">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+              </svg>
+              <span>Demo Guarantee Notice: Payments are simulated in demo mode and do not represent actual settled bank funds.</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline btn-md" (click)="closeBookingDetails()">
+          Close
+        </button>
+
+        @if (isConfirmEligible(bk)) {
+          <button 
+            type="button" 
+            class="btn btn-primary btn-md btn-confirm" 
+            (click)="promptConfirm(bk)">
+            Confirm Reservation
+          </button>
+        }
+
+        @if (isCancelEligible(bk)) {
+          <button 
+            type="button" 
+            class="btn btn-cancel btn-md" 
+            (click)="promptCancel(bk)">
+            Cancel Reservation
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: Confirmation Prompt Dialog -->
+  @if (actionConfirmation(); as action) {
+    <div class="modal-backdrop prompt-backdrop" (click)="closeConfirmationDialog()" aria-hidden="true"></div>
+    <div class="prompt-dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-desc">
+      <div class="dialog-header">
+        <div class="dialog-icon-circle" [class.confirm-icon]="action.action === 'confirm'" [class.cancel-icon]="action.action === 'cancel'">
+          @if (action.action === 'confirm') {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+          }
+        </div>
+        <h3 id="dialog-title" class="dialog-title">
+          {{ action.action === 'confirm' ? 'Confirm Reservation' : 'Cancel Reservation' }}
+        </h3>
+      </div>
+
+      <p id="dialog-desc" class="dialog-desc">
+        @if (action.action === 'confirm') {
+          Are you sure you want to <strong>confirm</strong> reservation <strong>#{{ action.booking.bookingId }}</strong> for <strong>{{ action.booking.customerName }}</strong> at <strong>{{ action.booking.restaurantName }}</strong>?
+        } @else {
+          Are you sure you want to <strong>cancel</strong> reservation <strong>#{{ action.booking.bookingId }}</strong> for <strong>{{ action.booking.customerName }}</strong> at <strong>{{ action.booking.restaurantName }}</strong>? This action will notify the guest.
+        }
+      </p>
+
+      @if (actionError(); as errorMsg) {
+        <div class="dialog-error" role="alert">
+          {{ errorMsg }}
+        </div>
+      }
+
+      <div class="dialog-actions">
+        <button 
+          type="button" 
+          class="btn btn-outline btn-md" 
+          [disabled]="isSubmittingAction()"
+          (click)="closeConfirmationDialog()">
+          Go Back
+        </button>
+
+        <button 
+          type="button" 
+          class="btn btn-md" 
+          [class.btn-primary]="action.action === 'confirm'"
+          [class.btn-danger]="action.action === 'cancel'"
+          [disabled]="isSubmittingAction()"
+          (click)="executeAction()">
+          @if (isSubmittingAction()) {
+            <span class="spinner-small" aria-hidden="true"></span>
+            <span>Processing...</span>
+          } @else {
+            <span>{{ action.action === 'confirm' ? 'Yes, Confirm Reservation' : 'Yes, Cancel Reservation' }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  }
+</div>

@@ -30,8 +30,33 @@
   --color-border: #E5DEC9;
   --color-border-subtle: rgba(38, 40, 36, 0.08);
 
-  --font-serif: 'Playfair Display', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Champagne Brass (Modern Indian Premium Accent) */
+  --color-brass: #C5A059;
+  --color-brass-dark: #A48139;
+  --color-brass-light: #DFBF7E;
+  --color-brass-subtle: rgba(197, 160, 89, 0.14);
+
+  /* Indian Dietary Design System Foundations (FSSAI-Compliant) */
+  --color-dietary-veg: #27AE60;
+  --color-dietary-veg-bg: #EBF8F2;
+  --color-dietary-veg-border: #27AE60;
+
+  --color-dietary-nonveg: #8B3A2B;
+  --color-dietary-nonveg-bg: #FDEDEC;
+  --color-dietary-nonveg-border: #8B3A2B;
+
+  --color-dietary-jain: #D97706;
+  --color-dietary-jain-bg: #FEF3C7;
+  --color-dietary-jain-border: #D97706;
+
+  --color-dietary-vegan: #10B981;
+  --color-dietary-vegan-bg: #ECFDF5;
+  --color-dietary-vegan-border: #10B981;
+
+  --font-serif: 'Lora', 'Noto Serif Devanagari', 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-serif);
+  --font-body: var(--font-sans);
 
   --shadow-sm: 0 2px 8px rgba(38, 40, 36, 0.04);
   --shadow-md: 0 8px 24px rgba(38, 40, 36, 0.07);
@@ -141,6 +166,19 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   }
 }
 
+.btn-brass {
+  background-color: var(--color-brass);
+  color: var(--color-forest-dark);
+  border-color: var(--color-brass);
+  &:hover {
+    background-color: var(--color-brass-dark);
+    border-color: var(--color-brass-dark);
+    color: var(--color-white);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(197, 160, 89, 0.3);
+  }
+}
+
 .btn-outline {
   background-color: transparent;
   color: var(--color-forest);
@@ -183,6 +221,105 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 }
 .badge-sage { background-color: var(--color-sage); color: var(--color-forest-dark); }
 .badge-ivory { background-color: rgba(248, 245, 239, 0.92); color: var(--color-forest-dark); }
+.badge-brass {
+  background-color: var(--color-brass-subtle);
+  color: var(--color-brass-dark);
+  border: 1px solid rgba(197, 160, 89, 0.3);
+}
+
+/* Dietary Indicator Foundations (Ready for future UI phases) */
+.badge-dietary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+
+  &.badge-dietary-veg {
+    background-color: var(--color-dietary-veg-bg);
+    color: var(--color-dietary-veg);
+    border-color: rgba(39, 174, 96, 0.25);
+  }
+
+  &.badge-dietary-nonveg {
+    background-color: var(--color-dietary-nonveg-bg);
+    color: var(--color-dietary-nonveg);
+    border-color: rgba(139, 58, 43, 0.25);
+  }
+
+  &.badge-dietary-jain {
+    background-color: var(--color-dietary-jain-bg);
+    color: var(--color-dietary-jain);
+    border-color: rgba(217, 119, 6, 0.25);
+  }
+
+  &.badge-dietary-vegan {
+    background-color: var(--color-dietary-vegan-bg);
+    color: var(--color-dietary-vegan);
+    border-color: rgba(16, 185, 129, 0.25);
+  }
+}
+
+.dietary-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-width: 1.5px;
+  border-style: solid;
+  border-radius: 2px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+
+  &.dietary-veg {
+    border-color: var(--color-dietary-veg);
+    &::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--color-dietary-veg);
+    }
+  }
+
+  &.dietary-nonveg {
+    border-color: var(--color-dietary-nonveg);
+    &::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 3px solid transparent;
+      border-right: 3px solid transparent;
+      border-bottom: 6px solid var(--color-dietary-nonveg);
+    }
+  }
+
+  &.dietary-jain {
+    border-color: var(--color-dietary-jain);
+    &::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--color-dietary-jain);
+    }
+  }
+
+  &.dietary-vegan {
+    border-color: var(--color-dietary-vegan);
+    &::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 2px;
+      background-color: var(--color-dietary-vegan);
+    }
+  }
+}
 
 /* Section Header */
 .section-header {

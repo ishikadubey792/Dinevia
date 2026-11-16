@@ -103,7 +103,15 @@ function isOwnerProtectedEndpoint(path: string, method: string): boolean {
     return true;
   }
 
-  // 2. Owner restaurant portfolio: GET /restaurants/my-restaurants & GET /restaurants/my-restaurants/{id}
+  // 2. Owner booking actions: POST /bookings/{id}/confirm, POST /bookings/{id}/owner-confirm, POST /bookings/{id}/owner-cancel
+  if (upperMethod === 'POST') {
+    const ownerBookingActionMatch = path.match(/^\/bookings\/\d+\/(confirm|owner-confirm|owner-cancel)$/);
+    if (ownerBookingActionMatch) {
+      return true;
+    }
+  }
+
+  // 3. Owner restaurant portfolio: GET /restaurants/my-restaurants & GET /restaurants/my-restaurants/{id}
   if (
     path === '/restaurants/my-restaurants' ||
     path.startsWith('/restaurants/my-restaurants/')
@@ -111,7 +119,7 @@ function isOwnerProtectedEndpoint(path: string, method: string): boolean {
     return true;
   }
 
-  // 3. Owner restaurant management:
+  // 4. Owner restaurant management:
   // POST /restaurants (Create restaurant)
   if (path === '/restaurants' && upperMethod === 'POST') {
     return true;
@@ -127,10 +135,11 @@ function isOwnerProtectedEndpoint(path: string, method: string): boolean {
     return true;
   }
 
-  // 4. Other explicitly identified owner-only endpoints
+  // 5. Owner dashboard and other explicitly identified owner-only endpoints
   if (
     path === '/admin' || path.startsWith('/admin/') ||
-    path === '/owner' || path.startsWith('/owner/')
+    path === '/owner' || path.startsWith('/owner/') ||
+    path === '/owner-dashboard' || path.startsWith('/owner-dashboard/')
   ) {
     return true;
   }

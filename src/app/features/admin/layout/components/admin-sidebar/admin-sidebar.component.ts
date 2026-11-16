@@ -62,6 +62,16 @@ export class AdminSidebarComponent {
           icon: 'bookings',
           badge: 'Live',
           badgeType: 'sage'
+        },
+        {
+          label: 'Table Management',
+          route: '/admin/tables',
+          icon: 'tables'
+        },
+        {
+          label: 'Operating Hours',
+          route: '/admin/operating-hours',
+          icon: 'hours'
         }
       ]
     }

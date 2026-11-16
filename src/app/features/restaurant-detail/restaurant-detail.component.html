@@ -655,21 +655,30 @@
             </div>
             }
 
-            <!-- Phase 2 informational state: submission disabled until Phase 3 -->
-            <div class="phase-notice-box"
-              style="background: rgba(220, 229, 218, 0.35); border: 1px solid var(--color-sage-border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.82rem; color: var(--color-forest-dark); margin-bottom: 0.85rem;">
-              Live table availability is verified via the backend API. Reservation submission will be enabled in Phase
-              3.
-            </div>
+            <!-- Active Table Reservation Submission -->
+            <button type="submit" class="btn btn-terracotta btn-lg reserve-submit-btn" style="margin-bottom: 0.75rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: text-bottom;">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>Reserve Table for {{ bookingPartySize() }} Guest{{ bookingPartySize() > 1 ? 's' : '' }}</span>
+            </button>
 
-            <button type="button" class="btn btn-outline btn-block" style="margin-bottom: 0.65rem;"
+            <button type="button" class="btn btn-outline btn-block"
               (click)="navigateToBooking()">
               <span>Open Full Availability View</span>
             </button>
 
-            <button type="submit" [disabled]="true" class="btn btn-terracotta btn-lg reserve-submit-btn">
-              <span>Reservation Submission Opening in Phase 3</span>
-            </button>
+            <div class="reservation-assurance-note"
+              style="display: flex; align-items: center; justify-content: center; gap: 0.45rem; font-size: 0.82rem; color: var(--color-forest); margin-top: 0.85rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <span>Instant Confirmation &bull; Real-Time Inventory Guaranteed</span>
+            </div>
           </form>
 
           <!-- Direct Restaurant Contact Footer -->

@@ -204,4 +204,19 @@ describe('HomeComponent Dynamic Cuisine Counts & Navigation', () => {
     httpTesting.expectNone(`${environment.apiUrl}/restaurants`);
     httpTesting.expectNone(`${environment.apiUrl}/cuisines`);
   });
+
+  it('should have Explore Restaurants hero button linking to /explore', () => {
+    const restReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
+    restReq.flush(mockRestaurantsResponse);
+    fixture.detectChanges();
+
+    const cuisinesReq = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    cuisinesReq.flush(mockCuisinesResponse);
+    fixture.detectChanges();
+
+    const heroLink = fixture.nativeElement.querySelector('.hero-actions a.btn-primary') as HTMLAnchorElement | null;
+    expect(heroLink).toBeTruthy();
+    expect(heroLink?.textContent).toContain('Explore Restaurants');
+    expect(heroLink?.getAttribute('routerlink') || heroLink?.getAttribute('href')).toMatch(/explore/);
+  });
 });
