@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
 import { OwnerBookingService } from '../../../core/services/owner-booking.service';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import {
@@ -12,7 +13,7 @@ import { OwnerRestaurant } from '../../../core/models/admin.model';
 @Component({
   selector: 'app-owner-bookings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ScrollRevealDirective],
   templateUrl: './owner-bookings.component.html',
   styleUrl: './owner-bookings.component.scss'
 })

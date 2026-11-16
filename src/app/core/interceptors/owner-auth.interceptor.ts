@@ -144,6 +144,22 @@ function isOwnerProtectedEndpoint(path: string, method: string): boolean {
     return true;
   }
 
+  // 6. Restaurant tables management: /restaurant-tables, /restaurant-tables/*
+  if (
+    path === '/restaurant-tables' ||
+    path.startsWith('/restaurant-tables/')
+  ) {
+    return true;
+  }
+
+  // 7. Operating hours management: /operating-hours, /operating-hours/*
+  if (
+    path === '/operating-hours' ||
+    path.startsWith('/operating-hours/')
+  ) {
+    return true;
+  }
+
   return false;
 }
 

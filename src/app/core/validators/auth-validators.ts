@@ -157,3 +157,67 @@ export function getDineviaEmailErrorMessage(errors: ValidationErrors | null | un
   return 'Please enter a valid email address (e.g. user@example.com or user@example.co.in).';
 }
 
+/**
+ * Angular Reactive Forms validator enforcing backend password security standards:
+ * - 8 to 128 characters
+ * - At least one uppercase letter [A-Z]
+ * - At least one lowercase letter [a-z]
+ * - At least one digit [0-9]
+ * - At least one special character
+ * - No whitespace
+ */
+export function backendPasswordValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (!value) {
+      return null;
+    }
+
+    if (value.length < 8) {
+      return { minlength: { requiredLength: 8, actualLength: value.length } };
+    }
+
+    if (value.length > 128) {
+      return { maxlength: { requiredLength: 128, actualLength: value.length } };
+    }
+
+    if (/\s/.test(value)) {
+      return { hasWhitespace: true };
+    }
+
+    if (!/[A-Z]/.test(value)) {
+      return { requiresUppercase: true };
+    }
+
+    if (!/[a-z]/.test(value)) {
+      return { requiresLowercase: true };
+    }
+
+    if (!/\d/.test(value)) {
+      return { requiresDigit: true };
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(value)) {
+      return { requiresSpecial: true };
+    }
+
+    return null;
+  };
+}
+
+/**
+ * Returns a descriptive user-facing error message for password validation errors.
+ */
+export function getPasswordErrorMessage(errors: ValidationErrors | null | undefined): string {
+  if (!errors) return '';
+  if (errors['required']) return 'Password is required.';
+  if (errors['minlength']) return 'Password must be at least 8 characters.';
+  if (errors['maxlength']) return 'Password cannot exceed 128 characters.';
+  if (errors['hasWhitespace']) return 'Password must not contain whitespace.';
+  if (errors['requiresUppercase']) return 'Password must contain at least one uppercase letter.';
+  if (errors['requiresLowercase']) return 'Password must contain at least one lowercase letter.';
+  if (errors['requiresDigit']) return 'Password must contain at least one digit.';
+  if (errors['requiresSpecial']) return 'Password must contain at least one special character.';
+  return 'Password does not meet complexity requirements.';
+}
+

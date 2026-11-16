@@ -57,7 +57,7 @@
   @if (filteredRestaurants().length > 0) {
     <div class="restaurants-grid">
       @for (rest of filteredRestaurants(); track rest.id) {
-        <article class="restaurant-card">
+        <article class="restaurant-card" appScrollReveal>
           <div class="card-cover-stage">
             <img [src]="rest.coverImageUrl" [alt]="rest.name" class="card-cover-img" loading="lazy" />
             <span class="status-badge" [class.active]="rest.status === 'active'">

@@ -2,6 +2,10 @@
   min-height: calc(100vh - 80px);
   background: var(--color-ivory);
   padding: 2.5rem 1.5rem 6rem;
+
+  @media (max-width: 480px) {
+    padding: 1.5rem 0.85rem 4rem;
+  }
 }
 
 .bookings-breadcrumbs {
@@ -143,9 +147,28 @@
   border: 1px solid rgba(35, 70, 55, 0.12);
   border-radius: var(--radius-xl);
   padding: 1.5rem;
+
+  @media (max-width: 480px) {
+    padding: 1.15rem 0.95rem;
+  }
   box-shadow: 0 6px 20px rgba(38, 40, 36, 0.04);
   align-items: center;
-  transition: all 0.2s ease;
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.8s var(--ease-luxury), transform 0.8s var(--ease-luxury), box-shadow 0.3s var(--ease-luxury), border-color 0.3s ease;
+  will-change: opacity, transform;
+
+  &.is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  &:nth-child(2n + 1) {
+    transition-delay: 0s;
+  }
+  &:nth-child(2n + 2) {
+    transition-delay: 0.12s;
+  }
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
@@ -160,7 +183,12 @@
 
   &:hover {
     border-color: rgba(35, 70, 55, 0.3);
-    box-shadow: 0 10px 28px rgba(38, 40, 36, 0.06);
+    box-shadow: 0 16px 36px rgba(35, 70, 55, 0.09);
+    transform: translateY(-4px);
+
+    .card-thumb-img {
+      transform: scale(1.05);
+    }
   }
 }
 
@@ -176,7 +204,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s var(--ease-luxury);
   }
 
   .thumb-cuisine-tag {
@@ -235,6 +263,7 @@
         height: 6px;
         border-radius: 50%;
         background: var(--color-forest);
+        animation: subtlePulse 2s infinite ease-in-out;
       }
     }
 
@@ -252,6 +281,7 @@
         height: 6px;
         border-radius: 50%;
         background: var(--color-terracotta);
+        animation: subtlePulse 1.8s infinite ease-in-out;
       }
     }
 
@@ -336,9 +366,15 @@
       color: var(--color-forest);
       transition: all 0.2s ease;
 
+      &:active {
+        transform: scale(0.92);
+      }
+
       .ref-value {
         font-size: 0.8125rem;
         letter-spacing: 0.04em;
+        word-break: break-all;
+        overflow-wrap: anywhere;
       }
 
       .copy-svg {
@@ -372,6 +408,17 @@
     flex-direction: row;
     flex-wrap: wrap;
     min-width: auto;
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    width: 100%;
+
+    .action-btn,
+    .complete-payment-btn,
+    .btn {
+      width: 100%;
+    }
   }
 
   .action-btn {
@@ -475,6 +522,11 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+
+  @media (max-width: 480px) {
+    padding: 0.65rem;
+  }
+  animation: fadeIn 0.25s ease-out;
 }
 
 .modal-dialog {
@@ -484,12 +536,18 @@
   border-radius: var(--radius-xl);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  max-height: 90vh;
+  max-height: calc(100dvh - 2rem);
   display: flex;
   flex-direction: column;
+  animation: modalScaleIn 0.3s var(--ease-luxury);
 
   &.cancel-dialog {
     max-width: 480px;
+  }
+
+  @media (max-width: 480px) {
+    border-radius: var(--radius-lg);
+    max-height: calc(100dvh - 1.25rem);
   }
 }
 
@@ -499,6 +557,10 @@
   align-items: flex-start;
   padding: 1.75rem 2rem;
   border-bottom: 1px solid rgba(35, 70, 55, 0.08);
+
+  @media (max-width: 480px) {
+    padding: 1.15rem 1rem;
+  }
 
   .eyebrow {
     display: block;
@@ -535,9 +597,14 @@
 .modal-body {
   padding: 1.75rem 2rem;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+
+  @media (max-width: 480px) {
+    padding: 1.15rem 1rem;
+  }
 }
 
 .modal-ref-banner {
@@ -686,12 +753,25 @@
   gap: 0.75rem;
   padding: 1.25rem 2rem;
   border-top: 1px solid rgba(35, 70, 55, 0.08);
+
+  @media (max-width: 480px) {
+    padding: 0.85rem 1rem;
+    flex-direction: column-reverse;
+
+    .btn {
+      width: 100%;
+    }
+  }
 }
 
 /* Cancel Dialog specific */
 .cancel-dialog-header {
   padding: 2rem 2rem 1rem;
   text-align: center;
+
+  @media (max-width: 480px) {
+    padding: 1.25rem 1rem 0.5rem;
+  }
 
   .cancel-warning-icon {
     width: 3.5rem;

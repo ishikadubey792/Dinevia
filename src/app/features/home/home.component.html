@@ -99,14 +99,14 @@
   </section>
 
   <!-- C. RESTAURANT SEARCH PANEL -->
-  <section id="search-section" class="search-section" aria-label="Find and reserve a restaurant table">
+  <section id="search-section" class="search-section" appScrollReveal aria-label="Find and reserve a restaurant table">
     <div class="container">
       <app-search-panel (searchSubmitted)="onSearch($event)"></app-search-panel>
     </div>
   </section>
 
   <!-- D. POPULAR CUISINES SECTION ("Explore by Taste") -->
-  <section class="cuisines-section" aria-labelledby="cuisines-heading">
+  <section class="cuisines-section" appScrollReveal aria-labelledby="cuisines-heading">
     <div class="container">
       <div class="section-header">
         <span class="eyebrow">Culinary Traditions</span>
@@ -181,7 +181,7 @@
   <!-- E. FEATURED RESTAURANTS ("Worth a Reservation") -->
   <section id="featured-section" class="featured-section" aria-labelledby="featured-heading">
     <div class="container">
-      <div class="section-header">
+      <div class="section-header" appScrollReveal>
         <span class="eyebrow">Handpicked Destinations</span>
         <h2 id="featured-heading" class="section-title">Worth a Reservation</h2>
         <p class="section-subtitle">
@@ -190,7 +190,7 @@
       </div>
 
       <!-- Category Filter Tabs -->
-      <div class="filter-tabs-wrapper">
+      <div class="filter-tabs-wrapper" appScrollReveal>
         <div class="filter-tabs" role="tablist" aria-label="Restaurant categories">
           @for (tab of categoryTabs; track tab.id) {
           <button type="button" role="tab" [class.active]="currentCategory() === tab.id"
@@ -240,7 +240,7 @@
       <!-- Restaurant Cards Grid -->
       <div class="restaurants-grid">
         @for (restaurant of restaurants(); track restaurant.id) {
-        <app-restaurant-card [restaurant]="restaurant" (viewDetails)="onViewDetails($event)"
+        <app-restaurant-card appScrollReveal [restaurant]="restaurant" (viewDetails)="onViewDetails($event)"
           (reserveSlot)="onReserveSlot($event)">
         </app-restaurant-card>
         }
@@ -274,7 +274,7 @@
   </section>
 
   <!-- F. PROMOTIONAL BANNER ("The Dinevia Experience") -->
-  <section class="promo-section" aria-labelledby="promo-heading">
+  <section class="promo-section" appScrollReveal aria-labelledby="promo-heading">
     <div class="container">
       <div class="promo-card">
         <div class="promo-content">
@@ -319,7 +319,7 @@
   </section>
 
   <!-- G. TESTIMONIALS SECTION ("Stories from the Table") -->
-  <section class="testimonials-section" aria-labelledby="testimonials-heading">
+  <section class="testimonials-section" appScrollReveal aria-labelledby="testimonials-heading">
     <div class="container">
       <div class="section-header">
         <span class="eyebrow">Memorable Evenings</span>

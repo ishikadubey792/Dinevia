@@ -219,7 +219,7 @@
           </thead>
           <tbody>
             @for (bk of bookings(); track bk.bookingId) {
-              <tr class="table-row">
+              <tr class="table-row" appScrollReveal>
                 <!-- Ref -->
                 <td class="cell-ref">
                   <span class="ref-badge">#{{ bk.bookingId }}</span>

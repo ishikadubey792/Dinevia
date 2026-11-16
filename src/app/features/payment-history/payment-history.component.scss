@@ -103,11 +103,17 @@
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-sm);
-    transition: var(--transition-fast);
+    transition: transform 0.25s var(--ease-luxury), box-shadow 0.25s var(--ease-luxury);
+    animation: fadeInUp 0.5s var(--ease-luxury) backwards;
+
+    &:nth-child(1) { animation-delay: 0.05s; }
+    &:nth-child(2) { animation-delay: 0.1s; }
+    &:nth-child(3) { animation-delay: 0.15s; }
+    &:nth-child(4) { animation-delay: 0.2s; }
 
     &:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(35, 70, 55, 0.08);
+      transform: translateY(-3px);
     }
 
     .metric-label {
@@ -280,10 +286,18 @@
   border-radius: var(--radius-lg);
   padding: 1.5rem 1.75rem;
   box-shadow: var(--shadow-sm);
-  transition: var(--transition-fast);
+  transition: transform 0.25s var(--ease-luxury), box-shadow 0.25s var(--ease-luxury), border-color 0.2s ease;
+  animation: fadeInUp 0.5s var(--ease-luxury) backwards;
+
+  &:nth-child(1) { animation-delay: 0.05s; }
+  &:nth-child(2) { animation-delay: 0.1s; }
+  &:nth-child(3) { animation-delay: 0.15s; }
+  &:nth-child(4) { animation-delay: 0.2s; }
+  &:nth-child(5) { animation-delay: 0.25s; }
 
   &:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 12px 28px rgba(35, 70, 55, 0.08);
+    transform: translateY(-3px);
     border-color: rgba(35, 70, 55, 0.25);
   }
 

@@ -8,6 +8,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService } from '../../core/services/payment.service';
@@ -51,7 +52,8 @@ type BookingAvailabilityTrigger =
     ReactiveFormsModule,
     RouterLink,
     NavbarComponent,
-    FooterComponent
+    FooterComponent,
+    ScrollRevealDirective
   ],
   templateUrl: './booking.component.html',
   styleUrl: './booking.component.scss'
@@ -464,7 +466,7 @@ export class BookingComponent implements OnInit {
       this.availableTables.set([]);
       this.selectedTableId.set(null);
       this.availabilityError.set(null);
-      this.availabilityValidationError.set(prepared.error);
+      this.availabilityValidationError.set('error' in prepared ? prepared.error : 'Invalid reservation request.');
       this.availabilityTrigger$.next({ kind: 'clear' });
       return;
     }

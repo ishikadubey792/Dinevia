@@ -99,6 +99,10 @@
   align-items: center;
   justify-content: center;
   padding: 2.5rem 1.5rem;
+
+  @media (max-width: 400px) {
+    padding: 1.5rem 0.75rem;
+  }
 }
 
 .auth-card {
@@ -109,14 +113,21 @@
   border-radius: var(--radius-lg);
   padding: 2.5rem;
   box-shadow: 0 16px 48px rgba(35, 70, 55, 0.08);
+  animation: authCardEntrance 0.55s var(--ease-luxury) both;
 
   @media (max-width: 540px) {
     padding: 1.75rem 1.25rem;
+  }
+
+  @media (max-width: 400px) {
+    padding: 1.5rem 1rem;
   }
 }
 
 .card-header {
   margin-bottom: 1.5rem;
+  animation: fadeInUp 0.45s var(--ease-luxury) both;
+  animation-delay: 0.08s;
 }
 
 .kicker-pill {
@@ -238,6 +249,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  animation: fadeInUp 0.45s var(--ease-luxury) both;
+
+  &:nth-of-type(1) { animation-delay: 0.16s; }
+  &:nth-of-type(2) { animation-delay: 0.24s; }
 }
 
 .label-row {
@@ -256,6 +271,14 @@
   font-size: 0.7rem;
   color: var(--color-charcoal-light);
   font-style: italic;
+}
+
+.error-hint {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: #e02424;
+  margin-top: 0.2rem;
+  display: block;
 }
 
 .input-wrap {
@@ -300,6 +323,12 @@
     }
   }
 
+  &.input-invalid .form-input,
+  .form-input.input-invalid {
+    border-color: #e02424 !important;
+    background-color: #fff8f8;
+  }
+
   .password-toggle-btn {
     position: absolute;
     right: 0.85rem;
@@ -329,6 +358,8 @@
   justify-content: space-between;
   align-items: center;
   font-size: 0.82rem;
+  animation: fadeInUp 0.45s var(--ease-luxury) both;
+  animation-delay: 0.28s;
 
   .remember-label {
     display: inline-flex;
@@ -348,6 +379,8 @@
   padding: 0.9rem 1.5rem;
   font-size: 0.95rem;
   margin-top: 0.5rem;
+  animation: fadeInUp 0.5s var(--ease-luxury) both;
+  animation-delay: 0.34s;
 
   .btn-arrow {
     width: 1.1rem;
@@ -378,6 +411,8 @@
   padding-top: 1.25rem;
   border-top: 1px solid rgba(35, 70, 55, 0.08);
   text-align: center;
+  animation: fadeInUp 0.5s var(--ease-luxury) both;
+  animation-delay: 0.4s;
 
   .footer-note {
     font-size: 0.84rem;

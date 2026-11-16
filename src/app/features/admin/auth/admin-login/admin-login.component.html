@@ -56,10 +56,13 @@
       }
 
       <!-- Login Form -->
-      <form class="auth-form" (ngSubmit)="onLogin()">
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form" novalidate>
         <div class="form-group">
-          <label for="adminEmail" class="form-label">Business / Host Email</label>
-          <div class="input-wrap">
+          <label for="adminEmail" class="form-label">
+            <span>Business / Host Email</span>
+            <span class="required-star">*</span>
+          </label>
+          <div class="input-wrap" [class.input-invalid]="isFieldInvalid('email')">
             <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
               <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
               <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
@@ -67,34 +70,38 @@
             <input 
               id="adminEmail"
               type="email" 
-              name="email"
-              [(ngModel)]="email" 
-              required
+              formControlName="email" 
               class="form-input" 
               placeholder="owner@your-restaurant.com"
-              [disabled]="isLoading()"
+              autocomplete="email"
+              [attr.disabled]="isLoading() ? '' : null"
             />
           </div>
+          @if (isFieldInvalid('email')) {
+            <span class="error-hint">{{ getEmailErrorMessage() }}</span>
+          }
         </div>
 
         <div class="form-group">
           <div class="label-row">
-            <label for="adminPassword" class="form-label">Security Key / Password</label>
+            <label for="adminPassword" class="form-label">
+              <span>Security Key / Password</span>
+              <span class="required-star">*</span>
+            </label>
             <span class="hint-text">Minimum 8 characters</span>
           </div>
-          <div class="input-wrap">
+          <div class="input-wrap" [class.input-invalid]="isFieldInvalid('password')">
             <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
               <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
             </svg>
             <input 
               id="adminPassword"
               [type]="showPassword() ? 'text' : 'password'" 
-              name="password"
-              [(ngModel)]="password" 
-              required
+              formControlName="password" 
               class="form-input has-toggle" 
               placeholder="Enter your password"
-              [disabled]="isLoading()"
+              autocomplete="current-password"
+              [attr.disabled]="isLoading() ? '' : null"
             />
             <button 
               type="button" 
@@ -114,11 +121,14 @@
               }
             </button>
           </div>
+          @if (isFieldInvalid('password')) {
+            <span class="error-hint">{{ getPasswordErrorMessage() }}</span>
+          }
         </div>
 
         <div class="form-options">
           <label class="remember-label">
-            <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe" [disabled]="isLoading()" />
+            <input type="checkbox" id="rememberMe" name="rememberMe" formControlName="rememberMe" [attr.disabled]="isLoading() ? '' : null" />
             <span>Remember this device</span>
           </label>
         </div>

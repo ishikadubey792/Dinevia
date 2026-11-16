@@ -255,11 +255,14 @@ export interface PreparedAvailabilityRequest {
   valid: true;
   query: AvailabilityQuery;
   key: string;
+  error?: never;
 }
 
 export interface InvalidAvailabilityRequest {
   valid: false;
   error: string;
+  query?: never;
+  key?: never;
 }
 
 export function getTodayDateString(): string {

@@ -228,7 +228,7 @@
       <!-- LEFT COLUMN: Deep Information -->
       <div class="detail-main-col">
         <!-- About Section -->
-        <section class="content-card about-card" id="aboutSection">
+        <section class="content-card about-card" id="aboutSection" appScrollReveal>
           <span class="eyebrow">Culinary Identity</span>
           <h2 class="card-title">About the Dining Sanctuary</h2>
           <p class="about-paragraph">{{ rest.description || 'Restaurant overview will be updated by the venue shortly.'
@@ -293,7 +293,7 @@
 
         <!-- Executive Chef Spotlight -->
         @if (rest.chefName) {
-        <section class="content-card chef-card">
+        <section class="content-card chef-card" appScrollReveal>
           <div class="chef-badge-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round" aria-hidden="true">
@@ -317,7 +317,7 @@
 
         <!-- Opening Hours & Weekly Schedule Section -->
         @if (weeklySchedule().length > 0) {
-        <section class="content-card hours-card" id="hoursSection">
+        <section class="content-card hours-card" id="hoursSection" appScrollReveal>
           <span class="eyebrow">Operating Hours</span>
           <h2 class="card-title">Weekly Schedule & Service Times</h2>
 
@@ -357,7 +357,7 @@
 
         <!-- Menu Categories & Sample Dishes Section -->
         @if (rest.menuHighlights && rest.menuHighlights.length > 0) {
-        <section class="content-card menu-card" id="menuSection">
+        <section class="content-card menu-card" id="menuSection" appScrollReveal>
           <div class="menu-card-header">
             <div>
               <span class="eyebrow">Gastronomic Selection</span>
@@ -405,7 +405,7 @@
         }
 
         <!-- Customer Reviews & Ratings Section -->
-        <section class="content-card reviews-card" id="reviewsSection">
+        <section class="content-card reviews-card" id="reviewsSection" appScrollReveal>
           <div class="reviews-header">
             <div>
               <span class="eyebrow">Verified Guest Feedback</span>
@@ -508,7 +508,7 @@
         </section>
 
         <!-- Dining Guidelines & Contact Section -->
-        <section class="content-card guidelines-card">
+        <section class="content-card guidelines-card" appScrollReveal>
           <span class="eyebrow">Practical Essentials</span>
           <h2 class="card-title">Venue Information & Contact</h2>
 
@@ -698,7 +698,7 @@
 
     <!-- 4. SIMILAR RESTAURANTS ("You May Also Savor") -->
     @if (similarRestaurants().length > 0) {
-    <section class="similar-restaurants-section" aria-labelledby="similarHeading">
+    <section class="similar-restaurants-section" appScrollReveal aria-labelledby="similarHeading">
       <div class="section-header text-left">
         <span class="eyebrow">Gastronomic Recommendations</span>
         <h2 id="similarHeading" class="section-title">You May Also Savor</h2>
@@ -709,7 +709,7 @@
 
       <div class="similar-cards-grid">
         @for (sim of similarRestaurants(); track sim.id) {
-        <app-restaurant-card [restaurant]="sim" (viewDetails)="onSimilarRestaurantClick($event)">
+        <app-restaurant-card appScrollReveal [restaurant]="sim" (viewDetails)="onSimilarRestaurantClick($event)">
         </app-restaurant-card>
         }
       </div>

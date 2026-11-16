@@ -2,13 +2,14 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { OwnerRestaurant } from '../../../core/models/admin.model';
 
 @Component({
   selector: 'app-admin-restaurants',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, ScrollRevealDirective],
   templateUrl: './admin-restaurants.component.html',
   styleUrl: './admin-restaurants.component.scss'
 })

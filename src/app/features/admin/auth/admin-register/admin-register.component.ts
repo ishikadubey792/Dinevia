@@ -1,14 +1,22 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminDataService } from '../../../../core/services/admin-data.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { CuisineService } from '../../../../core/services/cuisine.service';
 import { OwnerAuthService } from '../../../../core/services/owner-auth.service';
 import { ApiCuisine } from '../../../../core/models/cuisine.model';
 import { OwnerRegisterRequest } from '../../../../core/models/owner-auth.model';
-import { isValidStandardEmail } from '../../../../core/validators/auth-validators';
+import {
+  backendPasswordValidator,
+  dineviaEmailValidator,
+  getDineviaEmailErrorMessage,
+  getIndianPhoneErrorMessage,
+  getPasswordErrorMessage,
+  indianPhoneValidator,
+  isValidStandardEmail
+} from '../../../../core/validators/auth-validators';
 
 export const DEFAULT_FALLBACK_CUISINES: ApiCuisine[] = [
   { id: 1, name: 'French Haute', isActive: true },
@@ -25,34 +33,58 @@ export const DEFAULT_FALLBACK_CUISINES: ApiCuisine[] = [
 @Component({
   selector: 'app-admin-register',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './admin-register.component.html',
   styleUrl: './admin-register.component.scss'
 })
 export class AdminRegisterComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly adminData = inject(AdminDataService);
   private readonly authService = inject(AuthService);
   private readonly cuisineService = inject(CuisineService);
   private readonly ownerAuthService = inject(OwnerAuthService);
 
-  // Owner credentials (initially empty)
-  ownerName = '';
-  ownerEmail = '';
-  password = '';
+  readonly registerForm: FormGroup = this.fb.group({
+    ownerName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    ownerEmail: ['', [Validators.required, dineviaEmailValidator(), Validators.maxLength(150)]],
+    password: ['', [Validators.required, backendPasswordValidator()]],
+    restaurantName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    streetAddress: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(250)]],
+    city: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)]],
+    phone: ['', [Validators.required, indianPhoneValidator()]],
+    restaurantEmail: ['', [Validators.required, dineviaEmailValidator(), Validators.maxLength(150)]],
+    termsAccepted: [false, [Validators.requiredTrue]]
+  });
 
-  // 1. Restaurant Name
-  restaurantName = '';
-  // 2. Street Address
-  streetAddress = '';
-  // 3. City
-  city = '';
-  // 4. Description
-  description = '';
-  // 5. Phone
-  phone = '';
-  // 6. Restaurant Email
-  restaurantEmail = '';
+  // Backward-compatible getters and setters
+  get ownerName(): string { return this.registerForm.get('ownerName')?.value ?? ''; }
+  set ownerName(val: string) { this.registerForm.get('ownerName')?.setValue(val); }
+
+  get ownerEmail(): string { return this.registerForm.get('ownerEmail')?.value ?? ''; }
+  set ownerEmail(val: string) { this.registerForm.get('ownerEmail')?.setValue(val); }
+
+  get password(): string { return this.registerForm.get('password')?.value ?? ''; }
+  set password(val: string) { this.registerForm.get('password')?.setValue(val); }
+
+  get restaurantName(): string { return this.registerForm.get('restaurantName')?.value ?? ''; }
+  set restaurantName(val: string) { this.registerForm.get('restaurantName')?.setValue(val); }
+
+  get streetAddress(): string { return this.registerForm.get('streetAddress')?.value ?? ''; }
+  set streetAddress(val: string) { this.registerForm.get('streetAddress')?.setValue(val); }
+
+  get city(): string { return this.registerForm.get('city')?.value ?? ''; }
+  set city(val: string) { this.registerForm.get('city')?.setValue(val); }
+
+  get description(): string { return this.registerForm.get('description')?.value ?? ''; }
+  set description(val: string) { this.registerForm.get('description')?.setValue(val); }
+
+  get phone(): string { return this.registerForm.get('phone')?.value ?? ''; }
+  set phone(val: string) { this.registerForm.get('phone')?.setValue(val); }
+
+  get restaurantEmail(): string { return this.registerForm.get('restaurantEmail')?.value ?? ''; }
+  set restaurantEmail(val: string) { this.registerForm.get('restaurantEmail')?.setValue(val); }
 
   // 7. Multiple Cuisines Selection (Live ASP.NET Core API Integration)
   readonly availableCuisines = signal<ApiCuisine[]>(DEFAULT_FALLBACK_CUISINES);
@@ -84,8 +116,75 @@ export class AdminRegisterComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
+  constructor() {
+    this.registerForm.get('termsAccepted')?.valueChanges.subscribe(val => {
+      this.termsAccepted.set(!!val);
+    });
+  }
+
   ngOnInit(): void {
     this.loadCuisines();
+  }
+
+  isFieldInvalid(fieldName: string): boolean {
+    const field = this.registerForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  getOwnerNameErrorMessage(): string {
+    const control = this.registerForm.get('ownerName');
+    if (!control || !control.errors) return '';
+    if (control.errors['required']) return 'Owner / Chef full name is required.';
+    if (control.errors['minlength']) return 'Name must be at least 2 characters.';
+    return 'Please enter a valid owner name.';
+  }
+
+  getOwnerEmailErrorMessage(): string {
+    return getDineviaEmailErrorMessage(this.registerForm.get('ownerEmail')?.errors);
+  }
+
+  getPasswordErrorMessage(): string {
+    return getPasswordErrorMessage(this.registerForm.get('password')?.errors);
+  }
+
+  getRestaurantNameErrorMessage(): string {
+    const control = this.registerForm.get('restaurantName');
+    if (!control || !control.errors) return '';
+    if (control.errors['required']) return 'Restaurant name is required.';
+    if (control.errors['minlength']) return 'Restaurant name must be at least 2 characters.';
+    return 'Please enter a valid restaurant name.';
+  }
+
+  getStreetAddressErrorMessage(): string {
+    const control = this.registerForm.get('streetAddress');
+    if (!control || !control.errors) return '';
+    if (control.errors['required']) return 'Street address is required.';
+    if (control.errors['minlength']) return 'Address must be at least 5 characters.';
+    return 'Please enter a valid street address.';
+  }
+
+  getCityErrorMessage(): string {
+    const control = this.registerForm.get('city');
+    if (!control || !control.errors) return '';
+    if (control.errors['required']) return 'City is required.';
+    if (control.errors['minlength']) return 'City must be at least 2 characters.';
+    return 'Please enter a valid city.';
+  }
+
+  getDescriptionErrorMessage(): string {
+    const control = this.registerForm.get('description');
+    if (!control || !control.errors) return '';
+    if (control.errors['required']) return 'Restaurant description is required.';
+    if (control.errors['minlength']) return 'Description must be at least 10 characters.';
+    return 'Please enter a valid description.';
+  }
+
+  getPhoneErrorMessage(): string {
+    return getIndianPhoneErrorMessage(this.registerForm.get('phone')?.errors);
+  }
+
+  getRestaurantEmailErrorMessage(): string {
+    return getDineviaEmailErrorMessage(this.registerForm.get('restaurantEmail')?.errors);
   }
 
   loadCuisines(): void {
@@ -169,8 +268,13 @@ export class AdminRegisterComponent implements OnInit {
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
+    // Sync termsAccepted from signal if test set component.termsAccepted.set(true)
+    if (this.termsAccepted()) {
+      this.registerForm.get('termsAccepted')?.setValue(true, { emitEvent: false });
+    }
+
     // Front-end validation
-    if (!this.termsAccepted()) {
+    if (!this.termsAccepted() && !this.registerForm.get('termsAccepted')?.value) {
       this.errorMessage.set('Please confirm that your establishment meets Dinevia hospitality standards.');
       return;
     }
@@ -180,22 +284,47 @@ export class AdminRegisterComponent implements OnInit {
       return;
     }
 
-    if (
-      !this.ownerName.trim() ||
-      !this.ownerEmail.trim() ||
-      !this.password ||
-      !this.restaurantName.trim() ||
-      !this.streetAddress.trim() ||
-      !this.city.trim() ||
-      !this.phone.trim() ||
-      !this.restaurantEmail.trim()
-    ) {
-      this.errorMessage.set('Please complete all required fields.');
-      return;
+    // Trim whitespace on all string controls
+    const stringKeys = ['ownerName', 'ownerEmail', 'restaurantName', 'streetAddress', 'city', 'description', 'phone', 'restaurantEmail'];
+    for (const key of stringKeys) {
+      const c = this.registerForm.get(key);
+      if (c && typeof c.value === 'string') {
+        const trimmed = c.value.trim();
+        if (c.value !== trimmed) {
+          c.setValue(trimmed, { emitEvent: false });
+        }
+      }
     }
 
-    if (!isValidStandardEmail(this.ownerEmail) || !isValidStandardEmail(this.restaurantEmail)) {
-      this.errorMessage.set('Please enter valid email addresses for owner and restaurant.');
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+
+      const ownerEmailCtrl = this.registerForm.get('ownerEmail');
+      const restEmailCtrl = this.registerForm.get('restaurantEmail');
+      const phoneCtrl = this.registerForm.get('phone');
+      const pwdCtrl = this.registerForm.get('password');
+
+      if (
+        !this.ownerName.trim() ||
+        !this.ownerEmail.trim() ||
+        !this.password ||
+        !this.restaurantName.trim() ||
+        !this.streetAddress.trim() ||
+        !this.city.trim() ||
+        !this.description.trim() ||
+        !this.phone.trim() ||
+        !this.restaurantEmail.trim()
+      ) {
+        this.errorMessage.set('Please complete all required fields.');
+      } else if (ownerEmailCtrl?.invalid || restEmailCtrl?.invalid) {
+        this.errorMessage.set('Please enter valid email addresses for owner and restaurant.');
+      } else if (phoneCtrl?.invalid) {
+        this.errorMessage.set(this.getPhoneErrorMessage());
+      } else if (pwdCtrl?.invalid) {
+        this.errorMessage.set(this.getPasswordErrorMessage());
+      } else {
+        this.errorMessage.set('Please review and correct the highlighted fields before submitting.');
+      }
       return;
     }
 

@@ -84,7 +84,7 @@
 
           <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" class="luxury-booking-form" novalidate>
             <!-- 1. DATE, TIME WINDOW, GUESTS & SEATING PREFERENCE -->
-            <section class="form-section-card">
+            <section class="form-section-card" appScrollReveal>
               <div class="section-badge-header">
                 <span class="step-num">1</span>
                 <div>
@@ -214,7 +214,7 @@
             </section>
 
             <!-- 2. LIVE AVAILABLE TABLES -->
-            <section class="form-section-card">
+            <section class="form-section-card" appScrollReveal>
               <div class="section-badge-header">
                 <span class="step-num">2</span>
                 <div>
@@ -282,7 +282,7 @@
             </section>
 
             <!-- 3. CUSTOMER INFORMATION -->
-            <section class="form-section-card" id="leadGuestSection">
+            <section class="form-section-card" id="leadGuestSection" appScrollReveal>
               <div class="section-badge-header">
                 <span class="step-num">3</span>
                 <div>
@@ -470,7 +470,7 @@
 
         <!-- RIGHT: Live Availability Summary Sidebar -->
         <aside class="booking-sidebar-col" aria-label="Live availability summary">
-          <div class="sticky-summary-box">
+          <div class="sticky-summary-box" appScrollReveal>
             <!-- Restaurant Mini Card -->
             <div class="summary-restaurant-card">
               <div class="summary-thumb-frame">

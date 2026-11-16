@@ -5,6 +5,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  @media (max-width: 400px) {
+    padding: 1.5rem 0.75rem 3rem;
+  }
 }
 
 .auth-container {
@@ -21,6 +25,10 @@
   border-radius: var(--radius-xl);
   padding: 3rem 2.5rem;
   box-shadow: 0 16px 40px rgba(38, 40, 36, 0.06);
+
+  &:not(.modal-embedded-card) {
+    animation: authCardEntrance 0.55s var(--ease-luxury) both;
+  }
 
   &.modal-embedded-card {
     max-width: 100%;
@@ -48,6 +56,10 @@
   @media (max-width: 640px) {
     padding: 2rem 1.5rem;
   }
+
+  @media (max-width: 400px) {
+    padding: 1.5rem 1rem;
+  }
 }
 
 .btn-as-link {
@@ -61,6 +73,8 @@
 .auth-card-header {
   text-align: center;
   margin-bottom: 2rem;
+  animation: fadeInUp 0.45s var(--ease-luxury) both;
+  animation-delay: 0.08s;
 
   .auth-eyebrow {
     display: inline-block;
@@ -188,6 +202,11 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  animation: fadeInUp 0.45s var(--ease-luxury) both;
+
+  &:nth-of-type(1) { animation-delay: 0.16s; }
+  &:nth-of-type(2) { animation-delay: 0.24s; }
+  &:nth-of-type(3) { animation-delay: 0.32s; }
 
   .label-row {
     display: flex;
@@ -303,6 +322,8 @@
   display: flex;
   align-items: center;
   margin-top: -0.25rem;
+  animation: fadeInUp 0.45s var(--ease-luxury) both;
+  animation-delay: 0.28s;
 
   .checkbox-container {
     display: flex;
@@ -333,6 +354,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.625rem;
+  animation: fadeInUp 0.5s var(--ease-luxury) both;
+  animation-delay: 0.34s;
 
   .btn-arrow {
     width: 1.125rem;
@@ -359,6 +382,8 @@
   padding-top: 1.5rem;
   border-top: 1px solid rgba(35, 70, 55, 0.08);
   text-align: center;
+  animation: fadeInUp 0.5s var(--ease-luxury) both;
+  animation-delay: 0.4s;
 
   .footer-text {
     font-family: var(--font-sans);

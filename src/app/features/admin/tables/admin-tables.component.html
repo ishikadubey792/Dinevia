@@ -1,0 +1,501 @@
+<div class="tables-page-container">
+  <!-- Toast Notification -->
+  @if (toastMessage()) {
+    <div class="admin-toast" role="status" aria-live="polite">
+      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ toastMessage() }}</span>
+    </div>
+  }
+
+  <!-- Page Header -->
+  <section class="page-header">
+    <div class="header-text">
+      <div class="kicker-pill">
+        <span class="sparkle">✦</span>
+        <span>OPERATIONAL SEATING</span>
+      </div>
+      <h1 class="page-title">Table Management</h1>
+      <p class="page-desc">
+        Configure dining room floor plans, table numbers, guest capacities, and active seating availability across your restaurants.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      @if (restaurants().length > 0) {
+        <button 
+          type="button" 
+          class="btn btn-primary btn-md add-btn"
+          (click)="openAddModal()"
+          [disabled]="isLoadingTables() || !selectedRestaurantId()">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
+            <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+          </svg>
+          <span>Add Table</span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <!-- Restaurant Selector Strip -->
+  @if (restaurants().length > 0) {
+    <section class="restaurant-selector-card">
+      <div class="selector-content">
+        <div class="selector-label-group">
+          <label for="restaurant-select" class="selector-label">Managing Establishment</label>
+          <span class="selector-sublabel">Select sanctuary to view and configure seating floor plans</span>
+        </div>
+
+        <div class="selector-control-group">
+          <select 
+            id="restaurant-select"
+            class="restaurant-select"
+            [ngModel]="selectedRestaurantId()"
+            (ngModelChange)="onRestaurantChange($event)">
+            @for (rest of restaurants(); track rest.id) {
+              <option [value]="rest.id">
+                {{ rest.name }} ({{ rest.city }})
+              </option>
+            }
+          </select>
+
+          @if (activeRestaurant(); as active) {
+            <div class="active-sanctuary-pill">
+              <span class="pill-dot"></span>
+              <span class="pill-text">{{ active.city }} • {{ active.cuisines[0] || 'Fine Dining' }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Operational KPI Metrics Strip -->
+    <section class="stats-preview-grid">
+      <div class="stat-box">
+        <span class="stat-label">Total Tables</span>
+        <strong class="stat-value">{{ totalTablesCount() }}</strong>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Total Seating Capacity</span>
+        <strong class="stat-value">{{ totalSeatsCount() }} Covers</strong>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Available Tables</span>
+        <strong class="stat-value stat-available">{{ availableTablesCount() }}</strong>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Occupied / Reserved</span>
+        <strong class="stat-value stat-occupied">{{ occupiedTablesCount() }}</strong>
+      </div>
+    </section>
+
+    <!-- Toolbar: Search and Filter -->
+    <section class="toolbar-section">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 20 20" fill="currentColor" class="search-icon" aria-hidden="true">
+          <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+        </svg>
+        <input 
+          type="search" 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Filter by table number, capacity, or status..." 
+          class="search-input"
+          aria-label="Filter tables" 
+        />
+      </div>
+
+      <div class="status-filter-wrap">
+        <label for="status-filter" class="filter-label">Status:</label>
+        <select 
+          id="status-filter"
+          class="filter-select"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="statusFilter.set($event)">
+          <option value="all">All Statuses</option>
+          @for (st of supportedStatuses; track st) {
+            <option [value]="st">{{ st }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="toolbar-stats">
+        <span>Showing <strong>{{ filteredTables().length }}</strong> of {{ totalTablesCount() }} tables</span>
+      </div>
+    </section>
+
+    <!-- Loading State -->
+    @if (isLoadingTables()) {
+      <div class="loading-state-card" role="status">
+        <div class="spinner"></div>
+        <p class="loading-text">Loading dining room floor plan...</p>
+      </div>
+    }
+
+    <!-- Error State -->
+    @else if (tablesError()) {
+      <div class="error-state-card" role="alert">
+        <div class="error-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h3 class="error-title">Unable to Load Tables</h3>
+        <p class="error-desc">{{ tablesError() }}</p>
+        <button 
+          type="button" 
+          class="btn btn-outline btn-sm"
+          (click)="selectedRestaurantId() && loadTables(selectedRestaurantId()!)">
+          Retry Loading
+        </button>
+      </div>
+    }
+
+    <!-- Empty State: When restaurant has no tables -->
+    @else if (tables().length === 0) {
+      <div class="empty-state-card">
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+            <path d="M7 8h10"></path>
+            <path d="M7 12h6"></path>
+            <path d="M7 16h4"></path>
+          </svg>
+        </div>
+        <h3 class="empty-title">No Tables Configured Yet</h3>
+        <p class="empty-desc">
+          Your dining floor plan is currently empty for this establishment. Add tables to configure seating capacity and open online reservations.
+        </p>
+        <button type="button" class="btn btn-primary btn-md" (click)="openAddModal()">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon">
+            <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+          </svg>
+          <span>Add First Table</span>
+        </button>
+      </div>
+    }
+
+    <!-- Empty Filtered Results -->
+    @else if (filteredTables().length === 0) {
+      <div class="empty-filter-card">
+        <p>No tables match your current filter query.</p>
+        <button type="button" class="btn btn-outline btn-sm" (click)="searchQuery.set(''); statusFilter.set('all')">
+          Clear Filters
+        </button>
+      </div>
+    }
+
+    <!-- Tables Grid -->
+    @else {
+      <div class="tables-grid">
+        @for (table of filteredTables(); track table.id) {
+          <article class="table-card" appScrollReveal>
+            <div class="table-card-header">
+              <div class="table-num-badge">
+                <span class="num-hash">#</span>
+                <span class="num-val">{{ table.tableNumber }}</span>
+              </div>
+              <span 
+                class="status-pill" 
+                [class.status-available]="table.status?.toLowerCase() === 'available'"
+                [class.status-occupied]="table.status?.toLowerCase() === 'occupied'"
+                [class.status-reserved]="table.status?.toLowerCase() === 'reserved'">
+                {{ table.status }}
+              </span>
+            </div>
+
+            <div class="table-card-body">
+              <div class="table-info-row">
+                <span class="info-label">Seating Capacity</span>
+                <strong class="info-val">
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="cover-icon">
+                    <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
+                  </svg>
+                  <span>{{ table.capacity }} Guests</span>
+                </strong>
+              </div>
+
+              <div class="table-info-row">
+                <span class="info-label">Sanctuary</span>
+                <span class="info-sanctuary">{{ activeRestaurant()?.name || 'Assigned' }}</span>
+              </div>
+            </div>
+
+            <div class="table-card-footer">
+              <button 
+                type="button" 
+                class="btn btn-outline btn-sm action-btn edit-btn"
+                (click)="openEditModal(table)"
+                aria-label="Edit Table {{ table.tableNumber }}">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon">
+                  <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
+                  <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
+                </svg>
+                <span>Edit</span>
+              </button>
+
+              <button 
+                type="button" 
+                class="btn btn-outline btn-sm action-btn delete-btn"
+                (click)="openDeleteModal(table)"
+                aria-label="Delete Table {{ table.tableNumber }}">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon">
+                  <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" />
+                </svg>
+                <span>Delete</span>
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  }
+
+  <!-- Owner Has Zero Restaurants Registered -->
+  @else if (!isLoadingRestaurants() && restaurants().length === 0) {
+    <div class="empty-state-card no-restaurants-card">
+      <div class="empty-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M3 21h18"></path>
+          <path d="M5 21V7l8-4v18"></path>
+          <path d="M19 21V11l-6-3"></path>
+        </svg>
+      </div>
+      <h3 class="empty-title">No Establishments Found</h3>
+      <p class="empty-desc">
+        You must register and list an establishment on Dinevia before managing dining room floor plans and tables.
+      </p>
+      <a routerLink="/admin/register" class="btn btn-primary btn-md">
+        <span>Register Restaurant</span>
+      </a>
+    </div>
+  }
+
+  <!-- MODAL 1: ADD TABLE MODAL -->
+  @if (isAddModalOpen()) {
+    <div class="modal-backdrop" (click)="closeAddModal()" aria-hidden="true"></div>
+    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">DINING ROOM SETUP</span>
+          <h3 id="add-modal-title" class="modal-title">Add Dining Table</h3>
+          <p class="modal-subtitle">Configure seating capacity for {{ activeRestaurant()?.name }}</p>
+        </div>
+        <button type="button" class="modal-close" (click)="closeAddModal()" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form (ngSubmit)="submitAddTable()" class="modal-form">
+        <div class="modal-body">
+          @if (addError()) {
+            <div class="modal-alert-error" role="alert">
+              {{ addError() }}
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label" for="add-table-num">Table Number <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="add-table-num"
+              class="form-control"
+              [(ngModel)]="addForm.tableNumber" 
+              name="addTableNumber"
+              min="1"
+              required 
+              placeholder="e.g. 1" 
+            />
+            <span class="field-hint">Unique numerical identifier in this establishment.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="add-capacity">Guest Capacity <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="add-capacity"
+              class="form-control"
+              [(ngModel)]="addForm.capacity" 
+              name="addCapacity"
+              min="1"
+              max="50"
+              required 
+              placeholder="e.g. 4" 
+            />
+            <span class="field-hint">Maximum number of covers / guests seated at this table.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="add-status">Table Status <span class="required">*</span></label>
+            <select 
+              id="add-status"
+              class="form-control form-select"
+              [(ngModel)]="addForm.status"
+              name="addStatus"
+              required>
+              @for (st of supportedStatuses; track st) {
+                <option [value]="st">{{ st }}</option>
+              }
+            </select>
+            <span class="field-hint">Set initial availability for reservation allocation.</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline btn-sm" (click)="closeAddModal()" [disabled]="isSavingAdd()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="isSavingAdd()">
+            @if (isSavingAdd()) {
+              <span>Adding Table...</span>
+            } @else {
+              <span>Create Table</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- MODAL 2: EDIT TABLE MODAL -->
+  @if (editingTable(); as table) {
+    <div class="modal-backdrop" (click)="closeEditModal()" aria-hidden="true"></div>
+    <div class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">SEATING RECONFIGURATION</span>
+          <h3 id="edit-modal-title" class="modal-title">Edit Table #{{ table.tableNumber }}</h3>
+          <p class="modal-subtitle">Update capacity or status for {{ activeRestaurant()?.name }}</p>
+        </div>
+        <button type="button" class="modal-close" (click)="closeEditModal()" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form (ngSubmit)="submitEditTable()" class="modal-form">
+        <div class="modal-body">
+          @if (editError()) {
+            <div class="modal-alert-error" role="alert">
+              {{ editError() }}
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label" for="edit-table-num">Table Number <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="edit-table-num"
+              class="form-control"
+              [(ngModel)]="editForm.tableNumber" 
+              name="editTableNumber"
+              min="1"
+              required 
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-capacity">Guest Capacity <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="edit-capacity"
+              class="form-control"
+              [(ngModel)]="editForm.capacity" 
+              name="editCapacity"
+              min="1"
+              max="50"
+              required 
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-status">Table Status <span class="required">*</span></label>
+            <select 
+              id="edit-status"
+              class="form-control form-select"
+              [(ngModel)]="editForm.status"
+              name="editStatus"
+              required>
+              @for (st of supportedStatuses; track st) {
+                <option [value]="st">{{ st }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline btn-sm" (click)="closeEditModal()" [disabled]="isSavingEdit()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="isSavingEdit()">
+            @if (isSavingEdit()) {
+              <span>Saving Changes...</span>
+            } @else {
+              <span>Update Table</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- MODAL 3: DELETE TABLE CONFIRMATION MODAL -->
+  @if (deletingTable(); as table) {
+    <div class="modal-backdrop" (click)="closeDeleteModal()" aria-hidden="true"></div>
+    <div class="admin-modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="del-modal-title">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker delete-kicker">REMOVE TABLE</span>
+          <h3 id="del-modal-title" class="modal-title">Delete Table #{{ table.tableNumber }}?</h3>
+        </div>
+        <button type="button" class="modal-close" (click)="closeDeleteModal()" aria-label="Cancel deletion">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (deleteError()) {
+          <div class="modal-alert-error" role="alert">
+            {{ deleteError() }}
+          </div>
+        }
+
+        <p class="delete-warning-text">
+          Are you sure you want to remove <strong>Table #{{ table.tableNumber }}</strong> (Capacity: {{ table.capacity }} guests) from <strong>{{ activeRestaurant()?.name }}</strong>?
+        </p>
+        <p class="delete-sub-text">
+          This removes the table from your active floor plan. If this table has active or past reservations, the backend will prevent deletion to preserve booking ledger integrity.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline btn-sm" (click)="closeDeleteModal()" [disabled]="isDeleting()">
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-danger btn-sm" 
+          (click)="confirmDeleteTable()" 
+          [disabled]="isDeleting()">
+          @if (isDeleting()) {
+            <span>Deleting Table...</span>
+          } @else {
+            <span>Delete Table</span>
+          }
+        </button>
+      </div>
+    </div>
+  }
+</div>
+

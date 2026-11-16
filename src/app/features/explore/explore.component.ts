@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { CuisineService } from '../../core/services/cuisine.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -34,7 +35,8 @@ export type SortOption = 'name-asc' | 'name-desc' | 'rating-desc' | 'reviews-des
     RouterLink,
     NavbarComponent,
     FooterComponent,
-    RestaurantCardComponent
+    RestaurantCardComponent,
+    ScrollRevealDirective
   ],
   templateUrl: './explore.component.html',
   styleUrl: './explore.component.scss'

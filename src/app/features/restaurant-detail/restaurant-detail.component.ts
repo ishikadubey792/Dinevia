@@ -8,6 +8,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { BookingService } from '../../core/services/booking.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -40,7 +41,8 @@ type AvailabilityTriggerPayload =
     RouterLink,
     NavbarComponent,
     FooterComponent,
-    RestaurantCardComponent
+    RestaurantCardComponent,
+    ScrollRevealDirective
   ],
   templateUrl: './restaurant-detail.component.html',
   styleUrl: './restaurant-detail.component.scss'
@@ -434,7 +436,7 @@ export class RestaurantDetailComponent implements OnInit {
       this.availableTables.set([]);
       this.selectedTableId.set(null);
       this.availabilityError.set(null);
-      this.availabilityValidationError.set(prepared.error);
+      this.availabilityValidationError.set('error' in prepared ? prepared.error : 'Invalid reservation request.');
       this.availabilityTrigger$.next({ kind: 'clear' });
       return;
     }

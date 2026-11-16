@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -27,7 +28,8 @@ import {
     FormsModule,
     RouterLink,
     NavbarComponent,
-    FooterComponent
+    FooterComponent,
+    ScrollRevealDirective
   ],
   templateUrl: './bookings.component.html',
   styleUrl: './bookings.component.scss'

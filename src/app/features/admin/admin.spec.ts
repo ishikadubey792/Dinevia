@@ -9,6 +9,8 @@ import { AdminDashboardComponent } from './dashboard/admin-dashboard.component';
 import { AdminRestaurantsComponent } from './restaurants/admin-restaurants.component';
 import { OwnerBookingsComponent } from './bookings/owner-bookings.component';
 import { AdminPlaceholderComponent } from './placeholder/admin-placeholder.component';
+import { AdminTablesComponent } from './tables/admin-tables.component';
+import { AdminOperatingHoursComponent } from './operating-hours/admin-operating-hours.component';
 import { AdminDataService } from '../../core/services/admin-data.service';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
@@ -26,6 +28,8 @@ describe('Dinevia Restaurant Owner Portal', () => {
         AdminDashboardComponent,
         AdminRestaurantsComponent,
         OwnerBookingsComponent,
+        AdminTablesComponent,
+        AdminOperatingHoursComponent,
         AdminPlaceholderComponent
       ],
       providers: [

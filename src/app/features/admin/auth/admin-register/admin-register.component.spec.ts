@@ -256,6 +256,97 @@ describe('AdminRegisterComponent', () => {
     expect(component.errorMessage()).toBe('Please enter valid email addresses for owner and restaurant.');
   });
 
+  it('should reject empty form submission and mark all controls as touched', () => {
+    component.onSubmit();
+    expect(ownerAuthServiceMock.registerRestaurantOwner).not.toHaveBeenCalled();
+    expect(component.errorMessage()).toBeTruthy();
+  });
+
+  it('should reject invalid phone number formats (alphabetic, short, long, invalid starting digit)', () => {
+    const invalidPhones = ['abcdefghij', '98765', '987654321099', '1234567890', '5876543210'];
+
+    for (const phone of invalidPhones) {
+      component.ownerName = 'Chef Julien Laurent';
+      component.ownerEmail = 'julien.laurent@dinevia.com';
+      component.password = 'OwnerPass@2026';
+      component.restaurantName = 'Le Gabriel Atelier';
+      component.streetAddress = '42 Rue du Faubourg';
+      component.city = 'Paris';
+      component.description = 'Contemporary fine dining sanctuary with seasonal tasting menus.';
+      component.phone = phone;
+      component.restaurantEmail = 'reservations@legabriel.com';
+      component.selectedCuisineIds = [1];
+      component.termsAccepted.set(true);
+
+      component.onSubmit();
+
+      expect(ownerAuthServiceMock.registerRestaurantOwner).not.toHaveBeenCalled();
+      expect(component.registerForm.get('phone')?.invalid).toBe(true);
+      expect(component.errorMessage()).toBe(component.getPhoneErrorMessage());
+      expect(component.errorMessage()!.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('should reject invalid password formats (missing upper, lower, digit, special or whitespace)', () => {
+    const invalidPasswords = [
+      'short1!',         // < 8 chars
+      'nouppercase123!', // no uppercase
+      'NOLOWERCASE123!', // no lowercase
+      'NoDigitsHere!',   // no digit
+      'NoSpecialChar12', // no special character
+      'Has Space 123!'   // whitespace
+    ];
+
+    for (const pwd of invalidPasswords) {
+      component.ownerName = 'Chef Julien Laurent';
+      component.ownerEmail = 'julien.laurent@dinevia.com';
+      component.password = pwd;
+      component.restaurantName = 'Le Gabriel Atelier';
+      component.streetAddress = '42 Rue du Faubourg';
+      component.city = 'Paris';
+      component.description = 'Contemporary fine dining sanctuary with seasonal tasting menus.';
+      component.phone = '9876543210';
+      component.restaurantEmail = 'reservations@legabriel.com';
+      component.selectedCuisineIds = [1];
+      component.termsAccepted.set(true);
+
+      component.onSubmit();
+
+      expect(ownerAuthServiceMock.registerRestaurantOwner).not.toHaveBeenCalled();
+      expect(component.registerForm.get('password')?.invalid).toBe(true);
+      expect(component.errorMessage()).toBeTruthy();
+    }
+  });
+
+  it('should trim string values before dispatching registration payload', () => {
+    component.ownerName = '   Chef Julien Laurent   ';
+    component.ownerEmail = '  julien.laurent@dinevia.com  ';
+    component.password = 'OwnerPass@2026';
+    component.restaurantName = '  Le Gabriel Atelier  ';
+    component.streetAddress = '  42 Rue du Faubourg  ';
+    component.city = '  Paris  ';
+    component.description = '  Contemporary fine dining sanctuary with seasonal tasting menus.  ';
+    component.phone = '  9876543210  ';
+    component.restaurantEmail = '  reservations@legabriel.com  ';
+    component.selectedCuisineIds = [1];
+    component.termsAccepted.set(true);
+
+    component.onSubmit();
+
+    expect(ownerAuthServiceMock.registerRestaurantOwner).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerName: 'Chef Julien Laurent',
+        ownerEmail: 'julien.laurent@dinevia.com',
+        restaurantName: 'Le Gabriel Atelier',
+        address: '42 Rue du Faubourg',
+        city: 'Paris',
+        description: 'Contemporary fine dining sanctuary with seasonal tasting menus.',
+        phone: '9876543210',
+        restaurantEmail: 'reservations@legabriel.com'
+      })
+    );
+  });
+
   it('should prevent duplicate submissions while already submitting', () => {
     component.isSubmitting.set(true);
     component.onSubmit();

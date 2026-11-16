@@ -18,6 +18,10 @@
     padding: 1.25rem 1rem;
     gap: 1.5rem;
   }
+
+  @media (max-width: 375px) {
+    padding: 1rem 0.65rem;
+  }
 }
 
 /* ==========================================================================
@@ -140,6 +144,10 @@
   border-radius: 12px;
   padding: 1.1rem 1.4rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+
+  @media (max-width: 480px) {
+    padding: 1rem 0.85rem;
+  }
 
   .filter-row {
     display: grid;
@@ -310,7 +318,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 480px) {
     grid-template-columns: 1fr;
   }
 
@@ -319,15 +327,29 @@
     border: 1px solid #E8E5DF;
     border-radius: 12px;
     padding: 1.25rem 1.4rem;
+
+    @media (max-width: 600px) {
+      padding: 1rem 0.95rem;
+    }
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.3s var(--ease-luxury), box-shadow 0.3s var(--ease-luxury), border-color 0.25s ease;
+    animation: fadeInUp 0.5s var(--ease-luxury) backwards;
+
+    &:nth-child(1) { animation-delay: 0.05s; }
+    &:nth-child(2) { animation-delay: 0.1s; }
+    &:nth-child(3) { animation-delay: 0.15s; }
+    &:nth-child(4) { animation-delay: 0.2s; }
+    &:nth-child(5) { animation-delay: 0.25s; }
+    &:nth-child(6) { animation-delay: 0.3s; }
+    &:nth-child(7) { animation-delay: 0.35s; }
 
     &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(27, 67, 50, 0.1);
+      border-color: rgba(27, 67, 50, 0.25);
     }
 
     &.highlight-pending {

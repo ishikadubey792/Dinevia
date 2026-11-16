@@ -184,9 +184,24 @@
   border-radius: var(--radius-lg);
   padding: 2.25rem;
   box-shadow: var(--shadow-sm);
+  animation: fadeInUp 0.6s var(--ease-luxury) backwards;
+  transition: box-shadow 0.3s var(--ease-luxury), border-color 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 10px 24px rgba(35, 70, 55, 0.05);
+  }
+
+  &:nth-child(1) { animation-delay: 0.08s; }
+  &:nth-child(2) { animation-delay: 0.16s; }
+  &:nth-child(3) { animation-delay: 0.24s; }
+  &:nth-child(4) { animation-delay: 0.32s; }
 
   @media (max-width: 640px) {
     padding: 1.5rem;
+  }
+
+  @media (max-width: 375px) {
+    padding: 1.15rem 0.85rem;
   }
 }
 
@@ -354,11 +369,16 @@
     font-weight: 600;
     color: var(--color-forest-dark);
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: all 0.2s var(--ease-luxury);
 
     &:hover {
       background-color: var(--color-sage-light);
       border-color: var(--color-forest);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: scale(0.95);
     }
   }
 }
@@ -393,13 +413,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 48px;
   padding: 0.65rem 0.5rem;
   background-color: var(--color-ivory-light);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: transform 0.2s var(--ease-luxury), box-shadow 0.2s var(--ease-luxury), background-color 0.2s ease, border-color 0.2s ease;
   text-align: center;
+  animation: fadeInUp 0.4s var(--ease-luxury) backwards;
+
+  &:nth-child(1) { animation-delay: 0.03s; }
+  &:nth-child(2) { animation-delay: 0.06s; }
+  &:nth-child(3) { animation-delay: 0.09s; }
+  &:nth-child(4) { animation-delay: 0.12s; }
+  &:nth-child(5) { animation-delay: 0.15s; }
+  &:nth-child(6) { animation-delay: 0.18s; }
+  &:nth-child(7) { animation-delay: 0.21s; }
+  &:nth-child(8) { animation-delay: 0.24s; }
 
   .slot-time-text {
     font-size: 0.95rem;
@@ -417,14 +448,18 @@
   &:hover:not(.disabled-slot) {
     border-color: var(--color-forest);
     background-color: var(--color-white);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(35, 70, 55, 0.1);
+  }
+
+  &:active:not(.disabled-slot) {
+    transform: scale(0.96);
   }
 
   &.active {
     background-color: var(--color-forest);
     border-color: var(--color-forest);
-    box-shadow: 0 4px 12px rgba(35, 70, 55, 0.25);
+    box-shadow: 0 6px 16px rgba(35, 70, 55, 0.25);
 
     .slot-time-text {
       color: var(--color-ivory);
@@ -487,16 +522,22 @@
   font-weight: 600;
   color: var(--color-charcoal-muted);
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: all 0.2s var(--ease-luxury);
 
   &:hover {
     border-color: var(--color-terracotta);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 
   &.active {
     background-color: var(--color-terracotta);
     border-color: var(--color-terracotta);
     color: var(--color-white);
+    box-shadow: 0 4px 10px rgba(200, 121, 90, 0.25);
   }
 }
 
@@ -554,10 +595,20 @@
     align-items: center;
     justify-content: center;
     gap: 0.65rem;
+    transition: transform 0.2s var(--ease-luxury), box-shadow 0.2s var(--ease-luxury);
+
+    &:active:not(:disabled) {
+      transform: scale(0.98);
+    }
 
     .btn-arrow {
       width: 1.15rem;
       height: 1.15rem;
+      transition: transform 0.2s ease;
+    }
+
+    &:hover:not(:disabled) .btn-arrow {
+      transform: translateX(4px);
     }
   }
 }
@@ -571,6 +622,7 @@
   border-radius: var(--radius-md);
   margin-top: 1rem;
   box-shadow: var(--shadow-sm);
+  animation: fadeInDown 0.4s var(--ease-luxury);
 
   .recovery-status-pill {
     display: inline-flex;
@@ -648,6 +700,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  animation: fadeInUp 0.7s var(--ease-luxury) backwards;
+  animation-delay: 0.2s;
 }
 
 /* Summary Restaurant Card */
@@ -657,6 +711,16 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  transition: transform 0.3s var(--ease-luxury), box-shadow 0.3s var(--ease-luxury);
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(35, 70, 55, 0.08);
+
+    .summary-thumb-img {
+      transform: scale(1.05);
+    }
+  }
 
   .summary-thumb-frame {
     width: 100%;
@@ -668,6 +732,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.5s var(--ease-luxury);
     }
   }
 

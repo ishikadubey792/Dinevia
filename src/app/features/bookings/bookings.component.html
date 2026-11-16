@@ -73,7 +73,7 @@
     } @else if (filteredBookings().length > 0) {
     <div class="bookings-grid">
       @for (b of filteredBookings(); track b.bookingRef) {
-      <article class="booking-card" [class.cancelled-card]="b.status === 'cancelled'">
+      <article class="booking-card" appScrollReveal [class.cancelled-card]="b.status === 'cancelled'">
         <div class="card-thumb-frame">
           <img [src]="b.restaurantImage" [alt]="b.restaurantName" class="card-thumb-img" />
           <div class="thumb-cuisine-tag">

@@ -401,7 +401,7 @@
       <!-- Valid Matching Results -->
       <div class="explore-restaurants-grid" [class.compact-mode]="viewMode() === 'compact'">
         @for (restaurant of filteredRestaurants(); track restaurant.id) {
-        <app-restaurant-card [restaurant]="restaurant" (viewDetails)="onViewDetails($event)"
+        <app-restaurant-card appScrollReveal [restaurant]="restaurant" (viewDetails)="onViewDetails($event)"
           (reserveSlot)="onReserveSlot($event)">
         </app-restaurant-card>
         }
