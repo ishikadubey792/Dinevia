@@ -1,14 +1,15 @@
 <article class="restaurant-card" (click)="onViewClick()" tabindex="0" role="button" [attr.aria-label]="restaurant.name + ', ' + restaurant.cuisine + ' restaurant in ' + restaurant.location">
   <!-- Card Media -->
-  <div class="card-media">
+  <div class="card-media restaurant-fallback">
     <img 
-      [src]="imgError() ? fallbackImage : restaurant.imageUrl" 
+      [src]="restaurant.imageUrl || ''" 
       [alt]="restaurant.name + ' interior and fine dining ambiance'"
       loading="lazy"
       (error)="onImageError()"
       (load)="onImageLoad()"
       class="card-img"
-      [class.loaded]="imgLoaded()"
+      [class.loaded]="imgLoaded() && !imgError()"
+      [class.img-fallback-hidden]="imgError() || !restaurant.imageUrl"
     />
     <div class="media-overlay"></div>
 
@@ -24,6 +25,7 @@
       type="button" 
       class="bookmark-btn" 
       [class.active]="isSaved()" 
+      [disabled]="isPending()"
       (click)="toggleSave($event)" 
       [attr.aria-label]="isSaved() ? 'Remove from saved restaurants' : 'Save to wishlist'"
       [attr.aria-pressed]="isSaved()">

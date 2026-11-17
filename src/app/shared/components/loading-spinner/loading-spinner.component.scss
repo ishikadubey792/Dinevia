@@ -1,0 +1,94 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.restaurants-loading-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 4.5rem 1.5rem;
+  text-align: center;
+  min-height: 240px;
+
+  &.loading-stage-sm {
+    min-height: auto;
+    padding: 1.5rem 1rem;
+    gap: 0.75rem;
+  }
+
+  &.loading-stage-lg {
+    padding: 6rem 2rem;
+  }
+
+  &.loading-stage-inline {
+    min-height: auto;
+    padding: 1rem 0;
+    flex-direction: row;
+    gap: 0.75rem;
+    text-align: left;
+  }
+}
+
+.luxury-spinner {
+  width: 44px;
+  height: 44px;
+  border: 2.5px solid rgba(35, 70, 55, 0.12);
+  border-top-color: var(--color-forest, #234637);
+  border-right-color: var(--color-brass, #C5A059);
+  border-radius: 50%;
+  animation: dineviaSpin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  flex-shrink: 0;
+
+  &.luxury-spinner-sm {
+    width: 24px;
+    height: 24px;
+    border-width: 2px;
+  }
+
+  &.luxury-spinner-lg {
+    width: 60px;
+    height: 60px;
+    border-width: 3.5px;
+  }
+}
+
+.loading-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.loading-text {
+  font-family: var(--font-serif, 'Lora', serif);
+  font-size: 1.0625rem;
+  font-style: italic;
+  color: var(--color-forest, #234637);
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.loading-subtitle {
+  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
+  font-size: 0.8125rem;
+  color: rgba(38, 40, 36, 0.6);
+  margin: 0;
+}
+
+@keyframes dineviaSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .luxury-spinner {
+    animation-duration: 2.4s;
+    transition: none;
+  }
+}

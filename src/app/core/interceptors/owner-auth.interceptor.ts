@@ -262,6 +262,11 @@ function isCustomerProtectedEndpoint(path: string, method: string): boolean {
     }
   }
 
+  // 8. Customer wishlist endpoints (GET /api/wishlist, POST /api/wishlist/{restaurantId}, DELETE /api/wishlist/{restaurantId})
+  if (path === '/wishlist' || path.startsWith('/wishlist/')) {
+    return true;
+  }
+
   return false;
 }
 

@@ -6,7 +6,7 @@ import { NavbarComponent } from '../../shared/components/navbar/navbar.component
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
-import { RestaurantService } from '../../core/services/restaurant.service';
+import { WishlistService } from '../../core/services/wishlist.service';
 import { User } from '../../core/models/user.model';
 import {
   dineviaEmailValidator,
@@ -32,7 +32,7 @@ export class ProfileComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly authService = inject(AuthService);
   private readonly bookingService = inject(BookingService);
-  private readonly restaurantService = inject(RestaurantService);
+  readonly wishlistService = inject(WishlistService);
   private readonly router = inject(Router);
 
   readonly isEditMode = signal<boolean>(false);
@@ -81,9 +81,7 @@ export class ProfileComponent implements OnInit {
     return this.bookingService.bookingHistory().filter(b => b.status === 'confirmed').length;
   });
 
-  readonly wishlistCount = computed(() => {
-    return this.restaurantService.savedIds().size;
-  });
+  readonly wishlistCount = this.wishlistService.wishlistCount;
 
   readonly userInitials = computed(() => {
     const user = this.authService.currentUser();

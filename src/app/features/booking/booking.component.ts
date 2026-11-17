@@ -8,6 +8,9 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
+import { ErrorAlertComponent } from '../../shared/components/error-alert/error-alert.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { BookingService } from '../../core/services/booking.service';
@@ -53,6 +56,9 @@ type BookingAvailabilityTrigger =
     RouterLink,
     NavbarComponent,
     FooterComponent,
+    LoadingSpinnerComponent,
+    ErrorAlertComponent,
+    EmptyStateComponent,
     ScrollRevealDirective
   ],
   templateUrl: './booking.component.html',
@@ -114,9 +120,6 @@ export class BookingComponent implements OnInit {
 
   // Selected dietary tags
   readonly selectedDietary = signal<string[]>([]);
-
-  // Fallback image
-  readonly fallbackImage = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80';
 
   // Booking Form
   bookingForm!: FormGroup;
@@ -603,7 +606,7 @@ export class BookingComponent implements OnInit {
     const customerContext = {
       restaurantId: String(rest.id),
       restaurantName: rest.name,
-      restaurantImage: rest.imageUrl ?? this.fallbackImage,
+      restaurantImage: rest.imageUrl || '',
       restaurantCuisine: rest.cuisine ?? 'Fine Dining',
       restaurantLocation: rest.neighborhood ? `${rest.neighborhood}, ${rest.city ?? ''}` : (rest.city ?? ''),
       restaurantAddress: rest.address ?? rest.location,

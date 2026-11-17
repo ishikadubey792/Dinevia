@@ -22,6 +22,26 @@
       </p>
     </header>
 
+    <!-- LOADING STATE -->
+    @if (isLoading()) {
+      <app-loading-spinner 
+        message="Loading your payment records..."
+        subtitle="Retrieving financial transaction logs and deposit receipts...">
+      </app-loading-spinner>
+    }
+
+    <!-- ERROR STATE -->
+    @if (errorMessage()) {
+      <app-error-alert
+        containerClass="error-stage"
+        title="Unable to Load Payments"
+        [message]="errorMessage()!"
+        retryLabel="Retry Connection"
+        (retry)="loadPaymentHistory()">
+      </app-error-alert>
+    }
+
+    @if (!isLoading() && !errorMessage()) {
     <!-- Metric Summary Cards -->
     <section class="metrics-grid" aria-label="Payment Summary Metrics">
       <div class="metric-card">
@@ -100,27 +120,8 @@
       </button>
     </div>
 
-    <!-- LOADING STATE -->
-    @if (isLoading()) {
-      <div class="loading-stage" aria-live="polite">
-        <div class="luxury-spinner"></div>
-        <p class="loading-text">Loading your payment records...</p>
-      </div>
-    } @else if (errorMessage()) {
-      <!-- ERROR STATE -->
-      <div class="error-stage" role="alert">
-        <div class="error-icon-wrap">
-          <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <h2 class="error-title">Unable to Load Payments</h2>
-        <p class="error-message">{{ errorMessage() }}</p>
-        <button type="button" class="btn btn-outline btn-md" (click)="loadPaymentHistory()">
-          Retry Connection
-        </button>
-      </div>
-    } @else if (filteredPayments().length > 0) {
+    <!-- PAYMENTS LIST -->
+    @if (filteredPayments().length > 0) {
       <!-- PAYMENTS LIST -->
       <div class="payments-list" role="feed" aria-label="Customer payments">
         @for (p of filteredPayments(); track p.id) {
@@ -135,18 +136,7 @@
               </div>
 
               <!-- Status Badge -->
-              <span class="status-badge" [class.badge-success]="p.status === 'Success'" [class.badge-pending]="p.status === 'Pending'" [class.badge-failed]="p.status === 'Failed'">
-                @if (p.status === 'Success') {
-                  <span class="status-dot dot-success"></span>
-                  <span>Success</span>
-                } @else if (p.status === 'Pending') {
-                  <span class="status-dot dot-pending"></span>
-                  <span>Pending</span>
-                } @else {
-                  <span class="status-dot dot-failed"></span>
-                  <span>Failed</span>
-                }
-              </span>
+              <app-status-badge [status]="p.status"></app-status-badge>
             </div>
 
             <div class="payment-card-body">
@@ -195,36 +185,18 @@
       </div>
     } @else {
       <!-- EMPTY STATE -->
-      <div class="empty-payments-card" role="region" aria-label="No payments found">
-        <div class="empty-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <rect x="2" y="5" width="20" height="14" rx="2" />
-            <line x1="2" y1="10" x2="22" y2="10" />
-          </svg>
-        </div>
-
-        <h2 class="empty-title">
-          @if (activeTab() === 'all') {
-            No Payment Records on File
-          } @else if (activeTab() === 'success') {
-            No Successful Payments
-          } @else if (activeTab() === 'pending') {
-            No Pending Guarantees
-          } @else {
-            No Failed Transactions
-          }
-        </h2>
-
-        <p class="empty-desc">
-          When you reserve tables and complete guarantee deposits at our partner fine-dining establishments, your transactions will appear here.
-        </p>
-
-        <div class="empty-actions">
+      <app-empty-state
+        containerClass="empty-payments-card"
+        icon="receipt"
+        [title]="activeTab() === 'all' ? 'No Payment Records on File' : (activeTab() === 'success' ? 'No Successful Payments' : (activeTab() === 'pending' ? 'No Pending Guarantees' : 'No Failed Transactions'))"
+        description="When you reserve tables and complete guarantee deposits at our partner fine-dining establishments, your transactions will appear here.">
+        <div actions class="empty-actions">
           <a routerLink="/bookings" class="btn btn-outline btn-lg">View My Reservations</a>
           <a routerLink="/explore" class="btn btn-primary btn-lg">Explore Restaurants</a>
         </div>
-      </div>
+      </app-empty-state>
     }
+  }
   </div>
 </main>
 

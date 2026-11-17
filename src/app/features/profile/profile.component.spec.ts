@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingService } from '../../core/services/booking.service';
-import { RestaurantService } from '../../core/services/restaurant.service';
+import { WishlistService } from '../../core/services/wishlist.service';
 import { ProfileComponent } from './profile.component';
 
 describe('ProfileComponent Form Validation & Clean Defaults', () => {
@@ -50,9 +50,10 @@ describe('ProfileComponent Form Validation & Clean Defaults', () => {
           }
         },
         {
-          provide: RestaurantService,
+          provide: WishlistService,
           useValue: {
-            savedIds: () => new Set<string>()
+            wishlistCount: signal(0),
+            savedIds: signal(new Set<number>())
           }
         }
       ]

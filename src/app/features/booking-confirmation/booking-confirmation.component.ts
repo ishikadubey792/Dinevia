@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService } from '../../core/services/payment.service';
 import { BookingDetails } from '../../core/models/booking.model';
@@ -15,7 +17,9 @@ import { PaymentRecord } from '../../core/models/payment.model';
     CommonModule,
     RouterLink,
     NavbarComponent,
-    FooterComponent
+    FooterComponent,
+    LoadingSpinnerComponent,
+    EmptyStateComponent
   ],
   templateUrl: './booking-confirmation.component.html',
   styleUrl: './booking-confirmation.component.scss'

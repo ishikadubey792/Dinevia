@@ -8,6 +8,7 @@ import { CuisineService } from '../../../../core/services/cuisine.service';
 import { OwnerAuthService } from '../../../../core/services/owner-auth.service';
 import { ApiCuisine } from '../../../../core/models/cuisine.model';
 import { OwnerRegisterRequest } from '../../../../core/models/owner-auth.model';
+import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
 import {
   backendPasswordValidator,
   dineviaEmailValidator,
@@ -33,7 +34,7 @@ export const DEFAULT_FALLBACK_CUISINES: ApiCuisine[] = [
 @Component({
   selector: 'app-admin-register',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, LoadingSpinnerComponent],
   templateUrl: './admin-register.component.html',
   styleUrl: './admin-register.component.scss'
 })

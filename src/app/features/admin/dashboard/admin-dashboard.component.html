@@ -85,32 +85,18 @@
 
   <!-- Loading State Banner -->
   @if (isLoading()) {
-    <div class="state-banner loading-banner" role="status" aria-live="polite">
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <div class="state-text">
-        <strong class="state-title">Aggregating Owner Analytics</strong>
-        <p class="state-desc">Retrieving live booking metrics and payment summaries from the Dinevia API...</p>
-      </div>
-    </div>
+    <app-loading-spinner containerClass="loading-banner" message="Aggregating Owner Analytics" subtitle="Retrieving live booking metrics and payment summaries from the Dinevia API..."></app-loading-spinner>
   }
 
   <!-- Error State Banner with Retry Button -->
   @if (loadError(); as err) {
-    <div class="state-banner error-banner" role="alert">
-      <svg class="state-icon error-icon" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-      </svg>
-      <div class="state-text">
-        <strong class="state-title">Unable to Load Dashboard Analytics</strong>
-        <p class="state-desc">{{ err }}</p>
-      </div>
-      <button type="button" class="retry-btn" (click)="retryLoad()" aria-label="Retry loading dashboard">
-        <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-        </svg>
-        <span>Retry Connection</span>
-      </button>
-    </div>
+    <app-error-alert
+      variant="banner"
+      title="Unable to Load Dashboard Analytics"
+      [message]="err"
+      retryLabel="Retry Connection"
+      (retry)="retryLoad()">
+    </app-error-alert>
   }
 
   <!-- SECTION 3: 7 Live KPI Metric Summary Cards -->

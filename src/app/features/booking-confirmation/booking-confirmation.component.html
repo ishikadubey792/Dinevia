@@ -19,24 +19,14 @@
 
     <!-- VERIFYING WITH BACKEND -->
     @if (isVerifying()) {
-      <div class="confirmation-loading-stage" aria-live="polite">
-        <div class="luxury-spinner"></div>
-        <p class="loading-text">Verifying table reservation with Dinevia concierge...</p>
-      </div>
+      <app-loading-spinner message="Verifying table reservation with Dinevia concierge..."></app-loading-spinner>
     } @else if (noBookingFound() || !booking()) {
-      <div class="no-booking-card" role="region" aria-label="No reservation found">
-        <div class="no-booking-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-        </div>
-        <h1 class="no-booking-title">No Active Table Reservation Found</h1>
-        <p class="no-booking-desc">
-          You do not have an active dining reservation in this browser session. If you recently booked a table, please check your reference email or reserve a table at one of our world-class dining destinations.
-        </p>
-        <div class="no-booking-actions">
+      <app-empty-state
+        containerClass="no-booking-card"
+        icon="calendar"
+        title="No Active Table Reservation Found"
+        description="You do not have an active dining reservation in this browser session. If you recently booked a table, please check your reference email or reserve a table at one of our world-class dining destinations.">
+        <div actions class="no-booking-actions">
           <a routerLink="/explore" class="btn btn-primary btn-lg">
             <span>Explore Restaurants</span>
             <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
@@ -45,7 +35,7 @@
           </a>
           <a routerLink="/" class="btn btn-outline btn-lg">Return to Home</a>
         </div>
-      </div>
+      </app-empty-state>
     }
 
     <!-- VALID RESERVATION (VERIFIED) -->
@@ -353,8 +343,14 @@
         <aside class="itinerary-sidebar-col" aria-label="Restaurant information and actions">
           <!-- Restaurant Preview Card -->
           <div class="sidebar-restaurant-card">
-            <div class="sidebar-img-wrapper">
-              <img [src]="b.restaurantImage" [alt]="b.restaurantName + ' fine dining'" class="sidebar-img" />
+            <div class="sidebar-img-wrapper restaurant-fallback">
+              <img 
+                [src]="b.restaurantImage || ''" 
+                [alt]="b.restaurantName + ' fine dining'" 
+                class="sidebar-img" 
+                (error)="$any($event.target).classList.add('img-fallback-hidden')"
+                [class.img-fallback-hidden]="!b.restaurantImage"
+              />
             </div>
 
             <div class="sidebar-content">

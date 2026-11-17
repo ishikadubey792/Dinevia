@@ -260,78 +260,6 @@ export class RestaurantService {
     this.activeSearchCriteria.set(null);
   }
 
-  // Saved Wishlist State
-  private readonly savedIdsSignal = signal<Set<string>>(this.loadInitialSavedIds());
-  readonly savedIds = this.savedIdsSignal.asReadonly();
-
-  private loadInitialSavedIds(): Set<string> {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('dinevia_saved_restaurants');
-        if (stored) {
-          return new Set<string>(JSON.parse(stored));
-        }
-      } catch (e) {
-        console.warn('Could not read saved restaurants from localStorage', e);
-      }
-    }
-    const initial = new Set<string>(['rest-1', 'rest-2']);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('dinevia_saved_restaurants', JSON.stringify(Array.from(initial)));
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-    return initial;
-  }
-
-  // Computed array of saved restaurants
-  readonly savedRestaurants = computed(() => {
-    const ids = this.savedIdsSignal();
-    return this.restaurantsSignal().filter(r => ids.has(r.id));
-  });
-
-  isSaved(restaurantId: string): boolean {
-    return this.savedIdsSignal().has(restaurantId);
-  }
-
-  toggleSaved(restaurantId: string): boolean {
-    const current = new Set(this.savedIdsSignal());
-    let state = false;
-    if (current.has(restaurantId)) {
-      current.delete(restaurantId);
-      state = false;
-    } else {
-      current.add(restaurantId);
-      state = true;
-    }
-    this.savedIdsSignal.set(current);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('dinevia_saved_restaurants', JSON.stringify(Array.from(current)));
-      } catch (e) {
-        console.warn('Could not write saved restaurants to localStorage', e);
-      }
-    }
-    return state;
-  }
-
-  removeFromSaved(restaurantId: string): void {
-    const current = new Set(this.savedIdsSignal());
-    if (current.has(restaurantId)) {
-      current.delete(restaurantId);
-      this.savedIdsSignal.set(current);
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('dinevia_saved_restaurants', JSON.stringify(Array.from(current)));
-        } catch (e) {
-          console.warn(e);
-        }
-      }
-    }
-  }
-
   /**
    * Fetch single restaurant details by ID from ASP.NET Core backend API:
    * GET /api/restaurants/{id}
@@ -428,18 +356,5 @@ export class RestaurantService {
     }
 
     return [];
-  }
-
-  /**
-   * Placeholder for future Table Reservation submission API
-   */
-  reserveTable(restaurantId: string, details: { date: string; time: string; guests: number; name?: string }) {
-    console.info('[RestaurantService: Future API Integration] Reservation intent:', { restaurantId, details });
-    return {
-      success: true,
-      bookingRef: `DV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-      restaurant: this.getRestaurantById(restaurantId),
-      details
-    };
   }
 }

@@ -1,0 +1,22 @@
+<div 
+  class="restaurants-loading-stage" 
+  [class.loading-stage-inline]="inline"
+  [class.loading-stage-sm]="size === 'sm'"
+  [class.loading-stage-lg]="size === 'lg'"
+  [ngClass]="containerClass"
+  role="status" 
+  aria-live="polite"
+  aria-busy="true">
+  <div 
+    class="luxury-spinner" 
+    [class.luxury-spinner-sm]="size === 'sm'" 
+    [class.luxury-spinner-lg]="size === 'lg'" 
+    aria-hidden="true">
+  </div>
+  <div class="loading-text-wrap">
+    <p class="loading-text">{{ message }}</p>
+    @if (subtitle) {
+      <p class="loading-subtitle">{{ subtitle }}</p>
+    }
+  </div>
+</div>

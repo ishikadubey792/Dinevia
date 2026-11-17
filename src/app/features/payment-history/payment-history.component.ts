@@ -4,6 +4,10 @@ import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
+import { ErrorAlertComponent } from '../../shared/components/error-alert/error-alert.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { PaymentService } from '../../core/services/payment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PaymentRecord } from '../../core/models/payment.model';
@@ -17,7 +21,11 @@ export type PaymentFilterTab = 'all' | 'success' | 'pending' | 'failed';
     CommonModule,
     RouterLink,
     NavbarComponent,
-    FooterComponent
+    FooterComponent,
+    LoadingSpinnerComponent,
+    ErrorAlertComponent,
+    EmptyStateComponent,
+    StatusBadgeComponent
   ],
   templateUrl: './payment-history.component.html',
   styleUrl: './payment-history.component.scss'

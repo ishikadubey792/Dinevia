@@ -5,6 +5,10 @@ import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
+import { ErrorAlertComponent } from '../../shared/components/error-alert/error-alert.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { BookingService } from '../../core/services/booking.service';
 import { PaymentService } from '../../core/services/payment.service';
@@ -29,6 +33,10 @@ import {
     RouterLink,
     NavbarComponent,
     FooterComponent,
+    LoadingSpinnerComponent,
+    ErrorAlertComponent,
+    EmptyStateComponent,
+    StatusBadgeComponent,
     ScrollRevealDirective
   ],
   templateUrl: './bookings.component.html',
@@ -42,7 +50,7 @@ export class BookingsComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly allBookings = signal<BookingDetails[]>([]);
-  readonly isLoading = signal<boolean>(false);
+  readonly isLoading = signal<boolean>(true);
   readonly errorMessage = signal<string | null>(null);
   readonly activeTab = signal<'all' | 'upcoming' | 'completed' | 'cancelled'>('all');
   readonly isProcessingPaymentForId = signal<number | null>(null);

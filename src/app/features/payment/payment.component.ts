@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { PaymentService } from '../../core/services/payment.service';
 import { BookingService } from '../../core/services/booking.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -17,7 +18,8 @@ import { BookingDetails } from '../../core/models/booking.model';
     CommonModule,
     RouterLink,
     NavbarComponent,
-    FooterComponent
+    FooterComponent,
+    LoadingSpinnerComponent
   ],
   templateUrl: './payment.component.html',
   styleUrl: './payment.component.scss'

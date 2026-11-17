@@ -8,10 +8,15 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
+import { ErrorAlertComponent } from '../../shared/components/error-alert/error-alert.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { BookingService } from '../../core/services/booking.service';
 import { AuthService } from '../../core/services/auth.service';
+import { WishlistService } from '../../core/services/wishlist.service';
+import { AuthModalService } from '../../core/services/auth-modal.service';
 import { Restaurant, MenuItem, DayHours, RestaurantReview } from '../../core/models/restaurant.model';
 import {
   AvailabilityQuery,
@@ -42,6 +47,9 @@ type AvailabilityTriggerPayload =
     NavbarComponent,
     FooterComponent,
     RestaurantCardComponent,
+    LoadingSpinnerComponent,
+    ErrorAlertComponent,
+    EmptyStateComponent,
     ScrollRevealDirective
   ],
   templateUrl: './restaurant-detail.component.html',
@@ -54,6 +62,8 @@ export class RestaurantDetailComponent implements OnInit {
   readonly restaurantService = inject(RestaurantService);
   private readonly bookingService = inject(BookingService);
   private readonly authService = inject(AuthService);
+  readonly wishlistService = inject(WishlistService);
+  private readonly authModalService = inject(AuthModalService);
 
   // Restaurant & Routing state
   private readonly rawRestaurant = signal<Restaurant | null>(null);
@@ -148,8 +158,15 @@ export class RestaurantDetailComponent implements OnInit {
   readonly toastMessage = signal<string | null>(null);
   readonly showStickyMobileBar = signal<boolean>(false);
 
-  // Reliable fallback image URL
-  readonly fallbackImage = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80';
+  // Active gallery image URL computed signal
+  readonly activeGalleryImageUrl = computed<string>(() => {
+    const list = this.galleryImages();
+    const idx = this.activeImageIndex();
+    if (list.length > idx && list[idx]) {
+      return list[idx];
+    }
+    return this.restaurant()?.imageUrl || '';
+  });
 
   // Seating options
   readonly seatingOptions = [
@@ -188,7 +205,12 @@ export class RestaurantDetailComponent implements OnInit {
   // Computed: Wishlist status
   readonly isSaved = computed<boolean>(() => {
     const r = this.restaurant();
-    return r ? this.restaurantService.isSaved(r.id) : false;
+    return r ? this.wishlistService.isSaved(r.id) : false;
+  });
+
+  readonly isWishlistPending = computed<boolean>(() => {
+    const r = this.restaurant();
+    return r ? this.wishlistService.isPending(r.id) : false;
   });
 
   // Computed: Weekly opening hours schedule (only when supplied by backend)
@@ -521,8 +543,31 @@ export class RestaurantDetailComponent implements OnInit {
   toggleWishlist(): void {
     const r = this.restaurant();
     if (!r) return;
-    const isNowSaved = this.restaurantService.toggleSaved(r.id);
-    this.showToast(isNowSaved ? `Added ${r.name} to your wishlist.` : `Removed ${r.name} from your wishlist.`);
+
+    if (!this.authService.isCustomerAuthenticated()) {
+      this.authModalService.open('login');
+      this.showToast('Please sign in as a customer to save restaurants to your wishlist.');
+      return;
+    }
+
+    if (this.authService.isOwnerAuthenticated() && !this.authService.isOwnerSessionExpired()) {
+      this.showToast('Wishlist is only available for customer accounts.');
+      return;
+    }
+
+    if (this.isWishlistPending()) return;
+
+    if (this.isSaved()) {
+      this.wishlistService.removeFromWishlist(r.id).subscribe({
+        next: () => this.showToast(`Removed ${r.name} from your wishlist.`),
+        error: () => this.showToast('Could not remove restaurant from wishlist. Please try again.')
+      });
+    } else {
+      this.wishlistService.addToWishlist(r.id).subscribe({
+        next: () => this.showToast(`Added ${r.name} to your wishlist.`),
+        error: () => this.showToast('Could not save restaurant to wishlist. Please try again.')
+      });
+    }
   }
 
   // Menu Category Filter

@@ -19,10 +19,10 @@
 
     <!-- LOADING STATE -->
     @if (isLoading()) {
-      <div class="payment-loading-card" role="status" aria-label="Loading payment details">
-        <div class="spinner" aria-hidden="true"></div>
-        <p class="loading-text">Retrieving reservation payment details...</p>
-      </div>
+      <app-loading-spinner 
+        message="Retrieving reservation payment details..." 
+        subtitle="Verifying secure transaction guarantee">
+      </app-loading-spinner>
     }
 
     <!-- ERROR STATE (NO PAYMENT OR UNAUTHORIZED) -->
@@ -80,7 +80,13 @@
 
             @if (booking(); as b) {
               <div class="restaurant-media-summary">
-                <img [src]="b.restaurantImage" [alt]="b.restaurantName" class="restaurant-thumb" />
+                <img 
+                  [src]="b.restaurantImage || ''" 
+                  [alt]="b.restaurantName" 
+                  class="restaurant-thumb restaurant-fallback" 
+                  (error)="$any($event.target).classList.add('img-fallback-hidden')"
+                  [class.img-fallback-hidden]="!b.restaurantImage"
+                />
                 <div class="restaurant-info">
                   <h3 class="restaurant-name">{{ b.restaurantName }}</h3>
                   <p class="restaurant-meta">{{ b.restaurantCuisine }} &bull; {{ b.restaurantLocation }}</p>
@@ -210,10 +216,11 @@
 
               <!-- PROCESSING SPINNER -->
               @if (isProcessing()) {
-                <div class="processing-notice" role="status" aria-live="polite">
-                  <div class="spinner-sm" aria-hidden="true"></div>
-                  <span>Communicating with demo payment processor...</span>
-                </div>
+                <app-loading-spinner 
+                  size="sm" 
+                  [inline]="true" 
+                  message="Communicating with demo payment processor...">
+                </app-loading-spinner>
               }
 
               @if (paymentStatus() === 'Success') {

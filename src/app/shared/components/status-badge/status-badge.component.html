@@ -1,0 +1,9 @@
+<span 
+  class="status-badge" 
+  [ngClass]="[badgeClass, size === 'sm' ? 'status-badge-sm' : 'status-badge-md']"
+  [attr.data-status]="normalizedStatus">
+  @if (showDot) {
+    <span class="status-dot" aria-hidden="true"></span>
+  }
+  <span class="status-label">{{ displayLabel }}</span>
+</span>

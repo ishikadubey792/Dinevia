@@ -3,6 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
+import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { OperatingHourService } from '../../../core/services/operating-hour.service';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import {
@@ -25,7 +29,15 @@ export interface DayScheduleViewModel {
 @Component({
   selector: 'app-admin-operating-hours',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ScrollRevealDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ScrollRevealDirective,
+    LoadingSpinnerComponent,
+    EmptyStateComponent,
+    StatusBadgeComponent,
+    ConfirmModalComponent
+  ],
   templateUrl: './admin-operating-hours.component.html',
   styleUrl: './admin-operating-hours.component.scss'
 })
@@ -38,12 +50,12 @@ export class AdminOperatingHoursComponent implements OnInit {
   // Owner restaurants list and selected restaurant
   readonly restaurants = signal<OwnerRestaurant[]>([]);
   readonly selectedRestaurantId = signal<number | null>(null);
-  readonly isLoadingRestaurants = signal<boolean>(false);
+  readonly isLoadingRestaurants = signal<boolean>(true);
   readonly restaurantsError = signal<string | null>(null);
 
   // Operating hours list from backend
   readonly operatingHours = signal<OperatingHour[]>([]);
-  readonly isLoadingHours = signal<boolean>(false);
+  readonly isLoadingHours = signal<boolean>(true);
   readonly hoursError = signal<string | null>(null);
 
   // Feedback notifications
@@ -148,10 +160,12 @@ export class AdminOperatingHoursComponent implements OnInit {
           this.loadOperatingHours(targetId);
         } else {
           this.operatingHours.set([]);
+          this.isLoadingHours.set(false);
         }
       },
       error: (err) => {
         this.isLoadingRestaurants.set(false);
+        this.isLoadingHours.set(false);
         const msg = err?.error?.message || err?.statusText || 'Failed to load your restaurants.';
         this.restaurantsError.set(msg);
       }

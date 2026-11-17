@@ -290,6 +290,36 @@ describe('ownerAuthInterceptor & authInterceptor', () => {
       singleReq.flush({ statusCode: 200, data: { id: 99 } });
     });
 
+    it('should attach Customer token on GET, POST, and DELETE /api/wishlist endpoints', () => {
+      authService.setCustomerSession({
+        id: 1001,
+        name: 'Ishika Patron',
+        email: 'ishika@example.com',
+        role: 'Customer',
+        accessToken: validCustomerJwt,
+        tokenType: 'Bearer',
+        expiresIn: 3600
+      });
+
+      // 1. GET /api/wishlist
+      http.get(`${environment.apiUrl}/wishlist`).subscribe();
+      const getReq = httpTesting.expectOne(`${environment.apiUrl}/wishlist`);
+      expect(getReq.request.headers.get('Authorization')).toBe(`Bearer ${validCustomerJwt}`);
+      getReq.flush([]);
+
+      // 2. POST /api/wishlist/5
+      http.post(`${environment.apiUrl}/wishlist/5`, {}).subscribe();
+      const postReq = httpTesting.expectOne(`${environment.apiUrl}/wishlist/5`);
+      expect(postReq.request.headers.get('Authorization')).toBe(`Bearer ${validCustomerJwt}`);
+      postReq.flush({ message: 'Added' });
+
+      // 3. DELETE /api/wishlist/5
+      http.delete(`${environment.apiUrl}/wishlist/5`).subscribe();
+      const delReq = httpTesting.expectOne(`${environment.apiUrl}/wishlist/5`);
+      expect(delReq.request.headers.get('Authorization')).toBe(`Bearer ${validCustomerJwt}`);
+      delReq.flush({ message: 'Removed' });
+    });
+
     it('should attach Customer token on POST /payments/{paymentId}/process-demo with query params', () => {
       authService.setCustomerSession({
         id: 1001,

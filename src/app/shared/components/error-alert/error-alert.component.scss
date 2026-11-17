@@ -1,0 +1,87 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.restaurants-error-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  background: #fdfbf7;
+  border: 1px solid rgba(200, 121, 90, 0.35);
+  border-left: 4px solid var(--color-terracotta, #c8795a);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 4px 16px rgba(38, 40, 36, 0.04);
+  margin: 1.5rem 0;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+
+    .retry-button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  &.error-banner {
+    border-radius: var(--radius-md, 8px);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+  }
+
+  &.error-inline {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0.5rem 0;
+    margin: 0;
+  }
+}
+
+.error-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(200, 121, 90, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .error-svg {
+    width: 22px;
+    height: 22px;
+    color: var(--color-terracotta, #c8795a);
+  }
+}
+
+.error-content {
+  flex: 1;
+  min-width: 0;
+
+  .error-title {
+    font-family: var(--font-serif, 'Lora', serif);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--color-forest, #234637);
+    margin: 0 0 0.25rem;
+  }
+
+  .error-message {
+    font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.875rem;
+    color: rgba(38, 40, 36, 0.75);
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+.retry-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

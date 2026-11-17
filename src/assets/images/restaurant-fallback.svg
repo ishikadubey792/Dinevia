@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Background Gradient: Deep Forest Noir -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#09140F" />
+      <stop offset="45%" stop-color="#152E22" />
+      <stop offset="75%" stop-color="#1A382A" />
+      <stop offset="100%" stop-color="#0B1611" />
+    </linearGradient>
+
+    <!-- Brass & Gold Foil Accent -->
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#9E7D3B" />
+      <stop offset="35%" stop-color="#DFBF7E" />
+      <stop offset="65%" stop-color="#F3E5C8" />
+      <stop offset="100%" stop-color="#A48139" />
+    </linearGradient>
+
+    <!-- Terracotta Warm Radial Ambient Glow -->
+    <radialGradient id="terracottaGlow" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#C8795A" stop-opacity="0.28" />
+      <stop offset="50%" stop-color="#C8795A" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#C8795A" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Fine dining Cloche Shimmer Gradient -->
+    <linearGradient id="clocheGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.25" />
+      <stop offset="50%" stop-color="#DFBF7E" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35" />
+    </linearGradient>
+
+    <!-- Subtle vignette shadow -->
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="40%" stop-color="#000000" stop-opacity="0" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.55" />
+    </radialGradient>
+  </defs>
+
+  <!-- 1. Background Fill -->
+  <rect width="1200" height="800" fill="url(#bgGrad)" />
+
+  <!-- 2. Warm Terracotta Ambient Light -->
+  <rect width="1200" height="800" fill="url(#terracottaGlow)" />
+
+  <!-- 3. Architectural Arches & Geometric Terroir Lines -->
+  <g opacity="0.16" stroke="url(#brassGrad)" stroke-width="1.2" fill="none">
+    <!-- Outer concentric framing arches -->
+    <ellipse cx="600" cy="400" rx="480" ry="320" />
+    <ellipse cx="600" cy="400" rx="420" ry="280" />
+    <ellipse cx="600" cy="400" rx="360" ry="240" stroke-dasharray="3 6" />
+
+    <!-- Diamond cross-lines -->
+    <path d="M 600,60 L 1050,400 L 600,740 L 150,400 Z" />
+    <path d="M 600,140 L 930,400 L 600,660 L 270,400 Z" stroke-dasharray="4 8" />
+
+    <!-- Vertical symmetry axis -->
+    <line x1="600" y1="40" x2="600" y2="760" stroke-dasharray="2 12" />
+  </g>
+
+  <!-- 4. Corner Filigree Accents -->
+  <g stroke="#DFBF7E" stroke-width="1.2" opacity="0.35" fill="none">
+    <!-- Top-Left -->
+    <path d="M 40,70 L 40,40 L 70,40" />
+    <circle cx="40" cy="40" r="3" fill="#DFBF7E" />
+    <line x1="40" y1="40" x2="65" y2="65" />
+
+    <!-- Top-Right -->
+    <path d="M 1160,70 L 1160,40 L 1130,40" />
+    <circle cx="1160" cy="40" r="3" fill="#DFBF7E" />
+    <line x1="1160" y1="40" x2="1135" y2="65" />
+
+    <!-- Bottom-Left -->
+    <path d="M 40,730 L 40,760 L 70,760" />
+    <circle cx="40" cy="760" r="3" fill="#DFBF7E" />
+    <line x1="40" y1="760" x2="65" y2="735" />
+
+    <!-- Bottom-Right -->
+    <path d="M 1160,730 L 1160,760 L 1130,760" />
+    <circle cx="1160" cy="760" r="3" fill="#DFBF7E" />
+    <line x1="1160" y1="760" x2="1135" y2="735" />
+  </g>
+
+  <!-- 5. Fine Dining Cloche Emblem & Stars -->
+  <g transform="translate(600, 310)">
+    <!-- Cloche Base Ring / Serving Platter -->
+    <ellipse cx="0" cy="38" rx="88" ry="12" fill="none" stroke="url(#brassGrad)" stroke-width="2.5" />
+    <ellipse cx="0" cy="41" rx="98" ry="14" fill="none" stroke="#DFBF7E" stroke-width="1" opacity="0.5" />
+
+    <!-- Cloche Dome -->
+    <path d="M -75,36 C -75,-25 75,-25 75,36 Z" fill="url(#clocheGrad)" stroke="url(#brassGrad)" stroke-width="2.5" />
+    <path d="M -60,34 C -60,-15 60,-15 60,34 Z" fill="none" stroke="#FFFFFF" stroke-width="0.8" opacity="0.3" />
+
+    <!-- Cloche Finial Handle -->
+    <circle cx="0" cy="-28" r="9" fill="none" stroke="url(#brassGrad)" stroke-width="2.2" />
+    <circle cx="0" cy="-28" r="3.5" fill="#DFBF7E" />
+    <path d="M 0,-19 L 0,-24" stroke="url(#brassGrad)" stroke-width="3" stroke-linecap="round" />
+
+    <!-- Sparkle Stars (✦) -->
+    <g fill="#DFBF7E" opacity="0.85">
+      <!-- Top Left Sparkle -->
+      <path d="M -115,-20 Q -115,-12 -123,-12 Q -115,-12 -115,-4 Q -115,-12 -107,-12 Q -115,-12 -115,-20 Z" />
+      <!-- Top Right Sparkle -->
+      <path d="M 118,-25 Q 118,-15 128,-15 Q 118,-15 118,-5 Q 118,-15 108,-15 Q 118,-15 118,-25 Z" />
+      <!-- Small Center Star -->
+      <circle cx="0" cy="8" r="2.5" fill="#DFBF7E" opacity="0.9" />
+    </g>
+  </g>
+
+  <!-- 6. Brand Typography & Status Pill -->
+  <!-- Dinevia Logotype -->
+  <text x="600" y="445" 
+        text-anchor="middle" 
+        fill="#F8F5EF" 
+        font-family="'Lora', 'Playfair Display', Georgia, serif" 
+        font-size="34" 
+        font-weight="600" 
+        letter-spacing="14">DINEVIA</text>
+
+  <!-- Divider Line with Diamond -->
+  <g transform="translate(600, 465)">
+    <line x1="-120" y1="0" x2="-15" y2="0" stroke="url(#brassGrad)" stroke-width="1.2" opacity="0.6" />
+    <rect x="-4" y="-4" width="8" height="8" fill="#DFBF7E" transform="rotate(45)" />
+    <line x1="15" y1="0" x2="120" y2="0" stroke="url(#brassGrad)" stroke-width="1.2" opacity="0.6" />
+  </g>
+
+  <!-- Subtitle -->
+  <text x="600" y="495" 
+        text-anchor="middle" 
+        fill="#DFBF7E" 
+        font-family="'Plus Jakarta Sans', -apple-system, sans-serif" 
+        font-size="12.5" 
+        font-weight="600" 
+        letter-spacing="6">FINE DINING SANCTUARY</text>
+
+  <text x="600" y="522" 
+        text-anchor="middle" 
+        fill="#A6ADA2" 
+        font-family="'Plus Jakarta Sans', -apple-system, sans-serif" 
+        font-size="11" 
+        font-weight="400" 
+        letter-spacing="2" 
+        opacity="0.8">Atmosphere Photography In Curation</text>
+
+  <!-- 7. Outer Vignette Overlay -->
+  <rect width="1200" height="800" fill="url(#vignette)" pointer-events="none" />
+</svg>

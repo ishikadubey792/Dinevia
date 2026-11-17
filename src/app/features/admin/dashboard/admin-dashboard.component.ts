@@ -2,6 +2,8 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+import { ErrorAlertComponent } from '../../../shared/components/error-alert/error-alert.component';
 import { OwnerDashboardService } from '../../../core/services/owner-dashboard.service';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -16,7 +18,7 @@ import { OwnerRestaurant } from '../../../core/models/admin.model';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, LoadingSpinnerComponent, ErrorAlertComponent],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })

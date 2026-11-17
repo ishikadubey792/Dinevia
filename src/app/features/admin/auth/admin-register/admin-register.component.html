@@ -218,9 +218,7 @@
           <div class="field-header-row">
             <label class="form-label">7. Multiple Cuisines Selection (Select all that apply) *</label>
             @if (isLoadingCuisines()) {
-              <span class="loading-indicator">
-                <span class="spinner-dot"></span> Loading live cuisines...
-              </span>
+              <app-loading-spinner size="sm" [inline]="true" message="Loading live cuisines..."></app-loading-spinner>
             }
           </div>
 

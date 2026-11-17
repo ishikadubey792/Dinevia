@@ -1,98 +1,97 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
-import { MOCK_RESTAURANTS } from './core/data/mock-restaurants';
+import { ROUTE_PATH } from './route-path';
 
 export const serverRoutes: ServerRoute[] = [
   {
-    path: 'restaurants/:id',
-    renderMode: RenderMode.Prerender,
-    getPrerenderParams: async () => MOCK_RESTAURANTS.map(r => ({ id: r.id }))
+    path: ROUTE_PATH.RESTAURANT_DETAILS,
+    renderMode: RenderMode.Server
   },
   {
-    path: 'restaurant/:id',
+    path: ROUTE_PATH.RESTAURANT_DETAILS_ALIAS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'book/:id',
+    path: ROUTE_PATH.BOOKING,
     renderMode: RenderMode.Client
   },
   {
-    path: 'booking/:id',
+    path: ROUTE_PATH.BOOKING_ALIAS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'booking/payment/:paymentId',
+    path: ROUTE_PATH.PAYMENT,
     renderMode: RenderMode.Client
   },
   {
-    path: 'payment/:paymentId',
+    path: ROUTE_PATH.PAYMENT_ALIAS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'booking/confirmation',
+    path: ROUTE_PATH.BOOKING_CONFIRMATION,
     renderMode: RenderMode.Client
   },
   {
-    path: 'booking-confirmation',
+    path: ROUTE_PATH.BOOKING_CONFIRMATION_ALIAS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'login',
+    path: ROUTE_PATH.LOGIN,
     renderMode: RenderMode.Client
   },
   {
-    path: 'signup',
+    path: ROUTE_PATH.SIGNUP,
     renderMode: RenderMode.Client
   },
   {
-    path: 'register',
+    path: ROUTE_PATH.REGISTER_ALIAS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'forgot-password',
+    path: ROUTE_PATH.FORGOT_PASSWORD,
     renderMode: RenderMode.Client
   },
   {
-    path: 'profile',
+    path: ROUTE_PATH.PROFILE,
     renderMode: RenderMode.Client
   },
   {
-    path: 'bookings',
+    path: ROUTE_PATH.BOOKINGS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'my-bookings',
+    path: ROUTE_PATH.MY_BOOKINGS_ALIAS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'payments',
+    path: ROUTE_PATH.PAYMENTS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'payment-history',
+    path: ROUTE_PATH.PAYMENT_HISTORY_ALIAS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'wishlist',
+    path: ROUTE_PATH.WISHLIST,
     renderMode: RenderMode.Client
   },
   {
-    path: 'saved',
+    path: ROUTE_PATH.SAVED_ALIAS,
     renderMode: RenderMode.Client
   },
   {
-    path: 'partner-with-us',
+    path: ROUTE_PATH.PARTNER_WITH_US,
     renderMode: RenderMode.Prerender
   },
   {
-    path: 'admin',
+    path: ROUTE_PATH.ADMIN,
     renderMode: RenderMode.Client
   },
   {
-    path: 'admin/**',
+    path: ROUTE_PATH.ADMIN_WILDCARD,
     renderMode: RenderMode.Client
   },
   {
-    path: '**',
+    path: ROUTE_PATH.WILDCARD,
     renderMode: RenderMode.Prerender
   }
 ];

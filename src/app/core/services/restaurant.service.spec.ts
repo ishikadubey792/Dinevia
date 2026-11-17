@@ -314,17 +314,6 @@ describe('RestaurantService Live API Integration', () => {
     expect(matchesRestaurantCuisine(liveRest, 'japanese')).toBe(false);
   });
 
-  it('should toggle and query saved wishlist status', () => {
-    expect(service.isSaved('1')).toBe(false);
-
-    const isNowSaved = service.toggleSaved('1');
-    expect(isNowSaved).toBe(true);
-    expect(service.isSaved('1')).toBe(true);
-
-    service.removeFromSaved('1');
-    expect(service.isSaved('1')).toBe(false);
-  });
-
   it('should map missing or zero dto.rating and dto.reviewCount to 0 instead of 4.9 / 12 fallback', () => {
     const unratedDto: ApiRestaurantDto = {
       id: 99,

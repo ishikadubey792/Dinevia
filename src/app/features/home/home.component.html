@@ -118,33 +118,21 @@
       </div>
 
       @if (isLoadingCuisines() || isLoading()) {
-      <div class="restaurants-loading-stage" aria-live="polite">
-        <div class="luxury-spinner"></div>
-        <p class="loading-text">Calculating available restaurants per cuisine...</p>
-      </div>
+      <app-loading-spinner message="Calculating available restaurants per cuisine..."></app-loading-spinner>
       } @else if (cuisinesLoadError()) {
-      <div class="restaurants-error-card" role="alert">
-        <div class="error-icon-wrap">
-          <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg" aria-hidden="true">
-            <path fill-rule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div class="error-content">
-          <h3 class="error-title">Connection Notice</h3>
-          <p class="error-message">{{ cuisinesLoadError() }}</p>
-        </div>
-        <button type="button" class="btn btn-outline btn-sm retry-button" (click)="retryCuisines()">
-          Retry Connection
-        </button>
-      </div>
+      <app-error-alert
+        title="Connection Notice"
+        [message]="cuisinesLoadError()!"
+        retryLabel="Retry Connection"
+        (retry)="retryCuisines()">
+      </app-error-alert>
       } @else if (cuisines().length === 0) {
-      <div class="empty-state" role="region" aria-label="No cuisines available">
-        <p class="empty-title">No cuisines currently available</p>
-        <p class="empty-desc">Browse all available destinations or refresh to check again.</p>
-        <a routerLink="/explore" class="btn btn-outline">Explore All Restaurants</a>
-      </div>
+      <app-empty-state
+        title="No cuisines currently available"
+        description="Browse all available destinations or refresh to check again."
+        actionLabel="Explore All Restaurants"
+        actionRoute="/explore">
+      </app-empty-state>
       } @else {
       <div class="cuisines-grid">
         @for (c of cuisines(); track c.id) {
@@ -214,28 +202,18 @@
 
       <!-- Loading State -->
       @if (isLoading()) {
-      <div class="restaurants-loading-stage" aria-live="polite">
-        <div class="luxury-spinner"></div>
-        <p class="loading-text">Retrieving fine dining establishments...</p>
-      </div>
+      <app-loading-spinner 
+        message="Retrieving fine dining establishments..."
+        subtitle="Curating live restaurant tables and reservations...">
+      </app-loading-spinner>
       } @else if (loadError()) {
       <!-- Error State with Retry -->
-      <div class="restaurants-error-card" role="alert">
-        <div class="error-icon-wrap">
-          <svg viewBox="0 0 20 20" fill="currentColor" class="error-svg">
-            <path fill-rule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div class="error-content">
-          <h3 class="error-title">Connection Notice</h3>
-          <p class="error-message">{{ loadError() }}</p>
-        </div>
-        <button type="button" class="btn btn-outline btn-sm retry-button" (click)="retryLoad()">
-          Retry Connection
-        </button>
-      </div>
+      <app-error-alert
+        title="Connection Notice"
+        [message]="loadError()!"
+        retryLabel="Retry Connection"
+        (retry)="retryLoad()">
+      </app-error-alert>
       } @else if (restaurants().length > 0) {
       <!-- Restaurant Cards Grid -->
       <div class="restaurants-grid">
@@ -258,17 +236,12 @@
         </a>
       </div>
       } @else {
-      <div class="empty-state">
-        @if (currentCuisine() !== 'all' || currentCategory() !== 'all') {
-        <p class="empty-title">No tables matched your precise criteria</p>
-        <p class="empty-desc">Try clearing your filters or exploring our other world-class dining destinations.</p>
-        <button type="button" class="btn btn-outline" (click)="resetAllFilters()">View All Restaurants</button>
-        } @else {
-        <p class="empty-title">No restaurants are currently available</p>
-        <p class="empty-desc">Check back soon or refresh to load live destinations.</p>
-        <button type="button" class="btn btn-outline" (click)="retryLoad()">Refresh Destinations</button>
-        }
-      </div>
+      <app-empty-state
+        [title]="currentCuisine() !== 'all' || currentCategory() !== 'all' ? 'No tables matched your precise criteria' : 'No restaurants are currently available'"
+        [description]="currentCuisine() !== 'all' || currentCategory() !== 'all' ? 'Try clearing your filters or exploring our other world-class dining destinations.' : 'Check back soon or refresh to load live destinations.'"
+        [actionLabel]="currentCuisine() !== 'all' || currentCategory() !== 'all' ? 'View All Restaurants' : 'Refresh Destinations'"
+        (actionClick)="currentCuisine() !== 'all' || currentCategory() !== 'all' ? resetAllFilters() : retryLoad()">
+      </app-empty-state>
       }
     </div>
   </section>

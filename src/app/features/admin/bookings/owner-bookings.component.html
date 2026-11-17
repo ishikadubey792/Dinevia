@@ -23,24 +23,26 @@
     </div>
 
     <!-- Status Summary Quick Badges -->
-    <div class="header-badges">
-      <div class="summary-pill total">
-        <span class="pill-label">Total</span>
-        <strong class="pill-val">{{ totalBookingsCount() }}</strong>
+    @if (!isLoading() && !errorMessage()) {
+      <div class="header-badges">
+        <div class="summary-pill total">
+          <span class="pill-label">Total</span>
+          <strong class="pill-val">{{ totalBookingsCount() }}</strong>
+        </div>
+        <div class="summary-pill pending">
+          <span class="pill-label">Pending</span>
+          <strong class="pill-val">{{ pendingCount() }}</strong>
+        </div>
+        <div class="summary-pill confirmed">
+          <span class="pill-label">Confirmed</span>
+          <strong class="pill-val">{{ confirmedCount() }}</strong>
+        </div>
+        <div class="summary-pill completed">
+          <span class="pill-label">Completed</span>
+          <strong class="pill-val">{{ completedCount() }}</strong>
+        </div>
       </div>
-      <div class="summary-pill pending">
-        <span class="pill-label">Pending</span>
-        <strong class="pill-val">{{ pendingCount() }}</strong>
-      </div>
-      <div class="summary-pill confirmed">
-        <span class="pill-label">Confirmed</span>
-        <strong class="pill-val">{{ confirmedCount() }}</strong>
-      </div>
-      <div class="summary-pill completed">
-        <span class="pill-label">Completed</span>
-        <strong class="pill-val">{{ completedCount() }}</strong>
-      </div>
-    </div>
+    }
   </header>
 
   <!-- Filter & Controls Section -->
@@ -151,55 +153,31 @@
 
   <!-- Loading State Banner -->
   @if (isLoading()) {
-    <div class="state-banner loading-banner" role="status" aria-live="polite">
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <div class="state-text">
-        <strong class="state-title">Retrieving Reservations</strong>
-        <p class="state-desc">Fetching real-time dining reservations for your establishments...</p>
-      </div>
-    </div>
+    <app-loading-spinner containerClass="loading-banner" message="Retrieving Reservations Ledger" subtitle="Fetching real-time dining reservations for your establishments..."></app-loading-spinner>
   }
 
   <!-- Error State Banner with Retry -->
   @if (errorMessage(); as err) {
-    <div class="state-banner error-banner" role="alert">
-      <svg class="state-icon error-icon" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-      </svg>
-      <div class="state-text">
-        <strong class="state-title">Unable to Load Reservations</strong>
-        <p class="state-desc">{{ err }}</p>
-      </div>
-      <button type="button" class="retry-btn" (click)="loadBookings()" aria-label="Retry loading bookings">
-        <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-        </svg>
-        <span>Retry Connection</span>
-      </button>
-    </div>
+    <app-error-alert
+      variant="banner"
+      title="Unable to Load Reservations"
+      [message]="err"
+      retryLabel="Retry Connection"
+      (retry)="loadBookings()">
+    </app-error-alert>
   }
 
   <!-- Main Content: Bookings Ledger -->
   @if (!isLoading() && !errorMessage()) {
     @if (bookings().length === 0) {
       <!-- Empty State -->
-      <section class="empty-state-card" aria-label="No Bookings Found">
-        <div class="empty-icon-circle">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-        </div>
-        <h3 class="empty-title">No Reservations Found</h3>
-        <p class="empty-desc">
-          No table reservations match your current filter criteria. Try clearing or expanding your date and status filters.
-        </p>
-        <button type="button" class="btn btn-outline btn-sm" (click)="clearFilters()">
-          <span>Clear All Filters</span>
-        </button>
-      </section>
+      <app-empty-state
+        icon="calendar"
+        title="No Reservations Found"
+        description="No table reservations match your current filter criteria. Try clearing or expanding your date and status filters."
+        actionLabel="Clear All Filters"
+        (actionClick)="clearFilters()">
+      </app-empty-state>
     } @else {
       <!-- Bookings Table (Desktop / Tablet) -->
       <div class="table-container">
@@ -270,9 +248,7 @@
 
                 <!-- Status Badge -->
                 <td class="cell-status">
-                  <span class="status-badge" [class]="'status-' + (bk.status || 'pending').toLowerCase()">
-                    {{ bk.status }}
-                  </span>
+                  <app-status-badge [status]="bk.status"></app-status-badge>
                 </td>
 
                 <!-- Actions -->
@@ -319,9 +295,7 @@
           <article class="booking-card">
             <div class="card-header-row">
               <span class="ref-badge">#{{ bk.bookingId }}</span>
-              <span class="status-badge" [class]="'status-' + (bk.status || 'pending').toLowerCase()">
-                {{ bk.status }}
-              </span>
+              <app-status-badge [status]="bk.status"></app-status-badge>
             </div>
 
             <div class="card-rest-row">
@@ -414,10 +388,7 @@
 
       <div class="modal-body">
         @if (isLoadingDetails()) {
-          <div class="modal-loading">
-            <div class="loading-spinner"></div>
-            <span>Fetching updated reservation details...</span>
-          </div>
+          <app-loading-spinner size="sm" message="Fetching updated reservation details..."></app-loading-spinner>
         } @else {
           <!-- Dossier Information Grid -->
           <div class="dossier-grid">
@@ -462,9 +433,7 @@
           <div class="status-summary-bar">
             <div class="status-col">
               <span class="label">Reservation Status:</span>
-              <span class="status-badge" [class]="'status-' + (bk.status || 'pending').toLowerCase()">
-                {{ bk.status }}
-              </span>
+              <app-status-badge [status]="bk.status"></app-status-badge>
             </div>
             <div class="created-col">
               <span class="label">Booked At:</span>
@@ -546,65 +515,19 @@
 
   <!-- MODAL: Confirmation Prompt Dialog -->
   @if (actionConfirmation(); as action) {
-    <div class="modal-backdrop prompt-backdrop" (click)="closeConfirmationDialog()" aria-hidden="true"></div>
-    <div class="prompt-dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-desc">
-      <div class="dialog-header">
-        <div class="dialog-icon-circle" [class.confirm-icon]="action.action === 'confirm'" [class.cancel-icon]="action.action === 'cancel'">
-          @if (action.action === 'confirm') {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          } @else {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="15" y1="9" x2="9" y2="15"></line>
-              <line x1="9" y1="9" x2="15" y2="15"></line>
-            </svg>
-          }
-        </div>
-        <h3 id="dialog-title" class="dialog-title">
-          {{ action.action === 'confirm' ? 'Confirm Reservation' : 'Cancel Reservation' }}
-        </h3>
-      </div>
-
-      <p id="dialog-desc" class="dialog-desc">
-        @if (action.action === 'confirm') {
-          Are you sure you want to <strong>confirm</strong> reservation <strong>#{{ action.booking.bookingId }}</strong> for <strong>{{ action.booking.customerName }}</strong> at <strong>{{ action.booking.restaurantName }}</strong>?
-        } @else {
-          Are you sure you want to <strong>cancel</strong> reservation <strong>#{{ action.booking.bookingId }}</strong> for <strong>{{ action.booking.customerName }}</strong> at <strong>{{ action.booking.restaurantName }}</strong>? This action will notify the guest.
-        }
-      </p>
-
-      @if (actionError(); as errorMsg) {
-        <div class="dialog-error" role="alert">
-          {{ errorMsg }}
-        </div>
-      }
-
-      <div class="dialog-actions">
-        <button 
-          type="button" 
-          class="btn btn-outline btn-md" 
-          [disabled]="isSubmittingAction()"
-          (click)="closeConfirmationDialog()">
-          Go Back
-        </button>
-
-        <button 
-          type="button" 
-          class="btn btn-md" 
-          [class.btn-primary]="action.action === 'confirm'"
-          [class.btn-danger]="action.action === 'cancel'"
-          [disabled]="isSubmittingAction()"
-          (click)="executeAction()">
-          @if (isSubmittingAction()) {
-            <span class="spinner-small" aria-hidden="true"></span>
-            <span>Processing...</span>
-          } @else {
-            <span>{{ action.action === 'confirm' ? 'Yes, Confirm Reservation' : 'Yes, Cancel Reservation' }}</span>
-          }
-        </button>
-      </div>
-    </div>
+    <app-confirm-modal
+      [isOpen]="true"
+      [kicker]="action.action === 'confirm' ? 'CONFIRM RESERVATION' : 'CANCEL RESERVATION'"
+      [title]="action.action === 'confirm' ? 'Confirm Reservation' : 'Cancel Reservation'"
+      [message]="action.action === 'confirm' ? 'Are you sure you want to confirm reservation #' + action.booking.bookingId + ' for ' + action.booking.customerName + ' at ' + action.booking.restaurantName + '?' : 'Are you sure you want to cancel reservation #' + action.booking.bookingId + ' for ' + action.booking.customerName + ' at ' + action.booking.restaurantName + '? This action will notify the guest.'"
+      [confirmLabel]="action.action === 'confirm' ? 'Yes, Confirm Reservation' : 'Yes, Cancel Reservation'"
+      cancelLabel="Go Back"
+      [confirmVariant]="action.action === 'confirm' ? 'primary' : 'danger'"
+      [isProcessing]="isSubmittingAction()"
+      processingLabel="Processing..."
+      [errorMessage]="actionError()"
+      (confirm)="executeAction()"
+      (cancel)="closeConfirmationDialog()">
+    </app-confirm-modal>
   }
 </div>

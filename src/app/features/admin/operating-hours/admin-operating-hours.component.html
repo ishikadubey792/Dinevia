@@ -38,8 +38,10 @@
     </div>
   </section>
 
-  <!-- Restaurant Selector Strip -->
-  @if (restaurants().length > 0) {
+  <!-- Restaurant Selector Strip / Loading -->
+  @if (isLoadingRestaurants()) {
+    <app-loading-spinner message="Loading your establishments..."></app-loading-spinner>
+  } @else if (restaurants().length > 0) {
     <section class="restaurant-selector-card">
       <div class="selector-content">
         <div class="selector-label-group">
@@ -70,32 +72,12 @@
       </div>
     </section>
 
-    <!-- Weekly Schedule Summary Metrics -->
-    <section class="stats-preview-grid">
-      <div class="stat-box">
-        <span class="stat-label">Days Configured</span>
-        <strong class="stat-value">{{ configuredDaysCount() }} / 7 Days</strong>
-      </div>
-      <div class="stat-box">
-        <span class="stat-label">Open for Service</span>
-        <strong class="stat-value stat-open">{{ openDaysCount() }} Days</strong>
-      </div>
-      <div class="stat-box">
-        <span class="stat-label">Closed Days</span>
-        <strong class="stat-value stat-closed">{{ closedDaysCount() }} Days</strong>
-      </div>
-      <div class="stat-box">
-        <span class="stat-label">Active Sanctuary</span>
-        <strong class="stat-value stat-sanctuary">{{ activeRestaurant()?.name || 'Selected' }}</strong>
-      </div>
-    </section>
-
     <!-- Loading State -->
     @if (isLoadingHours()) {
-      <div class="loading-state-card" role="status">
-        <div class="spinner"></div>
-        <p class="loading-text">Loading operating schedule from server...</p>
-      </div>
+      <app-loading-spinner 
+        message="Loading operating schedule from server..."
+        subtitle="Retrieving daily shift configurations...">
+      </app-loading-spinner>
     }
 
     <!-- Error State -->
@@ -121,6 +103,26 @@
 
     <!-- Weekly Schedule Ledger Table -->
     @else {
+      <!-- Weekly Schedule Summary Metrics -->
+      <section class="stats-preview-grid">
+        <div class="stat-box">
+          <span class="stat-label">Days Configured</span>
+          <strong class="stat-value">{{ configuredDaysCount() }} / 7 Days</strong>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Open for Service</span>
+          <strong class="stat-value stat-open">{{ openDaysCount() }} Days</strong>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Closed Days</span>
+          <strong class="stat-value stat-closed">{{ closedDaysCount() }} Days</strong>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Active Sanctuary</span>
+          <strong class="stat-value stat-sanctuary">{{ activeRestaurant()?.name || 'Selected' }}</strong>
+        </div>
+      </section>
+
       <section class="schedule-table-card">
         <div class="schedule-header">
           <div>
@@ -157,10 +159,8 @@
                   <td class="cell-status">
                     @if (!dayModel.isConfigured) {
                       <span class="badge-status badge-unset">Not Configured</span>
-                    } @else if (dayModel.isClosed) {
-                      <span class="badge-status badge-closed">Closed</span>
                     } @else {
-                      <span class="badge-status badge-open">Open</span>
+                      <app-status-badge [status]="dayModel.isClosed ? 'Closed' : 'Open'"></app-status-badge>
                     }
                   </td>
 
@@ -220,22 +220,14 @@
 
   <!-- Owner Has Zero Restaurants Registered -->
   @else if (!isLoadingRestaurants() && restaurants().length === 0) {
-    <div class="empty-state-card no-restaurants-card">
-      <div class="empty-icon-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M3 21h18"></path>
-          <path d="M5 21V7l8-4v18"></path>
-          <path d="M19 21V11l-6-3"></path>
-        </svg>
-      </div>
-      <h3 class="empty-title">No Establishments Found</h3>
-      <p class="empty-desc">
-        You must register and list an establishment on Dinevia before configuring weekly operating hours.
-      </p>
-      <a routerLink="/admin/register" class="btn btn-primary btn-md">
-        <span>Register Restaurant</span>
-      </a>
-    </div>
+    <app-empty-state
+      containerClass="no-restaurants-card"
+      icon="building"
+      title="No Establishments Found"
+      description="You must register and list an establishment on Dinevia before configuring weekly operating hours."
+      actionLabel="Register Restaurant"
+      actionRoute="/admin/register">
+    </app-empty-state>
   }
 
   <!-- MODAL: CONFIGURE / EDIT OPERATING HOURS -->
@@ -357,53 +349,20 @@
 
   <!-- MODAL: DELETE OPERATING HOURS CONFIRMATION -->
   @if (deletingSchedule(); as item) {
-    <div class="modal-backdrop" (click)="closeDeleteModal()" aria-hidden="true"></div>
-    <div class="admin-modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="del-hours-title">
-      <div class="modal-header">
-        <div>
-          <span class="modal-kicker delete-kicker">REMOVE SCHEDULE</span>
-          <h3 id="del-hours-title" class="modal-title">Delete Hours for {{ item.dayOfWeek }}?</h3>
-        </div>
-        <button type="button" class="modal-close" (click)="closeDeleteModal()" aria-label="Cancel deletion">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        @if (deleteError()) {
-          <div class="modal-alert-error" role="alert">
-            {{ deleteError() }}
-          </div>
-        }
-
-        <p class="delete-warning-text">
-          Are you sure you want to remove the operating hours schedule for <strong>{{ item.dayOfWeek }}</strong> ({{ item.displayHours }}) at <strong>{{ activeRestaurant()?.name }}</strong>?
-        </p>
-        <p class="delete-sub-text">
-          Removing this schedule marks {{ item.dayOfWeek }} as unconfigured for online reservations.
-        </p>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline btn-sm" (click)="closeDeleteModal()" [disabled]="isDeleting()">
-          Cancel
-        </button>
-        <button 
-          type="button" 
-          class="btn btn-danger btn-sm" 
-          (click)="confirmDeleteSchedule()" 
-          [disabled]="isDeleting()">
-          @if (isDeleting()) {
-            <span>Deleting Hours...</span>
-          } @else {
-            <span>Delete Hours</span>
-          }
-        </button>
-      </div>
-    </div>
+    <app-confirm-modal
+      [isOpen]="true"
+      kicker="REMOVE SCHEDULE"
+      [title]="'Delete Hours for ' + item.dayOfWeek + '?'"
+      [message]="'Are you sure you want to remove the operating hours schedule for ' + item.dayOfWeek + ' (' + item.displayHours + ') at ' + (activeRestaurant()?.name || 'this establishment') + '?'"
+      subtext="Removing this schedule marks this day as unconfigured for online reservations."
+      confirmLabel="Delete Hours"
+      processingLabel="Deleting Hours..."
+      confirmVariant="danger"
+      [isProcessing]="isDeleting()"
+      [errorMessage]="deleteError()"
+      (confirm)="confirmDeleteSchedule()"
+      (cancel)="closeDeleteModal()">
+    </app-confirm-modal>
   }
 </div>
 

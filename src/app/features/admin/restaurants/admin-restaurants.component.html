@@ -49,17 +49,33 @@
     </div>
 
     <div class="toolbar-stats">
-      <span>Showing <strong>{{ filteredRestaurants().length }}</strong> of {{ adminData.ownerRestaurants().length }} establishments</span>
+      @if (isLoading()) {
+        <span>Loading establishments...</span>
+      } @else {
+        <span>Showing <strong>{{ filteredRestaurants().length }}</strong> of {{ adminData.ownerRestaurants().length }} establishments</span>
+      }
     </div>
   </section>
 
-  <!-- Restaurants Grid -->
-  @if (filteredRestaurants().length > 0) {
+  <!-- Restaurants Grid / Loading / Empty -->
+  @if (isLoading()) {
+    <app-loading-spinner 
+      message="Loading your restaurant sanctuaries..." 
+      subtitle="Retrieving live portfolio from server...">
+    </app-loading-spinner>
+  } @else if (filteredRestaurants().length > 0) {
     <div class="restaurants-grid">
       @for (rest of filteredRestaurants(); track rest.id) {
         <article class="restaurant-card" appScrollReveal>
-          <div class="card-cover-stage">
-            <img [src]="rest.coverImageUrl" [alt]="rest.name" class="card-cover-img" loading="lazy" />
+          <div class="card-cover-stage restaurant-fallback">
+            <img 
+              [src]="rest.coverImageUrl || ''" 
+              [alt]="rest.name" 
+              class="card-cover-img" 
+              loading="lazy" 
+              (error)="$any($event.target).classList.add('img-fallback-hidden')"
+              [class.img-fallback-hidden]="!rest.coverImageUrl"
+            />
             <span class="status-badge" [class.active]="rest.status === 'active'">
               {{ rest.status === 'active' ? 'Active' : 'Draft' }}
             </span>
@@ -135,27 +151,27 @@
       }
     </div>
   } @else {
-    <div class="empty-state">
-      <div class="empty-icon-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
-          <path d="M6 2v20"></path>
-          <path d="M3 6h6"></path>
-          <path d="M3 10h6"></path>
-        </svg>
-      </div>
-      <h3 class="empty-title">No restaurants found</h3>
-      <p class="empty-desc">No establishments match your search criteria. Try adjusting your query or add a new restaurant.</p>
-      <button type="button" class="btn btn-primary btn-sm" (click)="searchQuery.set('')">Clear Filters</button>
-    </div>
+    <app-empty-state
+      icon="building"
+      title="No restaurants found"
+      description="No establishments match your search criteria. Try adjusting your query or add a new restaurant."
+      actionLabel="Clear Filters"
+      (actionClick)="searchQuery.set('')">
+    </app-empty-state>
   }
 
   <!-- MODAL 1: VIEW DETAILS MODAL -->
   @if (selectedRestaurant(); as rest) {
     <div class="modal-backdrop" (click)="closeDetails()" aria-hidden="true"></div>
     <div class="admin-modal details-modal" role="dialog" aria-modal="true" aria-labelledby="details-title">
-      <div class="modal-cover-header">
-        <img [src]="rest.coverImageUrl" [alt]="rest.name" class="modal-cover-img" />
+      <div class="modal-cover-header restaurant-fallback">
+        <img 
+          [src]="rest.coverImageUrl || ''" 
+          [alt]="rest.name" 
+          class="modal-cover-img" 
+          (error)="$any($event.target).classList.add('img-fallback-hidden')"
+          [class.img-fallback-hidden]="!rest.coverImageUrl"
+        />
         <button type="button" class="modal-close-float" (click)="closeDetails()" aria-label="Close details">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -218,13 +234,13 @@
           <div class="gallery-previews">
             @if (rest.galleryImages && rest.galleryImages.length > 0) {
               @for (img of rest.galleryImages; track img) {
-                <div class="gallery-thumb">
-                  <img [src]="img" [alt]="rest.name + ' gallery'" loading="lazy" />
+                <div class="gallery-thumb restaurant-fallback">
+                  <img [src]="img || ''" [alt]="rest.name + ' gallery'" loading="lazy" (error)="$any($event.target).classList.add('img-fallback-hidden')" [class.img-fallback-hidden]="!img" />
                 </div>
               }
             } @else {
-              <div class="gallery-thumb">
-                <img [src]="rest.coverImageUrl" [alt]="rest.name" />
+              <div class="gallery-thumb restaurant-fallback">
+                <img [src]="rest.coverImageUrl || ''" [alt]="rest.name" (error)="$any($event.target).classList.add('img-fallback-hidden')" [class.img-fallback-hidden]="!rest.coverImageUrl" />
               </div>
             }
           </div>
@@ -336,8 +352,14 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline btn-sm" (click)="closeEdit()">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+          <button type="button" class="btn btn-outline btn-sm" (click)="closeEdit()" [disabled]="isSaving()">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="isSaving()">
+            @if (isSaving()) {
+              <span>Saving Changes...</span>
+            } @else {
+              <span>Save Changes</span>
+            }
+          </button>
         </div>
       </form>
     </div>
@@ -345,37 +367,17 @@
 
   <!-- MODAL 3: DELETE CONFIRMATION MODAL -->
   @if (deletingRestaurant(); as rest) {
-    <div class="modal-backdrop" (click)="cancelDelete()" aria-hidden="true"></div>
-    <div class="admin-modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="del-title">
-      <div class="modal-header">
-        <div>
-          <span class="modal-kicker delete-kicker">REMOVE ESTABLISHMENT</span>
-          <h3 id="del-title" class="modal-title">Delete {{ rest.name }}?</h3>
-        </div>
-        <button type="button" class="modal-close" (click)="cancelDelete()" aria-label="Cancel deletion">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <p class="delete-warning-text">
-          Are you sure you want to remove <strong>{{ rest.name }}</strong> ({{ rest.city }}) from your restaurant portfolio?
-        </p>
-        <p class="delete-sub-text">
-          This action removes this establishment from your management portal. Existing customer reservations are archived and protected.
-        </p>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline btn-sm" (click)="cancelDelete()">Cancel</button>
-        <button type="button" class="btn btn-danger btn-sm" (click)="executeDelete()">
-          Delete Restaurant
-        </button>
-      </div>
-    </div>
+    <app-confirm-modal
+      [isOpen]="true"
+      kicker="REMOVE ESTABLISHMENT"
+      [title]="'Delete ' + rest.name + '?'"
+      [message]="'Are you sure you want to remove ' + rest.name + ' (' + rest.city + ') from your restaurant portfolio?'"
+      subtext="This action removes this establishment from your management portal. Existing customer reservations are archived and protected."
+      confirmLabel="Delete Restaurant"
+      confirmVariant="danger"
+      (confirm)="executeDelete()"
+      (cancel)="cancelDelete()">
+    </app-confirm-modal>
   }
 </div>
 

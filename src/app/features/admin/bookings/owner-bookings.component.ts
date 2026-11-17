@@ -2,6 +2,11 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
+import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+import { ErrorAlertComponent } from '../../../shared/components/error-alert/error-alert.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { OwnerBookingService } from '../../../core/services/owner-booking.service';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import {
@@ -13,7 +18,16 @@ import { OwnerRestaurant } from '../../../core/models/admin.model';
 @Component({
   selector: 'app-owner-bookings',
   standalone: true,
-  imports: [CommonModule, FormsModule, ScrollRevealDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ScrollRevealDirective,
+    LoadingSpinnerComponent,
+    ErrorAlertComponent,
+    EmptyStateComponent,
+    StatusBadgeComponent,
+    ConfirmModalComponent
+  ],
   templateUrl: './owner-bookings.component.html',
   styleUrl: './owner-bookings.component.scss'
 })
@@ -23,7 +37,7 @@ export class OwnerBookingsComponent implements OnInit {
 
   // Bookings list and loading states
   readonly bookings = signal<OwnerRestaurantBooking[]>([]);
-  readonly isLoading = signal<boolean>(false);
+  readonly isLoading = signal<boolean>(true);
   readonly errorMessage = signal<string | null>(null);
   readonly successToast = signal<string | null>(null);
 

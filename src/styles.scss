@@ -1320,4 +1320,64 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   }
 }
 
+/* ==========================================================================
+   Centralized Fallback Image Architecture
+   CSS owns the fallback asset reference, background sizing, and styling.
+   ========================================================================== */
+$restaurant-fallback-image-url: '/assets/images/restaurant-fallback.svg';
+
+:root {
+  --restaurant-fallback-image: url('#{$restaurant-fallback-image-url}');
+}
+
+/* Reusable CSS fallback classes for containers and image elements */
+.restaurant-fallback,
+.restaurant-img-fallback,
+.img-fallback {
+  background-image: var(--restaurant-fallback-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--color-forest-dark, #172F24);
+
+  /* When used on a container wrapping an <img> */
+  img.img-fallback-hidden,
+  img.img-failed,
+  img.is-fallback,
+  img[src=''],
+  img:not([src]) {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none;
+  }
+}
+
+/* Direct image element styling when fallback class is applied directly on <img> */
+img.restaurant-fallback,
+img.restaurant-img-fallback,
+img.img-fallback {
+  background-image: var(--restaurant-fallback-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--color-forest-dark, #172F24);
+  object-fit: cover;
+
+  &.img-fallback-hidden,
+  &.img-failed,
+  &.is-fallback {
+    color: transparent !important;
+    object-position: -99999px -99999px;
+  }
+}
+
+.img-fallback-contain {
+  background-size: contain;
+}
+
+.img-fallback-cover {
+  background-size: cover;
+}
+
+
 

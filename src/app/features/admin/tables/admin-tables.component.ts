@@ -3,6 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
+import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+import { ErrorAlertComponent } from '../../../shared/components/error-alert/error-alert.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { RestaurantTableService } from '../../../core/services/restaurant-table.service';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import {
@@ -16,7 +21,17 @@ import { OwnerRestaurant } from '../../../core/models/admin.model';
 @Component({
   selector: 'app-admin-tables',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ScrollRevealDirective],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ScrollRevealDirective,
+    LoadingSpinnerComponent,
+    ErrorAlertComponent,
+    EmptyStateComponent,
+    StatusBadgeComponent,
+    ConfirmModalComponent
+  ],
   templateUrl: './admin-tables.component.html',
   styleUrl: './admin-tables.component.scss'
 })
@@ -30,12 +45,12 @@ export class AdminTablesComponent implements OnInit {
   // Owner restaurants list and selected restaurant
   readonly restaurants = signal<OwnerRestaurant[]>([]);
   readonly selectedRestaurantId = signal<number | null>(null);
-  readonly isLoadingRestaurants = signal<boolean>(false);
+  readonly isLoadingRestaurants = signal<boolean>(true);
   readonly restaurantsError = signal<string | null>(null);
 
   // Tables list and loading state
   readonly tables = signal<RestaurantTable[]>([]);
-  readonly isLoadingTables = signal<boolean>(false);
+  readonly isLoadingTables = signal<boolean>(true);
   readonly tablesError = signal<string | null>(null);
 
   // Feedback notifications
@@ -136,10 +151,12 @@ export class AdminTablesComponent implements OnInit {
           this.loadTables(targetId);
         } else {
           this.tables.set([]);
+          this.isLoadingTables.set(false);
         }
       },
       error: (err) => {
         this.isLoadingRestaurants.set(false);
+        this.isLoadingTables.set(false);
         const msg = err?.error?.message || err?.statusText || 'Failed to load your restaurants.';
         this.restaurantsError.set(msg);
       }

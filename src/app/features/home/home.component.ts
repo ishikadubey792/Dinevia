@@ -1,10 +1,13 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
+import { ErrorAlertComponent } from '../../shared/components/error-alert/error-alert.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { SearchPanelComponent } from './components/search-panel/search-panel.component';
 import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
 import { RestaurantService } from '../../core/services/restaurant.service';
@@ -29,6 +32,9 @@ import {
     NavbarComponent,
     FooterComponent,
     RestaurantCardComponent,
+    LoadingSpinnerComponent,
+    ErrorAlertComponent,
+    EmptyStateComponent,
     SearchPanelComponent,
     ScrollRevealDirective
   ],
@@ -42,7 +48,9 @@ export class HomeComponent implements OnInit {
   private readonly router = inject(Router);
 
   // Shared live cuisines and restaurants API state (deduplicated at service layer)
-  readonly isLoadingCuisines = this.cuisineService.isLoadingCuisines;
+  readonly isLoadingCuisines = computed(() =>
+    this.cuisineService.isLoadingCuisines() || (!this.cuisineService.isCuisinesLoaded() && !this.cuisineService.cuisinesLoadError())
+  );
   readonly cuisinesLoadError = this.cuisineService.cuisinesLoadError;
   readonly cuisines = this.restaurantService.cuisines;
 
@@ -50,7 +58,9 @@ export class HomeComponent implements OnInit {
   readonly restaurants = this.restaurantService.filteredRestaurants;
   readonly currentCategory = this.restaurantService.selectedCategory;
   readonly currentCuisine = this.restaurantService.selectedCuisine;
-  readonly isLoading = this.restaurantService.isLoadingRestaurants;
+  readonly isLoading = computed(() =>
+    this.restaurantService.isLoadingRestaurants() || (!this.restaurantService.isApiLoaded() && !this.restaurantService.restaurantLoadError())
+  );
   readonly loadError = this.restaurantService.restaurantLoadError;
 
   // Filter Categories

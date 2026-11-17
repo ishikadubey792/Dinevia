@@ -14,7 +14,7 @@ import { AdminOperatingHoursComponent } from './operating-hours/admin-operating-
 import { AdminDataService } from '../../core/services/admin-data.service';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
-import { ADMIN_ROUTES } from './admin.routes';
+import { ADMIN_ROUTES } from '../../app.routes';
 
 describe('Dinevia Restaurant Owner Portal', () => {
   let router: Router;

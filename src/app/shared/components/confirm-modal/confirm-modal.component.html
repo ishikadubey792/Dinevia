@@ -1,0 +1,72 @@
+@if (isOpen) {
+  <div class="modal-backdrop prompt-backdrop" (click)="onCancel()" aria-hidden="true"></div>
+  <div 
+    class="admin-modal delete-modal prompt-dialog" 
+    role="alertdialog" 
+    aria-modal="true" 
+    [attr.aria-labelledby]="'confirm-modal-title'">
+    
+    <div class="modal-header">
+      <div>
+        @if (kicker) {
+          <span class="modal-kicker delete-kicker">{{ kicker }}</span>
+        }
+        <h3 id="confirm-modal-title" class="modal-title">{{ title }}</h3>
+      </div>
+      <button 
+        type="button" 
+        class="modal-close" 
+        (click)="onCancel()" 
+        [disabled]="isProcessing"
+        aria-label="Cancel dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      @if (errorMessage) {
+        <div class="modal-alert-error" role="alert">
+          {{ errorMessage }}
+        </div>
+      }
+
+      <ng-content select="[body]"></ng-content>
+
+      @if (message) {
+        <p class="delete-warning-text">{{ message }}</p>
+      }
+
+      @if (subtext) {
+        <p class="delete-sub-text">{{ subtext }}</p>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button 
+        type="button" 
+        class="btn btn-outline btn-sm" 
+        (click)="onCancel()" 
+        [disabled]="isProcessing">
+        {{ cancelLabel }}
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-sm"
+        [class.btn-danger]="confirmVariant === 'danger'"
+        [class.btn-primary]="confirmVariant === 'primary'"
+        [class.btn-terracotta]="confirmVariant === 'terracotta'"
+        (click)="onConfirm()" 
+        [disabled]="isProcessing">
+        @if (isProcessing) {
+          <span class="spinner-small" aria-hidden="true"></span>
+          <span>{{ processingLabel }}</span>
+        } @else {
+          <span>{{ confirmLabel }}</span>
+        }
+      </button>
+    </div>
+  </div>
+}

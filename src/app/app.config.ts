@@ -4,12 +4,13 @@ import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { ownerAuthInterceptor } from './core/interceptors/owner-auth.interceptor';
+import { devDelayInterceptor } from './core/interceptors/dev-delay.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideClientHydration(),
-    provideHttpClient(withFetch(), withInterceptors([ownerAuthInterceptor]))
+    provideHttpClient(withFetch(), withInterceptors([ownerAuthInterceptor, devDelayInterceptor]))
   ]
 };

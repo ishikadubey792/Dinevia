@@ -1,20 +1,43 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
+import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { OwnerRestaurant } from '../../../core/models/admin.model';
 
 @Component({
   selector: 'app-admin-restaurants',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ScrollRevealDirective],
+  imports: [
+    CommonModule,
+    RouterLink,
+    FormsModule,
+    ScrollRevealDirective,
+    LoadingSpinnerComponent,
+    EmptyStateComponent,
+    ConfirmModalComponent
+  ],
   templateUrl: './admin-restaurants.component.html',
   styleUrl: './admin-restaurants.component.scss'
 })
-export class AdminRestaurantsComponent {
+export class AdminRestaurantsComponent implements OnInit {
   readonly adminData = inject(AdminDataService);
+
+  readonly isLoading = computed(() =>
+    this.adminData.isLoadingRestaurants() || (!this.adminData.isLoaded() && !this.adminData.restaurantLoadError())
+  );
+
+  ngOnInit(): void {
+    if (!this.adminData.isLoaded()) {
+      this.adminData.loadOwnerRestaurants().subscribe({
+        error: () => {}
+      });
+    }
+  }
 
   // Search filter
   readonly searchQuery = signal<string>('');
@@ -23,6 +46,7 @@ export class AdminRestaurantsComponent {
   readonly selectedRestaurant = signal<OwnerRestaurant | null>(null);
   readonly editingRestaurant = signal<OwnerRestaurant | null>(null);
   readonly deletingRestaurant = signal<OwnerRestaurant | null>(null);
+  readonly isSaving = signal<boolean>(false);
   readonly toastMessage = signal<string | null>(null);
 
   // Available cuisine tags for editor
@@ -119,8 +143,9 @@ export class AdminRestaurantsComponent {
 
   saveEdit(): void {
     const current = this.editingRestaurant();
-    if (!current) return;
+    if (!current || this.isSaving()) return;
 
+    this.isSaving.set(true);
     this.adminData.updateRestaurant(current.id, {
       name: this.editName.trim(),
       address: this.editAddress.trim(),
@@ -132,6 +157,7 @@ export class AdminRestaurantsComponent {
       coverImageUrl: this.editCoverImagePreview || this.editCoverImageUrl
     });
 
+    this.isSaving.set(false);
     this.showToast(`Updated "${this.editName}" successfully.`);
     this.closeEdit();
 
