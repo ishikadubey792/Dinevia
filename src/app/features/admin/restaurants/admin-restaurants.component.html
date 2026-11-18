@@ -23,12 +23,12 @@
     </div>
 
     <div class="header-actions">
-      <a routerLink="/admin/register" class="btn btn-primary btn-md add-btn">
+      <button type="button" class="btn btn-primary btn-md add-btn" (click)="openAdd()">
         <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
           <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
         </svg>
         <span>Add Restaurant</span>
-      </a>
+      </button>
     </div>
   </section>
 
@@ -275,37 +275,43 @@
 
       <form (ngSubmit)="saveEdit()" class="edit-form">
         <div class="modal-body form-body">
+          @if (editError()) {
+            <div class="modal-alert-error" role="alert">
+              {{ editError() }}
+            </div>
+          }
+
           <div class="form-group">
             <label class="form-label" for="edit-name">Restaurant Name *</label>
-            <input type="text" id="edit-name" [(ngModel)]="editName" name="editName" required class="form-input" />
+            <input type="text" id="edit-name" [(ngModel)]="editName" name="editName" required class="form-input" [disabled]="isSaving()" />
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="edit-address">Street Address *</label>
-              <input type="text" id="edit-address" [(ngModel)]="editAddress" name="editAddress" required class="form-input" />
+              <input type="text" id="edit-address" [(ngModel)]="editAddress" name="editAddress" required class="form-input" [disabled]="isSaving()" />
             </div>
 
             <div class="form-group">
               <label class="form-label" for="edit-city">City *</label>
-              <input type="text" id="edit-city" [(ngModel)]="editCity" name="editCity" required class="form-input" />
+              <input type="text" id="edit-city" [(ngModel)]="editCity" name="editCity" required class="form-input" [disabled]="isSaving()" />
             </div>
           </div>
 
           <div class="form-group">
             <label class="form-label" for="edit-desc">Description *</label>
-            <textarea id="edit-desc" [(ngModel)]="editDescription" name="editDescription" required rows="3" class="form-input textarea-input"></textarea>
+            <textarea id="edit-desc" [(ngModel)]="editDescription" name="editDescription" required rows="3" class="form-input textarea-input" [disabled]="isSaving()"></textarea>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="edit-phone">Contact Phone *</label>
-              <input type="tel" id="edit-phone" [(ngModel)]="editPhone" name="editPhone" required class="form-input" />
+              <input type="tel" id="edit-phone" [(ngModel)]="editPhone" name="editPhone" required class="form-input" [disabled]="isSaving()" />
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="edit-email">Restaurant Email *</label>
-              <input type="email" id="edit-email" [(ngModel)]="editEmail" name="editEmail" required class="form-input" />
+              <label class="form-label" for="edit-email">Restaurant Email</label>
+              <input type="email" id="edit-email" [(ngModel)]="editEmail" name="editEmail" class="form-input" [disabled]="isSaving()" />
             </div>
           </div>
 
@@ -332,7 +338,7 @@
 
           <!-- Cover Image Upload & Preview -->
           <div class="form-group">
-            <label class="form-label" for="edit-cover-file">Cover Image Upload (1 File)</label>
+            <label class="form-label" for="edit-cover-file">Cover Image</label>
             <div class="cover-upload-box">
               @if (editCoverImagePreview) {
                 <div class="preview-stage">
@@ -340,13 +346,15 @@
                 </div>
               }
               <input 
-                type="file" 
-                id="edit-cover-file" 
-                (change)="onEditCoverFileChange($event)" 
-                accept="image/*" 
-                class="file-input" 
+                type="text" 
+                id="edit-cover-url" 
+                [(ngModel)]="editCoverImageUrl" 
+                name="editCoverImageUrl" 
+                placeholder="https://images.unsplash.com/photo-..." 
+                class="form-input" 
+                [disabled]="isSaving()" 
               />
-              <span class="file-hint">Select a new JPG/PNG file or keep existing photo.</span>
+              <span class="file-hint">Provide an image URL or keep existing cover. Full multi-image upload will be available in Media Management.</span>
             </div>
           </div>
         </div>
@@ -372,12 +380,103 @@
       kicker="REMOVE ESTABLISHMENT"
       [title]="'Delete ' + rest.name + '?'"
       [message]="'Are you sure you want to remove ' + rest.name + ' (' + rest.city + ') from your restaurant portfolio?'"
-      subtext="This action removes this establishment from your management portal. Existing customer reservations are archived and protected."
+      subtext="This action permanently removes this establishment and its tables from your management portal."
       confirmLabel="Delete Restaurant"
       confirmVariant="danger"
+      [isProcessing]="isDeleting()"
+      processingLabel="Deleting..."
+      [errorMessage]="deleteError()"
       (confirm)="executeDelete()"
       (cancel)="cancelDelete()">
     </app-confirm-modal>
+  }
+
+  <!-- MODAL 4: ADD ESTABLISHMENT MODAL -->
+  @if (isAddOpen()) {
+    <div class="modal-backdrop" (click)="closeAdd()" aria-hidden="true"></div>
+    <div class="admin-modal edit-modal" role="dialog" aria-modal="true" aria-labelledby="add-title">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">NEW ESTABLISHMENT</span>
+          <h3 id="add-title" class="modal-title">Add Restaurant Sanctuary</h3>
+        </div>
+        <button type="button" class="modal-close" (click)="closeAdd()" aria-label="Close add form" [disabled]="isAdding()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form (ngSubmit)="saveAdd()" class="edit-form">
+        <div class="modal-body form-body">
+          @if (addError()) {
+            <div class="modal-alert-error" role="alert">
+              {{ addError() }}
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label" for="add-name">Restaurant Name *</label>
+            <input type="text" id="add-name" [(ngModel)]="addName" name="addName" required placeholder="e.g. L'Ambroisie" class="form-input" [disabled]="isAdding()" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="add-address">Street Address *</label>
+              <input type="text" id="add-address" [(ngModel)]="addAddress" name="addAddress" required placeholder="e.g. 9 Place des Vosges" class="form-input" [disabled]="isAdding()" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="add-city">City *</label>
+              <input type="text" id="add-city" [(ngModel)]="addCity" name="addCity" required placeholder="e.g. Paris" class="form-input" [disabled]="isAdding()" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="add-desc">Description *</label>
+            <textarea id="add-desc" [(ngModel)]="addDescription" name="addDescription" required rows="3" placeholder="Describe the ambiance, philosophy, and culinary artistry..." class="form-input textarea-input" [disabled]="isAdding()"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="add-phone">Contact Phone *</label>
+              <input type="tel" id="add-phone" [(ngModel)]="addPhone" name="addPhone" required placeholder="e.g. +33 1 42 78 51 45" class="form-input" [disabled]="isAdding()" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="add-email">Restaurant Email</label>
+              <input type="email" id="add-email" [(ngModel)]="addEmail" name="addEmail" placeholder="e.g. reservations@lambroisie.fr" class="form-input" [disabled]="isAdding()" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="add-cover-url">Cover Image URL (Optional)</label>
+            <input 
+              type="url" 
+              id="add-cover-url" 
+              [(ngModel)]="addCoverImageUrl" 
+              name="addCoverImageUrl" 
+              placeholder="https://images.unsplash.com/photo-..." 
+              class="form-input" 
+              [disabled]="isAdding()" 
+            />
+            <span class="file-hint">Leave blank to use the default curated fallback image. Multi-file gallery management will be available in Media Management.</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline btn-sm" (click)="closeAdd()" [disabled]="isAdding()">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="isAdding()">
+            @if (isAdding()) {
+              <span>Creating Establishment...</span>
+            } @else {
+              <span>Add Establishment</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
   }
 </div>
 

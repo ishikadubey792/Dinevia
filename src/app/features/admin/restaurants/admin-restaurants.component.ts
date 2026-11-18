@@ -1,20 +1,18 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { AdminDataService } from '../../../core/services/admin-data.service';
-import { OwnerRestaurant } from '../../../core/models/admin.model';
+import { OwnerRestaurant, RestaurantUpsertPayload } from '../../../core/models/admin.model';
 
 @Component({
   selector: 'app-admin-restaurants',
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     FormsModule,
     ScrollRevealDirective,
     LoadingSpinnerComponent,
@@ -47,7 +45,22 @@ export class AdminRestaurantsComponent implements OnInit {
   readonly editingRestaurant = signal<OwnerRestaurant | null>(null);
   readonly deletingRestaurant = signal<OwnerRestaurant | null>(null);
   readonly isSaving = signal<boolean>(false);
+  readonly editError = signal<string | null>(null);
+  readonly isDeleting = signal<boolean>(false);
+  readonly deleteError = signal<string | null>(null);
   readonly toastMessage = signal<string | null>(null);
+
+  // Add Establishment state
+  readonly isAddOpen = signal<boolean>(false);
+  readonly isAdding = signal<boolean>(false);
+  readonly addError = signal<string | null>(null);
+  addName = '';
+  addAddress = '';
+  addCity = '';
+  addDescription = '';
+  addPhone = '';
+  addEmail = '';
+  addCoverImageUrl = '';
 
   // Available cuisine tags for editor
   readonly availableCuisines: string[] = [
@@ -100,6 +113,7 @@ export class AdminRestaurantsComponent implements OnInit {
 
   // 2. Edit Modal
   openEdit(restaurant: OwnerRestaurant): void {
+    this.editError.set(null);
     this.editingRestaurant.set(restaurant);
     this.editName = restaurant.name;
     this.editAddress = restaurant.address;
@@ -114,7 +128,10 @@ export class AdminRestaurantsComponent implements OnInit {
   }
 
   closeEdit(): void {
-    this.editingRestaurant.set(null);
+    if (!this.isSaving()) {
+      this.editingRestaurant.set(null);
+      this.editError.set(null);
+    }
   }
 
   toggleEditCuisine(cuisine: string): void {
@@ -145,49 +162,156 @@ export class AdminRestaurantsComponent implements OnInit {
     const current = this.editingRestaurant();
     if (!current || this.isSaving()) return;
 
+    if (!this.editName.trim() || !this.editAddress.trim() || !this.editPhone.trim()) {
+      this.editError.set('Restaurant name, street address, and contact phone are required.');
+      return;
+    }
+
+    if (this.editEmail.trim() && !this.editEmail.includes('@')) {
+      this.editError.set('Please provide a valid email address.');
+      return;
+    }
+
     this.isSaving.set(true);
-    this.adminData.updateRestaurant(current.id, {
+    this.editError.set(null);
+
+    const payload: RestaurantUpsertPayload = {
       name: this.editName.trim(),
       address: this.editAddress.trim(),
       city: this.editCity.trim(),
       description: this.editDescription.trim(),
       phone: this.editPhone.trim(),
       email: this.editEmail.trim(),
-      cuisines: [...this.editCuisines],
-      coverImageUrl: this.editCoverImagePreview || this.editCoverImageUrl
+      coverImagePath: this.editCoverImageUrl.trim() || null,
+      isActive: current.status !== 'draft'
+    };
+
+    this.adminData.updateMyRestaurant(current.id, payload).subscribe({
+      next: () => {
+        this.isSaving.set(false);
+        this.showToast(`Updated "${this.editName}" successfully.`);
+        this.closeEdit();
+
+        // If details modal was open for this restaurant, update it as well
+        if (this.selectedRestaurant()?.id === current.id) {
+          const updated = this.adminData.ownerRestaurants().find(r => r.id === current.id);
+          if (updated) this.selectedRestaurant.set(updated);
+        }
+      },
+      error: (err) => {
+        this.isSaving.set(false);
+        const errorMsg =
+          err?.error?.message ||
+          err?.message ||
+          'Failed to update restaurant details. Please verify your entries.';
+        this.editError.set(errorMsg);
+      }
     });
-
-    this.isSaving.set(false);
-    this.showToast(`Updated "${this.editName}" successfully.`);
-    this.closeEdit();
-
-    // If details modal was open for this restaurant, update it as well
-    if (this.selectedRestaurant()?.id === current.id) {
-      const updated = this.adminData.ownerRestaurants().find(r => r.id === current.id);
-      if (updated) this.selectedRestaurant.set(updated);
-    }
   }
 
   // 3. Delete Confirmation Modal
   confirmDelete(restaurant: OwnerRestaurant): void {
+    this.deleteError.set(null);
     this.deletingRestaurant.set(restaurant);
   }
 
   cancelDelete(): void {
-    this.deletingRestaurant.set(null);
+    if (!this.isDeleting()) {
+      this.deletingRestaurant.set(null);
+      this.deleteError.set(null);
+    }
   }
 
   executeDelete(): void {
     const current = this.deletingRestaurant();
-    if (!current) return;
+    if (!current || this.isDeleting()) return;
 
-    this.adminData.deleteRestaurant(current.id);
-    this.showToast(`Removed "${current.name}" from your portfolio.`);
-    this.cancelDelete();
+    this.isDeleting.set(true);
+    this.deleteError.set(null);
 
-    if (this.selectedRestaurant()?.id === current.id) {
-      this.closeDetails();
+    this.adminData.deleteMyRestaurant(current.id).subscribe({
+      next: () => {
+        this.isDeleting.set(false);
+        this.showToast(`Removed "${current.name}" from your portfolio.`);
+        this.cancelDelete();
+
+        if (this.selectedRestaurant()?.id === current.id) {
+          this.closeDetails();
+        }
+      },
+      error: (err) => {
+        this.isDeleting.set(false);
+        const errorMsg =
+          err?.error?.message ||
+          err?.message ||
+          'Failed to delete establishment. It may have active bookings or associated records.';
+        this.deleteError.set(errorMsg);
+      }
+    });
+  }
+
+  // 4. Add Establishment Modal
+  openAdd(): void {
+    this.addName = '';
+    this.addAddress = '';
+    this.addCity = '';
+    this.addDescription = '';
+    this.addPhone = '';
+    this.addEmail = '';
+    this.addCoverImageUrl = '';
+    this.addError.set(null);
+    this.isAddOpen.set(true);
+  }
+
+  closeAdd(): void {
+    if (!this.isAdding()) {
+      this.isAddOpen.set(false);
+      this.addError.set(null);
     }
+  }
+
+  saveAdd(): void {
+    if (this.isAdding()) return;
+
+    if (!this.addName.trim() || !this.addAddress.trim() || !this.addPhone.trim()) {
+      this.addError.set('Restaurant name, street address, and contact phone are required.');
+      return;
+    }
+
+    if (this.addEmail.trim() && !this.addEmail.includes('@')) {
+      this.addError.set('Please provide a valid email address.');
+      return;
+    }
+
+    this.isAdding.set(true);
+    this.addError.set(null);
+
+    const payload: RestaurantUpsertPayload = {
+      name: this.addName.trim(),
+      address: this.addAddress.trim(),
+      city: this.addCity.trim(),
+      description: this.addDescription.trim(),
+      phone: this.addPhone.trim(),
+      email: this.addEmail.trim(),
+      coverImagePath: this.addCoverImageUrl.trim() || null,
+      isActive: true
+    };
+
+    this.adminData.createMyRestaurant(payload).subscribe({
+      next: (created) => {
+        this.isAdding.set(false);
+        this.showToast(`Added "${created.name}" to your portfolio.`);
+        this.closeAdd();
+      },
+      error: (err) => {
+        this.isAdding.set(false);
+        const errorMsg =
+          err?.error?.message ||
+          err?.message ||
+          'Failed to add establishment. Please verify your entries.';
+        this.addError.set(errorMsg);
+      }
+    });
   }
 
   showToast(message: string): void {

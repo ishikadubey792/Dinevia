@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError, throwError } from 'rxjs';
+import { Observable, map, catchError, throwError, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/cuisine.model';
 import { ApiRestaurantDto, resolveCoverImageUrl } from '../models/restaurant.model';
@@ -9,6 +9,7 @@ import {
   AdminBookingItem,
   AdminRestaurantItem,
   OwnerRestaurant,
+  RestaurantUpsertPayload,
   AdminNotification,
   BookingTrendPoint,
   BookingStatusSummary
@@ -211,6 +212,88 @@ export class AdminDataService {
       status: dto.isActive === false ? 'draft' : 'active',
       createdAt: new Date().toISOString().split('T')[0]
     };
+  }
+
+  /**
+   * Creates a new restaurant establishment associated with the authenticated owner.
+   * POST /api/restaurants/my-restaurants
+   * Authenticated via JWT ownerAuthInterceptor.
+   */
+  createMyRestaurant(payload: RestaurantUpsertPayload): Observable<OwnerRestaurant> {
+    return this.http
+      .post<ApiResponse<ApiRestaurantDto>>(`${environment.apiUrl}/restaurants/my-restaurants`, payload)
+      .pipe(
+        map(response => {
+          const dto = response.data;
+          const newRestaurant = this.mapApiToOwnerRestaurant(dto);
+          this.ownerRestaurantsSignal.update(list => [newRestaurant, ...list]);
+          return newRestaurant;
+        }),
+        catchError(err => {
+          return throwError(() => err);
+        })
+      );
+  }
+
+  /**
+   * Updates an existing restaurant owned by the authenticated owner.
+   * PUT /api/restaurants/my-restaurants/{id}
+   * Authenticated via JWT ownerAuthInterceptor.
+   */
+  updateMyRestaurant(id: string | number, payload: RestaurantUpsertPayload): Observable<void> {
+    const cleanId = String(id).trim();
+    return this.http
+      .put<ApiResponse<object | null>>(`${environment.apiUrl}/restaurants/my-restaurants/${cleanId}`, payload)
+      .pipe(
+        tap(() => {
+          this.ownerRestaurantsSignal.update(list =>
+            list.map(r => {
+              if (String(r.id) === cleanId) {
+                return {
+                  ...r,
+                  name: payload.name,
+                  address: payload.address,
+                  city: payload.city || '',
+                  description: payload.description || '',
+                  phone: payload.phone,
+                  email: payload.email || '',
+                  coverImageUrl: payload.coverImagePath
+                    ? resolveCoverImageUrl(payload.coverImagePath)
+                    : r.coverImageUrl,
+                  status: payload.isActive === false ? 'draft' : 'active'
+                };
+              }
+              return r;
+            })
+          );
+        }),
+        map(() => void 0),
+        catchError(err => {
+          return throwError(() => err);
+        })
+      );
+  }
+
+  /**
+   * Permanently deletes a restaurant owned by the authenticated owner.
+   * DELETE /api/restaurants/my-restaurants/{id}
+   * Authenticated via JWT ownerAuthInterceptor.
+   */
+  deleteMyRestaurant(id: string | number): Observable<{ id: number }> {
+    const cleanId = String(id).trim();
+    return this.http
+      .delete<ApiResponse<{ id: number }>>(`${environment.apiUrl}/restaurants/my-restaurants/${cleanId}`)
+      .pipe(
+        tap(() => {
+          this.ownerRestaurantsSignal.update(list =>
+            list.filter(r => String(r.id) !== cleanId)
+          );
+        }),
+        map(response => response?.data ?? { id: Number(cleanId) }),
+        catchError(err => {
+          return throwError(() => err);
+        })
+      );
   }
 
   addRestaurant(data: Omit<OwnerRestaurant, 'id' | 'createdAt'>): OwnerRestaurant {

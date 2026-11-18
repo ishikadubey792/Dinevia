@@ -59,6 +59,17 @@ export interface OwnerRestaurant {
   createdAt: string;
 }
 
+export interface RestaurantUpsertPayload {
+  name: string;
+  address: string;
+  city?: string;
+  description?: string;
+  phone: string;
+  email?: string;
+  coverImagePath?: string | null;
+  isActive?: boolean;
+}
+
 export interface AdminNotification {
   id: string;
   title: string;
