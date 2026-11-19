@@ -24,6 +24,31 @@ export class AdminDataService {
   // Mobile sidebar visibility state
   readonly isSidebarOpen = signal<boolean>(false);
 
+  // Desktop & Tablet Mini-Rail collapsed state
+  private readonly COLLAPSED_STORAGE_KEY = 'dinevia_owner_sidebar_collapsed';
+
+  private getInitialCollapsedState(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = localStorage.getItem(this.COLLAPSED_STORAGE_KEY);
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      // Tablet default (768px - 1023px): prefer collapsed mini rail by default
+      if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  readonly isSidebarCollapsed = signal<boolean>(this.getInitialCollapsedState());
+
+  // Stored state before a modal temporarily auto-collapses the sidebar
+  private preModalSidebarCollapsed: boolean | null = null;
+
   // Loading, error, and loaded state for authenticated owner's restaurants
   readonly isLoadingRestaurants = signal<boolean>(false);
   readonly restaurantLoadError = signal<string | null>(null);
@@ -76,13 +101,15 @@ export class AdminDataService {
 
   // Owner Dashboard KPI Cards (Authentic live & pending metrics)
   get statCards(): AdminStatCard[] {
-    const restaurantCount = this.ownerRestaurants().length;
+    const all = this.ownerRestaurants();
+    const activeCount = all.filter(r => r.isActive !== false).length;
+    const deactivatedCount = all.filter(r => r.isActive === false).length;
     return [
       {
         title: 'My Restaurants',
-        value: `${restaurantCount}`,
-        change: restaurantCount > 0 ? 'All Active' : 'No Establishments',
-        isPositive: restaurantCount > 0,
+        value: `${activeCount}`,
+        change: deactivatedCount > 0 ? `${deactivatedCount} Deactivated` : (activeCount > 0 ? 'All Active' : 'No Establishments'),
+        isPositive: activeCount > 0,
         subtitle: 'Your Listed Sanctuaries',
         badge: 'Live on Dinevia',
         icon: 'restaurant'
@@ -195,6 +222,7 @@ export class AdminDataService {
     }
 
     const coverImageUrl = resolveCoverImageUrl(dto.coverImagePath);
+    const isActive = dto.isActive !== false;
 
     return {
       id: String(dto.id),
@@ -206,10 +234,12 @@ export class AdminDataService {
       email: dto.email || '',
       cuisines,
       coverImageUrl,
+      coverImagePath: dto.coverImagePath || null,
       galleryImages: [coverImageUrl],
       rating: dto.rating,
       reviewCount: dto.reviewCount,
-      status: dto.isActive === false ? 'draft' : 'active',
+      isActive,
+      status: isActive ? 'active' : 'deactivated',
       createdAt: new Date().toISOString().split('T')[0]
     };
   }
@@ -249,6 +279,7 @@ export class AdminDataService {
           this.ownerRestaurantsSignal.update(list =>
             list.map(r => {
               if (String(r.id) === cleanId) {
+                const updatedIsActive = payload.isActive !== undefined ? payload.isActive : r.isActive;
                 return {
                   ...r,
                   name: payload.name,
@@ -260,7 +291,9 @@ export class AdminDataService {
                   coverImageUrl: payload.coverImagePath
                     ? resolveCoverImageUrl(payload.coverImagePath)
                     : r.coverImageUrl,
-                  status: payload.isActive === false ? 'draft' : 'active'
+                  coverImagePath: payload.coverImagePath !== undefined ? payload.coverImagePath : r.coverImagePath,
+                  isActive: updatedIsActive,
+                  status: updatedIsActive ? 'active' : 'deactivated'
                 };
               }
               return r;
@@ -297,9 +330,12 @@ export class AdminDataService {
   }
 
   addRestaurant(data: Omit<OwnerRestaurant, 'id' | 'createdAt'>): OwnerRestaurant {
+    const isActive = data.isActive !== false;
     const newRestaurant: OwnerRestaurant = {
       ...data,
       id: `owner-rest-${Date.now()}`,
+      isActive,
+      status: isActive ? 'active' : 'deactivated',
       createdAt: new Date().toISOString().split('T')[0]
     };
     this.ownerRestaurantsSignal.update(list => [newRestaurant, ...list]);
@@ -331,6 +367,48 @@ export class AdminDataService {
 
   openSidebar(): void {
     this.isSidebarOpen.set(true);
+  }
+
+  toggleSidebarCollapse(): void {
+    const next = !this.isSidebarCollapsed();
+    this.isSidebarCollapsed.set(next);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(this.COLLAPSED_STORAGE_KEY, String(next));
+      } catch {}
+    }
+  }
+
+  setSidebarCollapsed(collapsed: boolean): void {
+    this.isSidebarCollapsed.set(collapsed);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(this.COLLAPSED_STORAGE_KEY, String(collapsed));
+      } catch {}
+    }
+  }
+
+  /**
+   * Temporarily auto-collapses the sidebar to provide maximum workspace for modal dialogs.
+   * Remembers the pre-modal state so it can be restored when the modal closes.
+   */
+  autoCollapseForModal(): void {
+    if (this.preModalSidebarCollapsed === null) {
+      this.preModalSidebarCollapsed = this.isSidebarCollapsed();
+    }
+    if (!this.isSidebarCollapsed()) {
+      this.isSidebarCollapsed.set(true);
+    }
+  }
+
+  /**
+   * Restores the sidebar to the state it was in before the modal was opened.
+   */
+  restoreSidebarAfterModal(): void {
+    if (this.preModalSidebarCollapsed !== null) {
+      this.isSidebarCollapsed.set(this.preModalSidebarCollapsed);
+      this.preModalSidebarCollapsed = null;
+    }
   }
 
   markNotificationAsRead(id: string): void {

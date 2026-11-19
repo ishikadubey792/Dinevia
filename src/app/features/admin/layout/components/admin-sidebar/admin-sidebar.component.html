@@ -1,13 +1,18 @@
 <!-- Mobile Backdrop -->
 @if (adminData.isSidebarOpen()) {
-<div class="sidebar-backdrop" (click)="adminData.closeSidebar()" aria-hidden="true"></div>
+  <div class="sidebar-backdrop" (click)="adminData.closeSidebar()" aria-hidden="true"></div>
 }
 
-<!-- Sidebar Container -->
-<aside class="admin-sidebar" [class.open]="adminData.isSidebarOpen()" aria-label="Admin Navigation Sidebar">
+<!-- Sidebar Container (Supports Expanded, Collapsed Mini-Rail, and Mobile Drawer) -->
+<aside 
+  class="admin-sidebar" 
+  [class.open]="adminData.isSidebarOpen()" 
+  [class.collapsed]="adminData.isSidebarCollapsed()"
+  aria-label="Admin Navigation Sidebar">
+
   <!-- Sidebar Header -->
   <div class="sidebar-header">
-    <a routerLink="/admin/dashboard" class="brand-link" (click)="adminData.closeSidebar()">
+    <a routerLink="/admin/dashboard" class="brand-link" (click)="adminData.closeSidebar()" [attr.title]="adminData.isSidebarCollapsed() ? 'Dinevia Owner Portal' : null">
       <span class="brand-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
@@ -23,98 +28,115 @@
       </span>
     </a>
 
+    <!-- Desktop / Tablet Collapse & Expand Toggle Button -->
+    <button 
+      type="button" 
+      class="sidebar-collapse-btn" 
+      (click)="toggleCollapse()"
+      [attr.aria-label]="adminData.isSidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      [attr.title]="adminData.isSidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'">
+      @if (adminData.isSidebarCollapsed()) {
+        <!-- Chevron pointing right (Expand) -->
+        <span class="d-icon d-icon-chevron-right" aria-hidden="true"></span>
+      } @else {
+        <!-- Chevron pointing left (Collapse) -->
+        <span class="d-icon d-icon-chevron-left" aria-hidden="true"></span>
+      }
+    </button>
+
     <!-- Mobile Drawer Close Button -->
     <button type="button" class="sidebar-close-btn" (click)="adminData.closeSidebar()"
       aria-label="Close sidebar navigation">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round" aria-hidden="true">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
+      <span class="d-icon d-icon-close" aria-hidden="true"></span>
     </button>
   </div>
 
   <!-- Navigation Groups -->
   <nav class="sidebar-nav" aria-label="Admin Navigation Links">
     @for (section of navSections; track section.title) {
-    <div class="nav-section">
-      <span class="section-title">{{ section.title }}</span>
-      <ul class="nav-list">
-        @for (item of section.items; track item.route) {
-        <li class="nav-item">
-          <a [routerLink]="item.route" routerLinkActive="active"
-            [routerLinkActiveOptions]="{exact: item.route === '/admin/dashboard'}" (click)="adminData.closeSidebar()"
-            class="nav-link">
+      <div class="nav-section">
+        <span class="section-title">{{ section.title }}</span>
+        <ul class="nav-list">
+          @for (item of section.items; track item.route) {
+            <li class="nav-item">
+              <a [routerLink]="item.route" routerLinkActive="active"
+                [routerLinkActiveOptions]="{exact: item.route === '/admin/dashboard'}" (click)="adminData.closeSidebar()"
+                class="nav-link"
+                [attr.title]="adminData.isSidebarCollapsed() ? item.label : null">
 
-            <!-- Icons -->
-            <span class="nav-icon" aria-hidden="true">
-              @switch (item.icon) {
-              @case ('dashboard') {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="9" rx="1.5"></rect>
-                <rect x="14" y="3" width="7" height="5" rx="1.5"></rect>
-                <rect x="14" y="12" width="7" height="9" rx="1.5"></rect>
-                <rect x="3" y="16" width="7" height="5" rx="1.5"></rect>
-              </svg>
-              }
-              @case ('restaurants') {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                stroke-linejoin="round">
-                <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
-                <path d="M6 2v20"></path>
-                <path d="M3 6h6"></path>
-                <path d="M3 10h6"></path>
-              </svg>
-              }
-              @case ('bookings') {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-                <path d="m9 16 2 2 4-4"></path>
-              </svg>
-              }
-              @case ('tables') {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                stroke-linejoin="round">
-                <path d="M3 7h18v4H3z"></path>
-                <path d="M5 11v8"></path>
-                <path d="M19 11v8"></path>
-                <path d="M9 11v5"></path>
-                <path d="M15 11v5"></path>
-              </svg>
-              }
-              @case ('hours') {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              }
-              }
-            </span>
+                <!-- Icons -->
+                <span class="nav-icon" aria-hidden="true">
+                  @switch (item.icon) {
+                    @case ('dashboard') {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="9" rx="1.5"></rect>
+                        <rect x="14" y="3" width="7" height="5" rx="1.5"></rect>
+                        <rect x="14" y="12" width="7" height="9" rx="1.5"></rect>
+                        <rect x="3" y="16" width="7" height="5" rx="1.5"></rect>
+                      </svg>
+                    }
+                    @case ('restaurants') {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M18 2h-3a4 4 0 0 0-4 4v14h7V6a4 4 0 0 0 0-4z"></path>
+                        <path d="M6 2v20"></path>
+                        <path d="M3 6h6"></path>
+                        <path d="M3 10h6"></path>
+                      </svg>
+                    }
+                    @case ('bookings') {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <path d="m9 16 2 2 4-4"></path>
+                      </svg>
+                    }
+                    @case ('tables') {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M3 7h18v4H3z"></path>
+                        <path d="M5 11v8"></path>
+                        <path d="M19 11v8"></path>
+                        <path d="M9 11v5"></path>
+                        <path d="M15 11v5"></path>
+                      </svg>
+                    }
+                    @case ('hours') {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                    }
+                  }
+                </span>
 
-            <span class="nav-label">{{ item.label }}</span>
+                <span class="nav-label">{{ item.label }}</span>
 
-            <!-- Badges -->
-            @if (item.badge) {
-            <span class="nav-badge" [class.gold]="item.badgeType === 'gold'">{{ item.badge }}</span>
-            }
-          </a>
-        </li>
-        }
-      </ul>
-    </div>
+                <!-- Badges -->
+                @if (item.badge) {
+                  <span class="nav-badge" [class.gold]="item.badgeType === 'gold'">{{ item.badge }}</span>
+                }
+
+                <!-- Floating Tooltip for Mini-Rail Mode -->
+                <span class="nav-tooltip" aria-hidden="true">{{ item.label }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
     }
   </nav>
 
   <!-- Sidebar Footer: Switch to Public & Admin Profile -->
   <div class="sidebar-footer">
     <!-- Switch to Customer Portal -->
-    <a routerLink="/" class="portal-switch-link" aria-label="Open Dinevia Customer Portal">
+    <a routerLink="/" class="portal-switch-link" aria-label="Open Dinevia Customer Portal"
+      [attr.title]="adminData.isSidebarCollapsed() ? 'Customer Portal' : null">
       <span class="switch-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
@@ -124,17 +146,18 @@
         </svg>
       </span>
       <span class="switch-text">Customer Portal</span>
+      <span class="footer-tooltip" aria-hidden="true">Customer Portal</span>
     </a>
 
     <!-- Admin Profile Strip -->
     <div class="admin-profile-strip">
-      <div class="profile-avatar">{{ ownerInitials() }}</div>
+      <div class="profile-avatar" [attr.title]="ownerName()">{{ ownerInitials() }}</div>
       <div class="profile-info">
         <span class="profile-name">{{ ownerName() }}</span>
         <span class="profile-role">Restaurant Owner</span>
       </div>
       <button type="button" class="logout-btn" (click)="logout()" aria-label="Sign out of owner portal"
-        title="Sign out">
+        [attr.title]="adminData.isSidebarCollapsed() ? 'Sign out (' + ownerName() + ')' : 'Sign out'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>

@@ -49,9 +49,7 @@
 
       @if (successMessage()) {
         <div class="auth-alert auth-alert-success" role="status">
-          <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-          </svg>
+          <span class="d-icon d-icon-check alert-icon" aria-hidden="true"></span>
           <span>{{ successMessage() }}</span>
         </div>
       }
@@ -239,9 +237,7 @@
                   (click)="toggleCuisine(cuisine.id)">
                   <span>{{ cuisine.name }}</span>
                   @if (isCuisineSelected(cuisine.id)) {
-                    <svg viewBox="0 0 20 20" fill="currentColor" class="check-icon">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
+                    <span class="d-icon d-icon-check check-icon" aria-hidden="true"></span>
                   }
                 </button>
               }
@@ -299,9 +295,7 @@
             <span>Registering Restaurant...</span>
           } @else {
             <span>Complete Registration &amp; Open Owner Portal</span>
-            <svg viewBox="0 0 20 20" fill="currentColor" class="btn-arrow" aria-hidden="true">
-              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
+            <span class="d-icon d-icon-arrow-right btn-arrow" aria-hidden="true"></span>
           }
         </button>
       </form>

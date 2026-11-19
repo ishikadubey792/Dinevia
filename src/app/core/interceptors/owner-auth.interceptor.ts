@@ -74,6 +74,18 @@ function isPublicEndpoint(path: string, method: string): boolean {
     if (restMatch && restMatch[1] !== 'my-restaurants') {
       return true;
     }
+
+    // Public restaurant gallery images discovery: GET /restaurants/{restaurantId}/images
+    const galleryImagesMatch = path.match(/^\/restaurants\/[^/]+\/images$/);
+    if (galleryImagesMatch) {
+      return true;
+    }
+
+    // Public restaurant menu images discovery: GET /restaurants/{restaurantId}/menu-images
+    const menuImagesMatch = path.match(/^\/restaurants\/[^/]+\/menu-images$/);
+    if (menuImagesMatch) {
+      return true;
+    }
   }
 
   return false;
@@ -158,6 +170,27 @@ function isOwnerProtectedEndpoint(path: string, method: string): boolean {
     path.startsWith('/operating-hours/')
   ) {
     return true;
+  }
+
+  // 8. Restaurant gallery and media management (Owner mutations only):
+  // - POST /restaurants/{restaurantId}/images
+  // - DELETE /restaurants/{restaurantId}/images/{imageId}
+  // - PUT /restaurants/{restaurantId}/images/{imageId}/primary
+  if (upperMethod === 'POST' || upperMethod === 'DELETE' || upperMethod === 'PUT') {
+    const galleryMediaMatch = path.match(/^\/restaurants\/[^/]+\/images(\/[^/]+(\/primary)?)?$/);
+    if (galleryMediaMatch) {
+      return true;
+    }
+  }
+
+  // 9. Restaurant menu image management (Owner mutations only):
+  // - POST /restaurants/{restaurantId}/menu-images
+  // - DELETE /restaurants/{restaurantId}/menu-images/{imageId}
+  if (upperMethod === 'POST' || upperMethod === 'DELETE') {
+    const menuMediaMatch = path.match(/^\/restaurants\/[^/]+\/menu-images(\/[^/]+)?$/);
+    if (menuMediaMatch) {
+      return true;
+    }
   }
 
   return false;

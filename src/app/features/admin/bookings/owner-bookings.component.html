@@ -2,9 +2,7 @@
   <!-- Toast Message -->
   @if (successToast()) {
     <div class="admin-toast success-toast" role="status" aria-live="polite">
-      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon" aria-hidden="true">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-      </svg>
+      <span class="d-icon d-icon-check toast-icon" aria-hidden="true"></span>
       <span>{{ successToast() }}</span>
     </div>
   }
@@ -379,10 +377,7 @@
           <h3 id="modal-booking-title" class="modal-title">Booking #{{ bk.bookingId }} &mdash; {{ bk.restaurantName }}</h3>
         </div>
         <button type="button" class="modal-close" (click)="closeBookingDetails()" aria-label="Close booking details">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <span class="d-icon d-icon-close" aria-hidden="true"></span>
         </button>
       </div>
 

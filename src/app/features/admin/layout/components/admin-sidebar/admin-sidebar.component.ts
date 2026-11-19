@@ -85,9 +85,13 @@ export class AdminSidebarComponent {
       });
   }
 
+  toggleCollapse(): void {
+    this.adminData.toggleSidebarCollapse();
+  }
+
   @HostListener('window:resize')
   onResize(): void {
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024 && this.adminData.isSidebarOpen()) {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768 && this.adminData.isSidebarOpen()) {
       this.adminData.closeSidebar();
     }
   }

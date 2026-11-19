@@ -1,12 +1,17 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.directive';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
+import { RestaurantGalleryModalComponent } from './restaurant-gallery-modal/restaurant-gallery-modal.component';
+import { RestaurantMenuModalComponent } from './restaurant-menu-modal/restaurant-menu-modal.component';
 import { AdminDataService } from '../../../core/services/admin-data.service';
+import { RestaurantMediaService } from '../../../core/services/restaurant-media.service';
 import { OwnerRestaurant, RestaurantUpsertPayload } from '../../../core/models/admin.model';
+import { resolveGalleryImageUrl, resolveMenuImageUrl, MenuImageItem } from '../../../core/models/restaurant-media.model';
+import { resolveCoverImageUrl } from '../../../core/models/restaurant.model';
 
 @Component({
   selector: 'app-admin-restaurants',
@@ -17,13 +22,16 @@ import { OwnerRestaurant, RestaurantUpsertPayload } from '../../../core/models/a
     ScrollRevealDirective,
     LoadingSpinnerComponent,
     EmptyStateComponent,
-    ConfirmModalComponent
+    ConfirmModalComponent,
+    RestaurantGalleryModalComponent,
+    RestaurantMenuModalComponent
   ],
   templateUrl: './admin-restaurants.component.html',
   styleUrl: './admin-restaurants.component.scss'
 })
-export class AdminRestaurantsComponent implements OnInit {
+export class AdminRestaurantsComponent implements OnInit, OnDestroy {
   readonly adminData = inject(AdminDataService);
+  private readonly mediaService = inject(RestaurantMediaService);
 
   readonly isLoading = computed(() =>
     this.adminData.isLoadingRestaurants() || (!this.adminData.isLoaded() && !this.adminData.restaurantLoadError())
@@ -37,6 +45,21 @@ export class AdminRestaurantsComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.adminData.restoreSidebarAfterModal();
+  }
+
+  // Tab navigation: 'active' vs 'deactivated'
+  readonly activeTab = signal<'active' | 'deactivated'>('active');
+
+  readonly activeRestaurantsCount = computed(() =>
+    this.adminData.ownerRestaurants().filter(r => r.isActive !== false).length
+  );
+
+  readonly deactivatedRestaurantsCount = computed(() =>
+    this.adminData.ownerRestaurants().filter(r => r.isActive === false).length
+  );
+
   // Search filter
   readonly searchQuery = signal<string>('');
 
@@ -44,10 +67,17 @@ export class AdminRestaurantsComponent implements OnInit {
   readonly selectedRestaurant = signal<OwnerRestaurant | null>(null);
   readonly editingRestaurant = signal<OwnerRestaurant | null>(null);
   readonly deletingRestaurant = signal<OwnerRestaurant | null>(null);
+  readonly deactivatingRestaurant = signal<OwnerRestaurant | null>(null);
+  readonly reactivatingRestaurant = signal<OwnerRestaurant | null>(null);
+
   readonly isSaving = signal<boolean>(false);
   readonly editError = signal<string | null>(null);
   readonly isDeleting = signal<boolean>(false);
   readonly deleteError = signal<string | null>(null);
+  readonly isDeactivating = signal<boolean>(false);
+  readonly deactivateError = signal<string | null>(null);
+  readonly isReactivating = signal<boolean>(false);
+  readonly reactivateError = signal<string | null>(null);
   readonly toastMessage = signal<string | null>(null);
 
   // Add Establishment state
@@ -87,13 +117,21 @@ export class AdminRestaurantsComponent implements OnInit {
   editCoverImagePreview: string | null = null;
   editSelectedFile: File | null = null;
 
-  // Filtered restaurants signal
+  // Filtered restaurants signal based on active tab and search query
   readonly filteredRestaurants = computed<OwnerRestaurant[]>(() => {
+    const tab = this.activeTab();
     const query = this.searchQuery().trim().toLowerCase();
     const list = this.adminData.ownerRestaurants();
-    if (!query) return list;
 
-    return list.filter(r =>
+    // 1. Filter by Active vs Deactivated tab
+    const tabFiltered = list.filter(r =>
+      tab === 'active' ? r.isActive !== false : r.isActive === false
+    );
+
+    // 2. Filter by search query
+    if (!query) return tabFiltered;
+
+    return tabFiltered.filter(r =>
       (r.name && r.name.toLowerCase().includes(query)) ||
       (r.city && r.city.toLowerCase().includes(query)) ||
       (r.address && r.address.toLowerCase().includes(query)) ||
@@ -102,13 +140,143 @@ export class AdminRestaurantsComponent implements OnInit {
     );
   });
 
+  // Details Modal gallery preview state
+  readonly detailsGalleryImages = signal<string[]>([]);
+  readonly isLoadingDetailsGallery = signal<boolean>(false);
+
+  // Details Modal menu preview state
+  readonly detailsMenuImages = signal<MenuImageItem[]>([]);
+  readonly isLoadingDetailsMenu = signal<boolean>(false);
+  readonly isDetailsMenuInactive = signal<boolean>(false);
+
+  // Gallery Management Modal state
+  readonly galleryRestaurant = signal<OwnerRestaurant | null>(null);
+
+  // Menu Management Modal state
+  readonly menuRestaurant = signal<OwnerRestaurant | null>(null);
+
   // 1. View Details Modal
   openDetails(restaurant: OwnerRestaurant): void {
     this.selectedRestaurant.set(restaurant);
+    this.loadDetailsGallery(restaurant.id);
+    this.loadDetailsMenu(restaurant);
+  }
+
+  loadDetailsGallery(restaurantId: string | number): void {
+    this.isLoadingDetailsGallery.set(true);
+    this.mediaService.getGalleryImages(restaurantId).subscribe({
+      next: (images) => {
+        this.isLoadingDetailsGallery.set(false);
+        const urls = images.map(img => resolveGalleryImageUrl(img.imagePath));
+        this.detailsGalleryImages.set(urls);
+        this.adminData.updateRestaurant(String(restaurantId), { galleryImages: urls });
+      },
+      error: () => {
+        this.isLoadingDetailsGallery.set(false);
+        this.detailsGalleryImages.set([]);
+      }
+    });
+  }
+
+  loadDetailsMenu(restaurant: OwnerRestaurant): void {
+    // If establishment is deactivated, do not call GET (backend requires active restaurant)
+    if (restaurant.isActive === false) {
+      this.isDetailsMenuInactive.set(true);
+      this.detailsMenuImages.set([]);
+      this.isLoadingDetailsMenu.set(false);
+      return;
+    }
+
+    this.isDetailsMenuInactive.set(false);
+    this.isLoadingDetailsMenu.set(true);
+    this.mediaService.getMenuImages(restaurant.id).subscribe({
+      next: (images) => {
+        this.isLoadingDetailsMenu.set(false);
+        const sorted = images
+          .slice()
+          .sort((a, b) => a.displayOrder - b.displayOrder || a.id - b.id)
+          .map((img, idx) => ({
+            ...img,
+            fullUrl: resolveMenuImageUrl(img.imagePath),
+            pageLabel: `Page ${img.displayOrder || idx + 1}`
+          }));
+        this.detailsMenuImages.set(sorted);
+      },
+      error: () => {
+        this.isLoadingDetailsMenu.set(false);
+        this.detailsMenuImages.set([]);
+      }
+    });
   }
 
   closeDetails(): void {
     this.selectedRestaurant.set(null);
+    this.detailsGalleryImages.set([]);
+    this.detailsMenuImages.set([]);
+    this.isDetailsMenuInactive.set(false);
+  }
+
+  // Gallery Modal Handlers
+  openGallery(restaurant: OwnerRestaurant): void {
+    this.adminData.autoCollapseForModal();
+    this.galleryRestaurant.set(restaurant);
+  }
+
+  closeGallery(): void {
+    this.galleryRestaurant.set(null);
+    this.adminData.restoreSidebarAfterModal();
+  }
+
+  // Menu Modal Handlers
+  openMenu(restaurant: OwnerRestaurant): void {
+    this.adminData.autoCollapseForModal();
+    this.menuRestaurant.set(restaurant);
+  }
+
+  closeMenu(): void {
+    this.menuRestaurant.set(null);
+    this.adminData.restoreSidebarAfterModal();
+  }
+
+  onMenuChanged(event: { restaurantId: string; imagesCount: number }): void {
+    const currentDetails = this.selectedRestaurant();
+    if (currentDetails && String(currentDetails.id) === event.restaurantId) {
+      this.loadDetailsMenu(currentDetails);
+    }
+  }
+
+  onPrimaryImageChanged(event: { restaurantId: string; newCoverPath: string; newCoverUrl: string }): void {
+    const resolvedUrl = event.newCoverUrl || resolveCoverImageUrl(event.newCoverPath);
+
+    // 1. Update AdminDataService portfolio state (restaurant cards immediately reflect new cover)
+    this.adminData.updateRestaurant(event.restaurantId, {
+      coverImagePath: event.newCoverPath,
+      coverImageUrl: resolvedUrl
+    });
+
+    // 2. If details modal is open for this restaurant, update it as well
+    const currentDetails = this.selectedRestaurant();
+    if (currentDetails && String(currentDetails.id) === event.restaurantId) {
+      this.selectedRestaurant.set({
+        ...currentDetails,
+        coverImagePath: event.newCoverPath,
+        coverImageUrl: resolvedUrl
+      });
+    }
+
+    // 3. If gallery modal is open for this restaurant, update it as well
+    const currentGallery = this.galleryRestaurant();
+    if (currentGallery && String(currentGallery.id) === event.restaurantId) {
+      this.galleryRestaurant.set({
+        ...currentGallery,
+        coverImagePath: event.newCoverPath,
+        coverImageUrl: resolvedUrl
+      });
+    }
+  }
+
+  onGalleryChanged(event: { restaurantId: string; imagesCount: number; primaryUrl?: string }): void {
+    this.loadDetailsGallery(event.restaurantId);
   }
 
   // 2. Edit Modal
@@ -182,8 +350,8 @@ export class AdminRestaurantsComponent implements OnInit {
       description: this.editDescription.trim(),
       phone: this.editPhone.trim(),
       email: this.editEmail.trim(),
-      coverImagePath: this.editCoverImageUrl.trim() || null,
-      isActive: current.status !== 'draft'
+      coverImagePath: this.editCoverImageUrl.trim() || current.coverImagePath || null,
+      isActive: current.isActive !== false
     };
 
     this.adminData.updateMyRestaurant(current.id, payload).subscribe({
@@ -250,7 +418,113 @@ export class AdminRestaurantsComponent implements OnInit {
     });
   }
 
-  // 4. Add Establishment Modal
+  // 4. Deactivate Confirmation Modal
+  confirmDeactivate(restaurant: OwnerRestaurant): void {
+    this.deactivateError.set(null);
+    this.deactivatingRestaurant.set(restaurant);
+  }
+
+  cancelDeactivate(): void {
+    if (!this.isDeactivating()) {
+      this.deactivatingRestaurant.set(null);
+      this.deactivateError.set(null);
+    }
+  }
+
+  executeDeactivate(): void {
+    const current = this.deactivatingRestaurant();
+    if (!current || this.isDeactivating()) return;
+
+    this.isDeactivating.set(true);
+    this.deactivateError.set(null);
+
+    const payload: RestaurantUpsertPayload = {
+      name: current.name,
+      address: current.address,
+      city: current.city || '',
+      description: current.description || '',
+      phone: current.phone,
+      email: current.email || '',
+      coverImagePath: current.coverImagePath || current.coverImageUrl || null,
+      isActive: false
+    };
+
+    this.adminData.updateMyRestaurant(current.id, payload).subscribe({
+      next: () => {
+        this.isDeactivating.set(false);
+        this.showToast(`Deactivated "${current.name}". It is now listed under Deactivated Restaurants.`);
+        this.cancelDeactivate();
+
+        if (this.selectedRestaurant()?.id === current.id) {
+          const updated = this.adminData.ownerRestaurants().find(r => r.id === current.id);
+          if (updated) this.selectedRestaurant.set(updated);
+        }
+      },
+      error: (err) => {
+        this.isDeactivating.set(false);
+        const errorMsg =
+          err?.error?.message ||
+          err?.message ||
+          'Failed to deactivate establishment. Please try again.';
+        this.deactivateError.set(errorMsg);
+      }
+    });
+  }
+
+  // 5. Reactivate Confirmation Modal
+  confirmReactivate(restaurant: OwnerRestaurant): void {
+    this.reactivateError.set(null);
+    this.reactivatingRestaurant.set(restaurant);
+  }
+
+  cancelReactivate(): void {
+    if (!this.isReactivating()) {
+      this.reactivatingRestaurant.set(null);
+      this.reactivateError.set(null);
+    }
+  }
+
+  executeReactivate(): void {
+    const current = this.reactivatingRestaurant();
+    if (!current || this.isReactivating()) return;
+
+    this.isReactivating.set(true);
+    this.reactivateError.set(null);
+
+    const payload: RestaurantUpsertPayload = {
+      name: current.name,
+      address: current.address,
+      city: current.city || '',
+      description: current.description || '',
+      phone: current.phone,
+      email: current.email || '',
+      coverImagePath: current.coverImagePath || current.coverImageUrl || null,
+      isActive: true
+    };
+
+    this.adminData.updateMyRestaurant(current.id, payload).subscribe({
+      next: () => {
+        this.isReactivating.set(false);
+        this.showToast(`Reactivated "${current.name}". It is now active and live on Dinevia.`);
+        this.cancelReactivate();
+
+        if (this.selectedRestaurant()?.id === current.id) {
+          const updated = this.adminData.ownerRestaurants().find(r => r.id === current.id);
+          if (updated) this.selectedRestaurant.set(updated);
+        }
+      },
+      error: (err) => {
+        this.isReactivating.set(false);
+        const errorMsg =
+          err?.error?.message ||
+          err?.message ||
+          'Failed to reactivate establishment. Please try again.';
+        this.reactivateError.set(errorMsg);
+      }
+    });
+  }
+
+  // 6. Add Establishment Modal
   openAdd(): void {
     this.addName = '';
     this.addAddress = '';

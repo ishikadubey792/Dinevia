@@ -1,0 +1,246 @@
+@if (isOpen && restaurant) {
+  <div class="modal-backdrop" (click)="onClose()" aria-hidden="true"></div>
+
+  <div class="admin-modal gallery-modal" role="dialog" aria-modal="true" aria-labelledby="gallery-modal-title">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="header-titles">
+        <span class="modal-kicker">RESTAURANT MEDIA MANAGEMENT</span>
+        <h3 id="gallery-modal-title" class="modal-title">Photo Gallery – {{ restaurant.name }}</h3>
+        <p class="modal-subtitle">Upload and curate high-resolution photography showcase for {{ restaurant.city }}.</p>
+      </div>
+      <button type="button" class="modal-close" (click)="onClose()" aria-label="Close gallery modal" [disabled]="isUploading() || isDeleting()">
+        <span class="d-icon d-icon-close" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      <!-- Toast Feedback -->
+      @if (toastMessage()) {
+        <div class="gallery-toast" role="status" aria-live="polite">
+          <span class="d-icon d-icon-check toast-icon" aria-hidden="true"></span>
+          <span>{{ toastMessage() }}</span>
+        </div>
+      }
+
+      <!-- Error Banners -->
+      @if (uploadError()) {
+        <div class="modal-alert-error" role="alert">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+          <span>{{ uploadError() }}</span>
+        </div>
+      }
+
+      @if (loadError()) {
+        <div class="modal-alert-error" role="alert">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="alert-icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+          <span>{{ loadError() }}</span>
+          <button type="button" class="btn-retry" (click)="loadGalleryImages()">Retry</button>
+        </div>
+      }
+
+      <!-- Upload Drag & Drop Stage -->
+      <section 
+        class="upload-dropzone"
+        [class.drag-over]="isDragOver()"
+        [class.uploading]="isUploading()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)">
+        
+        <input 
+          #fileInput
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp"
+          class="hidden-file-input"
+          (change)="onFileInputChange($event)"
+          [disabled]="isUploading()"
+        />
+
+        @if (isUploading()) {
+          <div class="uploading-state">
+            <div class="spinner-small-emerald"></div>
+            <p class="uploading-text">{{ uploadProgressMessage() }}</p>
+            <span class="uploading-sub">Validating magic-bytes and uploading to secure storage...</span>
+          </div>
+        } @else {
+          <div class="dropzone-content" (click)="fileInput.click()">
+            <div class="upload-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="cloud-icon" aria-hidden="true">
+                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                <path d="M12 12v9"></path>
+                <path d="m16 16-4-4-4 4"></path>
+              </svg>
+            </div>
+            <div class="dropzone-text-group">
+              <p class="dropzone-title">
+                <strong>Click to upload</strong> or drag and drop photos
+              </p>
+              <p class="dropzone-subtitle">
+                JPG, PNG, or WebP &bull; Maximum 5 MB per photo &bull; Multi-file upload supported
+              </p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm browse-btn" (click)="$event.stopPropagation(); fileInput.click()">
+              <span class="d-icon d-icon-plus btn-icon-sm" aria-hidden="true"></span>
+              <span>Select Photos</span>
+            </button>
+          </div>
+        }
+      </section>
+
+      <!-- Photos Gallery Grid Section -->
+      <section class="gallery-content-section">
+        <div class="section-title-row">
+          <h4 class="section-heading">
+            Uploaded Photos
+            <span class="count-badge">{{ galleryItems().length }}</span>
+          </h4>
+          <span class="section-hint">Select any photo to designate it as your primary cover image.</span>
+        </div>
+
+        @if (isLoading()) {
+          <app-loading-spinner
+            message="Loading photo gallery..."
+            subtitle="Retrieving high-resolution images from server...">
+          </app-loading-spinner>
+        } @else if (galleryItems().length > 0) {
+          <div class="gallery-grid">
+            @for (item of galleryItems(); track item.id) {
+              <article class="gallery-card" [class.is-primary]="item.isPrimary">
+                <div class="image-stage" (click)="openPreview(item)" title="Click to view full photo">
+                  <img
+                    [src]="item.fullUrl"
+                    [alt]="restaurant.name + ' photo'"
+                    class="gallery-img"
+                    loading="lazy"
+                    (error)="$any($event.target).classList.add('img-fallback-hidden')"
+                  />
+
+                  <!-- Primary Cover Badge -->
+                  @if (item.isPrimary) {
+                    <div class="primary-badge" title="This is your restaurant's main cover photo">
+                      <span class="star-icon">★</span>
+                      <span>Primary Cover</span>
+                    </div>
+                  }
+
+                  <!-- Zoom Overlay Icon -->
+                  <div class="zoom-cue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      <line x1="11" y1="8" x2="11" y2="14"></line>
+                      <line x1="8" y1="11" x2="14" y2="11"></line>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- Card Actions Toolbar -->
+                <div class="card-toolbar">
+                  @if (!item.isPrimary) {
+                    <button 
+                      type="button" 
+                      class="toolbar-btn make-primary-btn" 
+                      [disabled]="settingPrimaryId() === item.id"
+                      (click)="setAsPrimary(item)"
+                      title="Set as restaurant cover photo">
+                      @if (settingPrimaryId() === item.id) {
+                        <span>Updating...</span>
+                      } @else {
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="tb-icon" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Set Cover</span>
+                      }
+                    </button>
+                  } @else {
+                    <span class="active-cover-label">
+                      <span class="active-dot"></span>
+                      <span>Live Cover</span>
+                    </span>
+                  }
+
+                  <button 
+                    type="button" 
+                    class="toolbar-btn delete-photo-btn"
+                    (click)="confirmDelete(item)"
+                    title="Delete photo from gallery">
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="tb-icon" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <app-empty-state
+            icon="building"
+            title="No gallery photos yet"
+            description="Your restaurant currently has no uploaded photography. Use the upload zone above to showcase dining areas, signature culinary dishes, and architectural details."
+            actionLabel="Browse Photos"
+            (actionClick)="fileInput.click()">
+          </app-empty-state>
+        }
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <span class="footer-counter">
+        <strong>{{ galleryItems().length }}</strong> {{ galleryItems().length === 1 ? 'photo' : 'photos' }} in gallery
+      </span>
+      <button 
+        type="button" 
+        class="btn btn-outline btn-sm" 
+        (click)="onClose()" 
+        [disabled]="isUploading() || isDeleting()">
+        Done &amp; Close
+      </button>
+    </div>
+  </div>
+
+  <!-- Delete Photo Confirmation Modal -->
+  @if (deletingImage(); as image) {
+    <app-confirm-modal
+      [isOpen]="true"
+      kicker="REMOVE PHOTO"
+      title="Delete Gallery Photo?"
+      message="Are you sure you want to remove this photo from your gallery?"
+      [subtext]="image.isPrimary ? 'This is currently your Primary Cover image. If deleted, the next photo in your gallery will become the new cover.' : 'This photo will be permanently deleted from server storage.'"
+      confirmLabel="Delete Photo"
+      confirmVariant="danger"
+      [isProcessing]="isDeleting()"
+      processingLabel="Deleting..."
+      [errorMessage]="deleteError()"
+      (confirm)="executeDelete()"
+      (cancel)="cancelDelete()">
+    </app-confirm-modal>
+  }
+
+  <!-- Lightbox Image Fullscreen Preview -->
+  @if (previewingImage(); as preview) {
+    <div class="lightbox-backdrop" (click)="closePreview()" aria-hidden="true"></div>
+    <div class="lightbox-modal" role="dialog" aria-modal="true" aria-label="Photo Preview">
+      <button type="button" class="lightbox-close" (click)="closePreview()" aria-label="Close preview">
+        <span class="d-icon d-icon-close" aria-hidden="true"></span>
+      </button>
+      <div class="lightbox-stage">
+        <img [src]="preview.fullUrl" [alt]="restaurant.name + ' preview'" class="lightbox-img" />
+      </div>
+      <div class="lightbox-meta">
+        <span class="lightbox-title">{{ restaurant.name }}</span>
+        @if (preview.isPrimary) {
+          <span class="lightbox-primary-badge">★ Primary Cover Photo</span>
+        }
+      </div>
+    </div>
+  }
+}

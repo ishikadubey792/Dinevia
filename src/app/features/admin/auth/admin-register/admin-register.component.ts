@@ -377,6 +377,7 @@ export class AdminRegisterComponent implements OnInit {
           coverImageUrl: this.coverImagePreview,
           rating: 5.0,
           reviewCount: 0,
+          isActive: true,
           status: 'active'
         });
 

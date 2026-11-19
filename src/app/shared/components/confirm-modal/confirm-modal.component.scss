@@ -1,9 +1,9 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(23, 47, 36, 0.6);
+  background: rgba(23, 47, 36, 0.65);
   backdrop-filter: blur(4px);
-  z-index: 1050;
+  z-index: 2100;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -18,7 +18,7 @@
   box-shadow: 0 24px 64px rgba(23, 47, 36, 0.24);
   width: calc(100% - 2rem);
   max-width: 520px;
-  z-index: 1060;
+  z-index: 2110;
   overflow: hidden;
   animation: modalEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }

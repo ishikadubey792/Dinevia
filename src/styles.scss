@@ -1379,5 +1379,274 @@ img.img-fallback {
   background-size: cover;
 }
 
+/* ==========================================================================
+   Dinevia Reusable CSS Icon Utility System (Task 5, Phase 1)
+   Zero-dependency, accessible, theme-compatible CSS geometric icons.
+   Utilizes border shapes, pseudo-elements, transforms and currentColor.
+   ========================================================================== */
+
+.d-icon {
+  display: inline-block;
+  position: relative;
+  width: 1em;
+  height: 1em;
+  min-width: 1em;
+  min-height: 1em;
+  vertical-align: middle;
+  color: currentColor;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  line-height: 1;
+
+  &::before,
+  &::after {
+    box-sizing: border-box;
+  }
+}
+
+/* Size Modifiers */
+.d-icon-sm {
+  font-size: 0.75rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  min-width: 0.75rem;
+  min-height: 0.75rem;
+}
+
+.d-icon-lg {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  min-height: 1.25rem;
+}
+
+.d-icon-xl {
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+}
+
+/* 1. Close (X) Icon */
+.d-icon-close {
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 12%;
+    width: 76%;
+    height: 2px;
+    background-color: currentColor;
+    border-radius: 1px;
+  }
+  &::before {
+    transform: translateY(-50%) rotate(45deg);
+  }
+  &::after {
+    transform: translateY(-50%) rotate(-45deg);
+  }
+}
+
+/* 2-5. Directional Chevrons */
+.d-icon-chevron-right,
+.d-icon-chevron-left,
+.d-icon-chevron-up,
+.d-icon-chevron-down {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 38%;
+    height: 38%;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+  }
+}
+
+.d-icon-chevron-right::before {
+  transform: translate(-65%, -50%) rotate(45deg);
+}
+
+.d-icon-chevron-left::before {
+  transform: translate(-35%, -50%) rotate(-135deg);
+}
+
+.d-icon-chevron-down::before {
+  transform: translate(-50%, -65%) rotate(135deg);
+}
+
+.d-icon-chevron-up::before {
+  transform: translate(-50%, -35%) rotate(-45deg);
+}
+
+/* 6-7. Directional Arrows (Stem + Arrowhead) */
+.d-icon-arrow-right,
+.d-icon-arrow-left {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 12%;
+    width: 76%;
+    height: 2px;
+    background-color: currentColor;
+    transform: translateY(-50%);
+    border-radius: 1px;
+  }
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 36%;
+    height: 36%;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+  }
+}
+
+.d-icon-arrow-right::after {
+  right: 12%;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.d-icon-arrow-left::after {
+  left: 12%;
+  transform: translateY(-50%) rotate(-135deg);
+}
+
+/* 8. Checkmark / Verified */
+.d-icon-check {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    width: 30%;
+    height: 60%;
+    border-bottom: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    transform: translate(-50%, -55%) rotate(45deg);
+  }
+}
+
+/* 9-10. Plus (+) and Minus (-) */
+.d-icon-plus,
+.d-icon-minus {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 15%;
+    width: 70%;
+    height: 2px;
+    background-color: currentColor;
+    transform: translateY(-50%);
+    border-radius: 1px;
+  }
+}
+
+.d-icon-plus::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  width: 2px;
+  height: 70%;
+  background-color: currentColor;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+/* 11. Search (Magnifying Glass) */
+.d-icon-search {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 58%;
+    height: 58%;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+  }
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 12%;
+    right: 12%;
+    width: 34%;
+    height: 2px;
+    background-color: currentColor;
+    transform: rotate(45deg);
+    transform-origin: right center;
+    border-radius: 1px;
+  }
+}
+
+/* 12. Hamburger Menu (Three Parallel Bars) */
+.d-icon-hamburger {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    background-color: currentColor;
+    transform: translateY(-50%);
+    box-shadow:
+      0 -0.32em 0 0 currentColor,
+      0 0.32em 0 0 currentColor;
+    border-radius: 1px;
+  }
+}
+
+/* 13. Eye (Password Visibility Visible) */
+.d-icon-eye {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 62%;
+    height: 62%;
+    border: 2px solid currentColor;
+    border-radius: 75% 15%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: radial-gradient(circle at center, currentColor 28%, transparent 32%);
+  }
+}
+
+/* 14. Eye-Off (Password Visibility Hidden / Strike-Through) */
+.d-icon-eye-off {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 62%;
+    height: 62%;
+    border: 2px solid currentColor;
+    border-radius: 75% 15%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: radial-gradient(circle at center, currentColor 28%, transparent 32%);
+  }
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 8%;
+    width: 84%;
+    height: 2px;
+    background-color: currentColor;
+    transform: translateY(-50%) rotate(-45deg);
+    border-radius: 1px;
+  }
+}
+
 
 

@@ -17,7 +17,14 @@ import { BookingService } from '../../core/services/booking.service';
 import { AuthService } from '../../core/services/auth.service';
 import { WishlistService } from '../../core/services/wishlist.service';
 import { AuthModalService } from '../../core/services/auth-modal.service';
-import { Restaurant, MenuItem, DayHours, RestaurantReview } from '../../core/models/restaurant.model';
+import { Restaurant, MenuItem, DayHours, RestaurantReview, DEFAULT_FALLBACK_RESTAURANT_IMAGE } from '../../core/models/restaurant.model';
+import { RestaurantMediaService } from '../../core/services/restaurant-media.service';
+import {
+  GalleryImageItem,
+  MenuImageItem,
+  resolveGalleryImageUrl,
+  resolveMenuImageUrl
+} from '../../core/models/restaurant-media.model';
 import {
   AvailabilityQuery,
   AvailableTable,
@@ -64,6 +71,7 @@ export class RestaurantDetailComponent implements OnInit {
   private readonly authService = inject(AuthService);
   readonly wishlistService = inject(WishlistService);
   private readonly authModalService = inject(AuthModalService);
+  private readonly mediaService = inject(RestaurantMediaService);
 
   // Restaurant & Routing state
   private readonly rawRestaurant = signal<Restaurant | null>(null);
@@ -86,6 +94,10 @@ export class RestaurantDetailComponent implements OnInit {
   private currentRestaurantId: string | null = null;
   private readonly restaurantLoadTrigger$ = new Subject<{ id: string }>();
 
+  // Media loading triggers (parallel, isolated, cancellable)
+  private readonly galleryLoadTrigger$ = new Subject<{ id: string | number }>();
+  private readonly menuLoadTrigger$ = new Subject<{ id: string | number }>();
+
   // Real-time table availability state
   private readonly availabilityTrigger$ = new Subject<AvailabilityTriggerPayload>();
   private availabilitySeq = 0;
@@ -104,11 +116,34 @@ export class RestaurantDetailComponent implements OnInit {
   readonly hasCheckedAvailability = signal<boolean>(false);
 
   // Gallery state
+  readonly galleryPhotos = signal<GalleryImageItem[]>([]);
+  readonly isLoadingGallery = signal<boolean>(false);
+  readonly galleryError = signal<string | null>(null);
   readonly activeImageIndex = signal<number>(0);
   readonly isLightboxOpen = signal<boolean>(false);
   readonly imgErrorOccurred = signal<boolean>(false);
 
-  // Menu Category Filter state
+  // Digital Menu state
+  readonly menuPages = signal<MenuImageItem[]>([]);
+  readonly isLoadingMenu = signal<boolean>(false);
+  readonly menuError = signal<string | null>(null);
+  readonly activeMenuPageIndex = signal<number>(0);
+  readonly isMenuLightboxOpen = signal<boolean>(false);
+
+  // Active Menu Page computed signal
+  readonly activeMenuPage = computed<MenuImageItem | null>(() => {
+    const pages = this.menuPages();
+    const idx = this.activeMenuPageIndex();
+    if (pages.length > 0) {
+      if (idx >= 0 && idx < pages.length) {
+        return pages[idx];
+      }
+      return pages[0];
+    }
+    return null;
+  });
+
+  // Menu Category Filter state (legacy dish highlights support)
   readonly selectedMenuCategory = signal<'all' | 'starter' | 'main' | 'dessert' | 'beverage'>('all');
 
   // Reservation availability filter signals
@@ -162,8 +197,11 @@ export class RestaurantDetailComponent implements OnInit {
   readonly activeGalleryImageUrl = computed<string>(() => {
     const list = this.galleryImages();
     const idx = this.activeImageIndex();
-    if (list.length > idx && list[idx]) {
-      return list[idx];
+    if (list.length > 0) {
+      if (idx >= 0 && idx < list.length) {
+        return list[idx];
+      }
+      return list[0];
     }
     return this.restaurant()?.imageUrl || '';
   });
@@ -223,14 +261,35 @@ export class RestaurantDetailComponent implements OnInit {
     }));
   });
 
-  // Computed: Gallery images array with fallback protection
+  // Computed: Unified gallery images array with cover image deduplication
   readonly galleryImages = computed<string[]>(() => {
     const r = this.restaurant();
     if (!r) return [];
-    if (r.galleryImages && r.galleryImages.length > 0) {
-      return r.galleryImages;
+
+    const coverUrl = r.imageUrl?.trim() || '';
+    const photos = this.galleryPhotos();
+
+    if (photos.length === 0) {
+      return coverUrl ? [coverUrl] : [];
     }
-    return [r.imageUrl];
+
+    const result: string[] = [];
+    if (coverUrl && coverUrl !== DEFAULT_FALLBACK_RESTAURANT_IMAGE) {
+      result.push(coverUrl);
+    }
+
+    for (const photo of photos) {
+      const url = photo.fullUrl?.trim();
+      if (url && !result.includes(url)) {
+        result.push(url);
+      }
+    }
+
+    if (result.length === 0 && coverUrl) {
+      result.push(coverUrl);
+    }
+
+    return result;
   });
 
   // Computed: Filtered menu items (only actual restaurant menu items)
@@ -282,10 +341,24 @@ export class RestaurantDetailComponent implements OnInit {
     }
   }
 
-  @HostListener('window:keydown.escape')
-  onEscapeKey(): void {
+  @HostListener('window:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
     if (this.isLightboxOpen()) {
-      this.closeLightbox();
+      if (event.key === 'Escape') {
+        this.closeLightbox();
+      } else if (event.key === 'ArrowLeft') {
+        this.prevImage();
+      } else if (event.key === 'ArrowRight') {
+        this.nextImage();
+      }
+    } else if (this.isMenuLightboxOpen()) {
+      if (event.key === 'Escape') {
+        this.closeMenuLightbox();
+      } else if (event.key === 'ArrowLeft') {
+        this.prevMenuPage();
+      } else if (event.key === 'ArrowRight') {
+        this.nextMenuPage();
+      }
     }
   }
 
@@ -303,6 +376,7 @@ export class RestaurantDetailComponent implements OnInit {
           this.isNotFound.set(false);
           this.rawRestaurant.set(null);
           this.resetAvailabilityState();
+          this.resetMediaState();
 
           return this.restaurantService.fetchRestaurantById(id);
         }),
@@ -382,6 +456,86 @@ export class RestaurantDetailComponent implements OnInit {
         }
       });
 
+    // Independent Gallery Media Loading (Runs in parallel, isolated from menu and booking)
+    this.galleryLoadTrigger$
+      .pipe(
+        switchMap(({ id }) => {
+          this.isLoadingGallery.set(true);
+          this.galleryError.set(null);
+          return this.mediaService.getGalleryImages(id).pipe(
+            map(dtos => ({ status: 'success' as const, dtos })),
+            catchError(err =>
+              of({
+                status: 'error' as const,
+                message: err?.error?.message || 'Unable to load gallery photos at this time.'
+              })
+            )
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(res => {
+        this.isLoadingGallery.set(false);
+        if (res.status === 'success') {
+          const currentRest = this.restaurant();
+          const items: GalleryImageItem[] = (res.dtos || []).map(d => {
+            const fullUrl = resolveGalleryImageUrl(d.imagePath);
+            return {
+              ...d,
+              fullUrl,
+              isPrimary: Boolean(currentRest && currentRest.imageUrl === fullUrl)
+            };
+          });
+          this.galleryPhotos.set(items);
+          this.galleryError.set(null);
+        } else {
+          this.galleryPhotos.set([]);
+          this.galleryError.set(res.message);
+        }
+      });
+
+    // Independent Digital Menu Media Loading (Runs in parallel, isolated from gallery and booking)
+    this.menuLoadTrigger$
+      .pipe(
+        switchMap(({ id }) => {
+          this.isLoadingMenu.set(true);
+          this.menuError.set(null);
+          this.activeMenuPageIndex.set(0);
+          this.isMenuLightboxOpen.set(false);
+          return this.mediaService.getMenuImages(id).pipe(
+            map(dtos => ({ status: 'success' as const, dtos })),
+            catchError(err =>
+              of({
+                status: 'error' as const,
+                message: err?.error?.message || 'Unable to load digital menu pages at this time.'
+              })
+            )
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(res => {
+        this.isLoadingMenu.set(false);
+        if (res.status === 'success') {
+          const sorted = [...(res.dtos || [])].sort((a, b) => {
+            if (a.displayOrder !== b.displayOrder) {
+              return a.displayOrder - b.displayOrder;
+            }
+            return a.id - b.id;
+          });
+          const items: MenuImageItem[] = sorted.map((d, index) => ({
+            ...d,
+            fullUrl: resolveMenuImageUrl(d.imagePath),
+            pageLabel: `Page ${index + 1}`
+          }));
+          this.menuPages.set(items);
+          this.menuError.set(null);
+        } else {
+          this.menuPages.set([]);
+          this.menuError.set(res.message);
+        }
+      });
+
     // Subscribe to route parameter changes
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -421,10 +575,25 @@ export class RestaurantDetailComponent implements OnInit {
     // Fetch availability immediately once restaurant details resolve
     this.requestAvailabilityRefresh(true);
 
+    // Fetch media in parallel (non-blocking, isolated)
+    this.galleryLoadTrigger$.next({ id: found.id });
+    this.menuLoadTrigger$.next({ id: found.id });
+
     // Scroll to top
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  }
+
+  private resetMediaState(): void {
+    this.galleryPhotos.set([]);
+    this.isLoadingGallery.set(false);
+    this.galleryError.set(null);
+    this.menuPages.set([]);
+    this.isLoadingMenu.set(false);
+    this.menuError.set(null);
+    this.activeMenuPageIndex.set(0);
+    this.isMenuLightboxOpen.set(false);
   }
 
   private resetAvailabilityState(): void {
@@ -537,6 +706,49 @@ export class RestaurantDetailComponent implements OnInit {
 
   onImageError(): void {
     this.imgErrorOccurred.set(true);
+  }
+
+  // Media retry triggers
+  retryGalleryLoad(): void {
+    if (this.currentRestaurantId) {
+      this.galleryLoadTrigger$.next({ id: this.currentRestaurantId });
+    }
+  }
+
+  retryMenuLoad(): void {
+    if (this.currentRestaurantId) {
+      this.menuLoadTrigger$.next({ id: this.currentRestaurantId });
+    }
+  }
+
+  // Digital Menu methods
+  selectMenuPage(index: number): void {
+    if (index >= 0 && index < this.menuPages().length) {
+      this.activeMenuPageIndex.set(index);
+    }
+  }
+
+  nextMenuPage(): void {
+    const pages = this.menuPages();
+    if (pages.length <= 1) return;
+    this.activeMenuPageIndex.update(idx => (idx + 1) % pages.length);
+  }
+
+  prevMenuPage(): void {
+    const pages = this.menuPages();
+    if (pages.length <= 1) return;
+    this.activeMenuPageIndex.update(idx => (idx - 1 + pages.length) % pages.length);
+  }
+
+  openMenuLightbox(index?: number): void {
+    if (typeof index === 'number' && index >= 0 && index < this.menuPages().length) {
+      this.activeMenuPageIndex.set(index);
+    }
+    this.isMenuLightboxOpen.set(true);
+  }
+
+  closeMenuLightbox(): void {
+    this.isMenuLightboxOpen.set(false);
   }
 
   // Wishlist toggle

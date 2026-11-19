@@ -26,11 +26,7 @@
       <div class="search-bar-wrapper">
         <div class="luxury-search-box" [class.has-query]="searchQuery().length > 0">
           <span class="search-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
+            <span class="d-icon d-icon-search d-icon-lg"></span>
           </span>
 
           <input type="text" id="restaurantSearchInput" [ngModel]="searchQuery()"
@@ -40,11 +36,7 @@
 
           @if (searchQuery().length > 0) {
           <button type="button" class="clear-search-btn" (click)="clearSearch()" aria-label="Clear search query">
-            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clip-rule="evenodd" />
-            </svg>
+            <span class="d-icon d-icon-close" aria-hidden="true"></span>
           </button>
           }
         </div>
@@ -464,11 +456,7 @@
     <div class="drawer-header">
       <h3 class="drawer-title">Filter Restaurants</h3>
       <button type="button" class="drawer-close-btn" (click)="closeMobileFilters()" aria-label="Close filters">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
+        <span class="d-icon d-icon-close" aria-hidden="true"></span>
       </button>
     </div>
 

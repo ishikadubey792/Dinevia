@@ -6,11 +6,7 @@
     <div class="top-nav-bar">
       <!-- Back Link -->
       <a routerLink="/explore" class="back-nav-btn">
-        <svg viewBox="0 0 20 20" fill="currentColor" class="back-icon" aria-hidden="true">
-          <path fill-rule="evenodd"
-            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-            clip-rule="evenodd" />
-        </svg>
+        <span class="d-icon d-icon-arrow-left back-icon" aria-hidden="true"></span>
         <span>Back to Restaurants</span>
       </a>
 
@@ -186,7 +182,7 @@
           @for (img of galleryImages(); track img; let i = $index) {
           <button type="button" class="thumb-pill restaurant-fallback" [class.active]="activeImageIndex() === i" (click)="selectImage(i)"
             [attr.aria-label]="'Select photo ' + (i + 1)">
-            <img [src]="img || ''" [alt]="rest.name + ' thumbnail ' + (i + 1)" class="thumb-photo" (error)="$any($event.target).classList.add('img-fallback-hidden')" [class.img-fallback-hidden]="!img" />
+            <img [src]="img || ''" [alt]="rest.name + ' thumbnail ' + (i + 1)" class="thumb-photo" loading="lazy" (error)="$any($event.target).classList.add('img-fallback-hidden')" [class.img-fallback-hidden]="!img" />
           </button>
           }
         </div>
@@ -212,11 +208,7 @@
             <div class="amenities-chips-row">
               @for (h of rest.highlights; track h) {
               <span class="amenity-chip">
-                <svg viewBox="0 0 20 20" fill="currentColor" class="chip-check" aria-hidden="true">
-                  <path fill-rule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clip-rule="evenodd" />
-                </svg>
+                <span class="d-icon d-icon-check chip-check" aria-hidden="true"></span>
                 {{ h }}
               </span>
               }
@@ -327,17 +319,127 @@
         }
 
         <!-- Menu Categories & Sample Dishes Section -->
-        @if (rest.menuHighlights && rest.menuHighlights.length > 0) {
+        <!-- 4. DIGITAL MENU SHOWCASE -->
         <section class="content-card menu-card" id="menuSection" appScrollReveal>
           <div class="menu-card-header">
             <div>
               <span class="eyebrow">Gastronomic Selection</span>
-              <h2 class="card-title">Menu Highlights & Pairings</h2>
+              <h2 class="card-title">Curated Digital Menu</h2>
             </div>
-            <span class="menu-season-pill">Seasonal Tasting Program</span>
+            @if (menuPages().length > 0) {
+            <span class="menu-season-pill">{{ menuPages().length }} {{ menuPages().length === 1 ? 'Page' : 'Pages' }} Available</span>
+            }
           </div>
 
-          <!-- Menu Category Navigation Tabs -->
+          @if (isLoadingMenu()) {
+          <div class="menu-loading-box">
+            <app-loading-spinner size="md" message="Loading digital menu pages..."></app-loading-spinner>
+          </div>
+          } @else if (menuError()) {
+          <div class="menu-error-box">
+            <div class="menu-error-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <p class="menu-error-text">{{ menuError() }}</p>
+            <button type="button" class="btn btn-outline btn-sm" (click)="retryMenuLoad()">
+              Retry Loading Menu
+            </button>
+          </div>
+          } @else if (menuPages().length > 0) {
+          <!-- Menu Page Navigation Tabs / Selector -->
+          <div class="menu-page-tabs-bar" role="tablist" aria-label="Menu page selection">
+            @for (page of menuPages(); track page.id; let idx = $index) {
+            <button
+              type="button"
+              role="tab"
+              class="menu-page-pill"
+              [class.active]="activeMenuPageIndex() === idx"
+              [attr.aria-selected]="activeMenuPageIndex() === idx"
+              (click)="selectMenuPage(idx)">
+              <span class="pill-number">{{ idx + 1 }}</span>
+              <span class="pill-title">{{ page.pageLabel }}</span>
+            </button>
+            }
+          </div>
+
+          <!-- Active Menu Page Viewer -->
+          <div class="menu-page-viewer">
+            <div
+              class="menu-viewer-viewport"
+              (click)="openMenuLightbox(activeMenuPageIndex())"
+              tabindex="0"
+              role="button"
+              aria-label="Click to enlarge menu page in full resolution">
+              @if (activeMenuPage(); as curPage) {
+              <img
+                [src]="curPage.fullUrl"
+                [alt]="rest.name + ' - Menu ' + curPage.pageLabel"
+                class="menu-viewer-img"
+                loading="lazy"
+                (error)="$any($event.target).classList.add('img-fallback-hidden')" />
+              <div class="menu-viewer-gradient"></div>
+              }
+
+              <div class="menu-viewer-badge-box">
+                <span class="menu-counter">Page {{ activeMenuPageIndex() + 1 }} of {{ menuPages().length }}</span>
+                <span class="expand-hint">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
+                  </svg>
+                  <span>Full Screen Preview</span>
+                </span>
+              </div>
+
+              @if (menuPages().length > 1) {
+              <button
+                type="button"
+                class="menu-arrow prev-menu-arrow"
+                (click)="prevMenuPage(); $event.stopPropagation()"
+                aria-label="Previous menu page">
+                ‹
+              </button>
+              <button
+                type="button"
+                class="menu-arrow next-menu-arrow"
+                (click)="nextMenuPage(); $event.stopPropagation()"
+                aria-label="Next menu page">
+                ›
+              </button>
+              }
+            </div>
+
+            <!-- Thumbnail Strip for Multi-Page Menus -->
+            @if (menuPages().length > 1) {
+            <div class="menu-thumbnails-strip">
+              @for (page of menuPages(); track page.id; let idx = $index) {
+              <button
+                type="button"
+                class="menu-thumb-card"
+                [class.active]="activeMenuPageIndex() === idx"
+                (click)="selectMenuPage(idx)"
+                [attr.aria-label]="'Select ' + page.pageLabel">
+                <img
+                  [src]="page.fullUrl"
+                  [alt]="page.pageLabel + ' thumbnail'"
+                  class="menu-thumb-img"
+                  loading="lazy"
+                  (error)="$any($event.target).classList.add('img-fallback-hidden')" />
+                <span class="menu-thumb-caption">{{ page.pageLabel }}</span>
+              </button>
+              }
+            </div>
+            }
+          </div>
+
+          <p class="menu-disclaimer">
+            * Seasonal provisions and cellar reserves are prepared artisanal daily. Click any menu page to inspect in full resolution.
+          </p>
+          } @else if (rest.menuHighlights && rest.menuHighlights.length > 0) {
+          <!-- Fallback: Legacy Dishes Highlights Grid -->
           <div class="menu-tabs-bar" role="tablist" aria-label="Menu category filters">
             @for (tab of menuCategoryTabs; track tab.id) {
             <button type="button" role="tab" class="menu-category-btn"
@@ -348,7 +450,6 @@
             }
           </div>
 
-          <!-- Dishes Grid -->
           <div class="dishes-list">
             @for (dish of filteredMenu(); track dish.name) {
             <article class="dish-card">
@@ -372,8 +473,21 @@
           <p class="menu-disclaimer">
             * Dishes are prepared fresh daily using artisanal seasonal provisions.
           </p>
+          } @else {
+          <!-- Empty State: Digital Menu Under Curation -->
+          <div class="menu-curation-empty">
+            <div class="curation-icon-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+            </div>
+            <h3 class="curation-title">Digital Menu Under Curation</h3>
+            <p class="curation-desc">
+              The seasonal digital menu for this restaurant is being curated. Please contact the venue directly for daily specials and tasting menus.
+            </p>
+          </div>
+          }
         </section>
-        }
 
         <!-- Customer Reviews & Ratings Section -->
         <section class="content-card reviews-card" id="reviewsSection" appScrollReveal>
@@ -383,11 +497,7 @@
               <h2 class="card-title">Reviews & Culinary Memoirs</h2>
             </div>
             <div class="verified-badge-pill">
-              <svg viewBox="0 0 20 20" fill="currentColor" class="badge-check" aria-hidden="true">
-                <path fill-rule="evenodd"
-                  d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd" />
-              </svg>
+              <span class="d-icon d-icon-check badge-check" aria-hidden="true"></span>
               <span>100% Verified Reservations</span>
             </div>
           </div>
@@ -644,10 +754,7 @@
 
             <div class="reservation-assurance-note"
               style="display: flex; align-items: center; justify-content: center; gap: 0.45rem; font-size: 0.82rem; color: var(--color-forest); margin-top: 0.85rem;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+              <span class="d-icon d-icon-check" aria-hidden="true"></span>
               <span>Instant Confirmation &bull; Real-Time Inventory Guaranteed</span>
             </div>
           </form>
@@ -741,6 +848,40 @@
         <div class="lightbox-nav-btns">
           <button type="button" class="lightbox-nav-btn" (click)="prevImage()">‹ Previous</button>
           <button type="button" class="lightbox-nav-btn" (click)="nextImage()">Next ›</button>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Digital Menu Lightbox Modal -->
+  @if (isMenuLightboxOpen() && restaurant(); as rest) {
+  <div class="lightbox-backdrop menu-lightbox-backdrop" (click)="closeMenuLightbox()" role="dialog" aria-modal="true"
+    aria-label="Digital menu full screen preview">
+    <div class="lightbox-content menu-lightbox-content" (click)="$event.stopPropagation()">
+      <button type="button" class="lightbox-close" (click)="closeMenuLightbox()" aria-label="Close menu preview">
+        ✕
+      </button>
+
+      <div class="lightbox-image-wrapper menu-page-lightbox-wrapper">
+        @if (activeMenuPage(); as curPage) {
+        <img
+          [src]="curPage.fullUrl"
+          [alt]="rest.name + ' - ' + curPage.pageLabel + ' full size preview'"
+          class="lightbox-img menu-lightbox-img"
+          (error)="$any($event.target).classList.add('img-fallback-hidden')" />
+        }
+      </div>
+
+      <div class="lightbox-footer">
+        <span class="lightbox-caption">
+          {{ rest.name }} &bull; {{ activeMenuPage()?.pageLabel }} (Page {{ activeMenuPageIndex() + 1 }} of {{ menuPages().length }})
+        </span>
+        @if (menuPages().length > 1) {
+        <div class="lightbox-nav-btns">
+          <button type="button" class="lightbox-nav-btn" (click)="prevMenuPage()">‹ Previous Page</button>
+          <button type="button" class="lightbox-nav-btn" (click)="nextMenuPage()">Next Page ›</button>
         </div>
         }
       </div>

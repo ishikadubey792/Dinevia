@@ -1,9 +1,9 @@
-<div class="admin-shell">
+<div class="admin-shell" [class.sidebar-collapsed]="adminData.isSidebarCollapsed()">
   <!-- Sidebar (Desktop fixed / Mobile drawer) -->
   <app-admin-sidebar></app-admin-sidebar>
 
   <!-- Main View Area -->
-  <div class="admin-main">
+  <div class="admin-main" [class.sidebar-collapsed]="adminData.isSidebarCollapsed()">
     <app-admin-header></app-admin-header>
 
     <main class="admin-content-stage">

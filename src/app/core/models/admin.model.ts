@@ -52,10 +52,12 @@ export interface OwnerRestaurant {
   email: string;
   cuisines: string[];
   coverImageUrl: string;
+  coverImagePath?: string | null;
   galleryImages?: string[];
   rating?: number;
   reviewCount?: number;
-  status: 'active' | 'draft';
+  isActive: boolean;
+  status: 'active' | 'draft' | 'deactivated';
   createdAt: string;
 }
 

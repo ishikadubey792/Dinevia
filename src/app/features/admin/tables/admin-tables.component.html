@@ -2,9 +2,7 @@
   <!-- Toast Notification -->
   @if (toastMessage()) {
     <div class="admin-toast" role="status" aria-live="polite">
-      <svg viewBox="0 0 20 20" fill="currentColor" class="toast-icon">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-      </svg>
+      <span class="d-icon d-icon-check toast-icon" aria-hidden="true"></span>
       <span>{{ toastMessage() }}</span>
     </div>
   }
@@ -29,9 +27,7 @@
           class="btn btn-primary btn-md add-btn"
           (click)="openAddModal()"
           [disabled]="isLoadingTables() || !selectedRestaurantId()">
-          <svg viewBox="0 0 20 20" fill="currentColor" class="btn-icon" aria-hidden="true">
-            <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-          </svg>
+          <span class="d-icon d-icon-plus btn-icon" aria-hidden="true"></span>
           <span>Add Table</span>
         </button>
       }
@@ -109,9 +105,7 @@
       <!-- Toolbar: Search and Filter -->
       <section class="toolbar-section">
         <div class="search-input-wrap">
-          <svg viewBox="0 0 20 20" fill="currentColor" class="search-icon" aria-hidden="true">
-            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
-          </svg>
+          <span class="d-icon d-icon-search search-icon" aria-hidden="true"></span>
           <input 
             type="search" 
             [ngModel]="searchQuery()" 
@@ -254,10 +248,7 @@
           <p class="modal-subtitle">Configure seating capacity for {{ activeRestaurant()?.name }}</p>
         </div>
         <button type="button" class="modal-close" (click)="closeAddModal()" aria-label="Close dialog">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <span class="d-icon d-icon-close" aria-hidden="true"></span>
         </button>
       </div>
 
@@ -343,10 +334,7 @@
           <p class="modal-subtitle">Update capacity or status for {{ activeRestaurant()?.name }}</p>
         </div>
         <button type="button" class="modal-close" (click)="closeEditModal()" aria-label="Close dialog">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <span class="d-icon d-icon-close" aria-hidden="true"></span>
         </button>
       </div>
 

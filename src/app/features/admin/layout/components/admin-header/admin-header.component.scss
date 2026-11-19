@@ -61,8 +61,38 @@
     border-color: var(--color-forest);
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     display: none;
+  }
+}
+
+.desktop-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--color-ivory);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-forest-dark);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  &:hover {
+    background: var(--color-sage-light);
+    border-color: var(--color-terracotta);
+    color: var(--color-terracotta-dark);
+    transform: translateY(-1px);
+  }
+
+  @media (min-width: 768px) {
+    display: flex;
   }
 }
 
