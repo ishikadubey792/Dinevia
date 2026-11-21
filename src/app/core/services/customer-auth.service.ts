@@ -28,7 +28,9 @@ export class CustomerAuthService {
     const payload: CustomerRegisterRequest = {
       name: data.name.trim(),
       email: data.email.trim(),
-      password: data.password
+      password: data.password,
+      acceptedTerms: data.acceptedTerms,
+      legalDocumentId: data.legalDocumentId
     };
 
     return this.http.post<ApiResponse<CustomerRegisterResponseData>>(

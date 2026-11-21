@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal, computed } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl,
@@ -12,8 +12,10 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { FooterComponent } from '../../../shared/components/footer/footer.component';
+import { TermsModalComponent } from '../../../shared/components/terms-modal/terms-modal.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { CustomerAuthService } from '../../../core/services/customer-auth.service';
+import { LegalDocumentService } from '../../../core/services/legal-document.service';
 import { parseJwtClaims } from '../../../core/models/customer-auth.model';
 import {
   dineviaEmailValidator,
@@ -77,12 +79,13 @@ export function backendPasswordValidator(): ValidatorFn {
     ReactiveFormsModule,
     RouterLink,
     NavbarComponent,
-    FooterComponent
+    FooterComponent,
+    TermsModalComponent
   ],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.scss'
 })
-export class SignupComponent {
+export class SignupComponent implements OnInit {
   @Input() embedded = false;
   @Output() authSuccess = new EventEmitter<void>();
   @Output() switchToLogin = new EventEmitter<void>();
@@ -90,6 +93,7 @@ export class SignupComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly customerAuthService = inject(CustomerAuthService);
+  private readonly legalDocumentService = inject(LegalDocumentService);
   private readonly router = inject(Router);
 
   readonly isPasswordVisible = signal<boolean>(false);
@@ -98,6 +102,12 @@ export class SignupComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   private readonly passwordInputSignal = signal<string>('');
+
+  // Terms and Conditions state
+  readonly isTermsModalOpen = signal<boolean>(false);
+  readonly activeTerms = this.legalDocumentService.activeDocument;
+  readonly isLoadingTerms = this.legalDocumentService.loading;
+  readonly termsError = this.legalDocumentService.error;
 
   signupForm: FormGroup = this.fb.group({
     fullName: ['', [Validators.required, Validators.minLength(2)]],
@@ -112,6 +122,34 @@ export class SignupComponent {
     this.signupForm.get('password')?.valueChanges.subscribe(val => {
       this.passwordInputSignal.set(val || '');
     });
+  }
+
+  ngOnInit(): void {
+    this.loadTerms();
+  }
+
+  loadTerms(): void {
+    this.legalDocumentService.loadActiveTerms().subscribe({ error: () => {} });
+  }
+
+  retryLoadTerms(): void {
+    this.legalDocumentService.reloadActiveTerms().subscribe({ error: () => {} });
+  }
+
+  openTermsModal(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.isTermsModalOpen.set(true);
+  }
+
+  closeTermsModal(): void {
+    this.isTermsModalOpen.set(false);
+  }
+
+  handleTermsCheckboxClick(event: MouseEvent): void {
+    if (this.isLoadingTerms() || !this.activeTerms()) {
+      event.preventDefault();
+    }
   }
 
   // Password strength computation
@@ -224,6 +262,12 @@ export class SignupComponent {
       return;
     }
 
+    const activeDoc = this.activeTerms();
+    if (!activeDoc || !activeDoc.id) {
+      this.errorMessage.set('Terms and Conditions could not be verified. Please retry loading Terms before submitting.');
+      return;
+    }
+
     const fullName = (this.signupForm.get('fullName')?.value || '').trim();
     const email = (this.signupForm.get('email')?.value || '').trim();
     const password = this.signupForm.get('password')?.value || '';
@@ -234,7 +278,9 @@ export class SignupComponent {
     this.customerAuthService.register({
       name: fullName,
       email,
-      password
+      password,
+      acceptedTerms: true,
+      legalDocumentId: activeDoc.id
     }).subscribe({
       next: () => {
         // Registration successful -> automatically log the customer in
@@ -339,6 +385,17 @@ export class SignupComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
+
+        const errDetail = (err?.error?.message || '').toLowerCase();
+        if (errDetail.includes('terms') || errDetail.includes('legal document') || errDetail.includes('version')) {
+          this.signupForm.patchValue({ agreeTerms: false });
+          this.errorMessage.set(
+            err?.error?.message || 'The Terms and Conditions have been updated. Please review and agree to the latest Terms to proceed.'
+          );
+          this.retryLoadTerms();
+          return;
+        }
+
         if (err.status === 0) {
           this.errorMessage.set(
             'Unable to connect to the authentication server. Please ensure the backend is running at https://localhost:7033.'

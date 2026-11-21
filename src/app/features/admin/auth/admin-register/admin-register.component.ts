@@ -8,7 +8,9 @@ import { CuisineService } from '../../../../core/services/cuisine.service';
 import { OwnerAuthService } from '../../../../core/services/owner-auth.service';
 import { ApiCuisine } from '../../../../core/models/cuisine.model';
 import { OwnerRegisterRequest } from '../../../../core/models/owner-auth.model';
+import { LegalDocumentService } from '../../../../core/services/legal-document.service';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner.component';
+import { TermsModalComponent } from '../../../../shared/components/terms-modal/terms-modal.component';
 import {
   backendPasswordValidator,
   dineviaEmailValidator,
@@ -34,7 +36,7 @@ export const DEFAULT_FALLBACK_CUISINES: ApiCuisine[] = [
 @Component({
   selector: 'app-admin-register',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, LoadingSpinnerComponent],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, LoadingSpinnerComponent, TermsModalComponent],
   templateUrl: './admin-register.component.html',
   styleUrl: './admin-register.component.scss'
 })
@@ -45,6 +47,13 @@ export class AdminRegisterComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly cuisineService = inject(CuisineService);
   private readonly ownerAuthService = inject(OwnerAuthService);
+  private readonly legalDocumentService = inject(LegalDocumentService);
+
+  // Terms and Conditions state
+  readonly isTermsModalOpen = signal<boolean>(false);
+  readonly activeTerms = this.legalDocumentService.activeDocument;
+  readonly isLoadingTerms = this.legalDocumentService.loading;
+  readonly termsError = this.legalDocumentService.error;
 
   readonly registerForm: FormGroup = this.fb.group({
     ownerName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
@@ -125,6 +134,31 @@ export class AdminRegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCuisines();
+    this.loadTerms();
+  }
+
+  loadTerms(): void {
+    this.legalDocumentService.loadActiveTerms().subscribe({ error: () => {} });
+  }
+
+  retryLoadTerms(): void {
+    this.legalDocumentService.reloadActiveTerms().subscribe({ error: () => {} });
+  }
+
+  openTermsModal(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+    this.isTermsModalOpen.set(true);
+  }
+
+  closeTermsModal(): void {
+    this.isTermsModalOpen.set(false);
+  }
+
+  handleTermsCheckboxClick(event: MouseEvent): void {
+    if (this.isLoadingTerms() || !this.activeTerms()) {
+      event.preventDefault();
+    }
   }
 
   isFieldInvalid(fieldName: string): boolean {
@@ -274,9 +308,15 @@ export class AdminRegisterComponent implements OnInit {
       this.registerForm.get('termsAccepted')?.setValue(true, { emitEvent: false });
     }
 
+    const activeDoc = this.activeTerms();
+    if (!activeDoc || !activeDoc.id) {
+      this.errorMessage.set('Terms and Conditions could not be verified. Please retry loading Terms before submitting.');
+      return;
+    }
+
     // Front-end validation
     if (!this.termsAccepted() && !this.registerForm.get('termsAccepted')?.value) {
-      this.errorMessage.set('Please confirm that your establishment meets Dinevia hospitality standards.');
+      this.errorMessage.set('You must accept the Terms and Conditions to register.');
       return;
     }
 
@@ -342,7 +382,9 @@ export class AdminRegisterComponent implements OnInit {
       phone: this.phone.trim(),
       restaurantEmail: this.restaurantEmail.trim(),
       cuisineIds: this.selectedCuisineIds,
-      coverImage: this.selectedCoverFile
+      coverImage: this.selectedCoverFile,
+      acceptedTerms: true,
+      legalDocumentId: activeDoc.id
     };
 
     // Call real POST /api/auth/register-restaurant-owner multipart/form-data API
@@ -390,6 +432,18 @@ export class AdminRegisterComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting.set(false);
+
+        const errDetail = (err?.error?.message || '').toLowerCase();
+        if (errDetail.includes('terms') || errDetail.includes('legal document') || errDetail.includes('version')) {
+          this.registerForm.patchValue({ termsAccepted: false });
+          this.termsAccepted.set(false);
+          this.errorMessage.set(
+            err?.error?.message || 'The Terms and Conditions have been updated. Please review and agree to the latest Terms to proceed.'
+          );
+          this.retryLoadTerms();
+          return;
+        }
+
         let message = 'Restaurant registration failed. Please review your details and try again.';
 
         if (err?.error?.message) {

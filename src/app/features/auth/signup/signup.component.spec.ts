@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { SignupComponent } from './signup.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { CustomerAuthService } from '../../../core/services/customer-auth.service';
+import { LegalDocumentService } from '../../../core/services/legal-document.service';
+import { LegalDocument } from '../../../core/models/legal-document.model';
 import { ApiResponse } from '../../../core/models/cuisine.model';
 import {
   CustomerRegisterResponseData,
@@ -18,6 +21,24 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
   let customerAuthServiceMock: {
     register: ReturnType<typeof vi.fn>;
     login: ReturnType<typeof vi.fn>;
+  };
+  let legalDocumentServiceMock: {
+    activeDocument: WritableSignal<LegalDocument | null>;
+    loading: WritableSignal<boolean>;
+    error: WritableSignal<string | null>;
+    loadActiveTerms: ReturnType<typeof vi.fn>;
+    reloadActiveTerms: ReturnType<typeof vi.fn>;
+  };
+  let activeDocSignal: WritableSignal<LegalDocument | null>;
+  let loadingTermsSignal: WritableSignal<boolean>;
+  let errorTermsSignal: WritableSignal<string | null>;
+
+  const mockLegalDocument: LegalDocument = {
+    id: 42,
+    title: 'Dinevia Terms and Conditions',
+    content: '<h2>Account Registration</h2><p>By registering...</p>',
+    version: '1.0',
+    effectiveDate: '2026-11-21'
   };
 
   function createTestJwt(payload: Record<string, any>): string {
@@ -80,11 +101,30 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
       login: vi.fn().mockReturnValue(of(mockLoginResponse))
     };
 
+    activeDocSignal = signal<LegalDocument | null>(mockLegalDocument);
+    loadingTermsSignal = signal<boolean>(false);
+    errorTermsSignal = signal<string | null>(null);
+
+    legalDocumentServiceMock = {
+      activeDocument: activeDocSignal,
+      loading: loadingTermsSignal,
+      error: errorTermsSignal,
+      loadActiveTerms: vi.fn().mockImplementation(() => {
+        activeDocSignal.set(mockLegalDocument);
+        return of(mockLegalDocument);
+      }),
+      reloadActiveTerms: vi.fn().mockImplementation(() => {
+        activeDocSignal.set(mockLegalDocument);
+        return of(mockLegalDocument);
+      })
+    };
+
     await TestBed.configureTestingModule({
       imports: [SignupComponent],
       providers: [
         AuthService,
         { provide: CustomerAuthService, useValue: customerAuthServiceMock },
+        { provide: LegalDocumentService, useValue: legalDocumentServiceMock },
         provideRouter([
           { path: 'signup', component: SignupComponent },
           { path: 'profile', component: SignupComponent },
@@ -117,6 +157,21 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     expect(component.signupForm.get('email')?.value).toBe('');
     expect(component.signupForm.get('phone')?.value).toBe('');
     expect(component.signupForm.get('agreeTerms')?.value).toBe(false);
+  });
+
+  it('should fetch active terms on initialization', () => {
+    expect(legalDocumentServiceMock.loadActiveTerms).toHaveBeenCalledTimes(1);
+    expect(component.activeTerms()).toEqual(mockLegalDocument);
+  });
+
+  it('should open and close the terms modal', () => {
+    expect(component.isTermsModalOpen()).toBe(false);
+
+    component.openTermsModal();
+    expect(component.isTermsModalOpen()).toBe(true);
+
+    component.closeTermsModal();
+    expect(component.isTermsModalOpen()).toBe(false);
   });
 
   it('should toggle password and confirm password visibility signals', () => {
@@ -239,7 +294,54 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     expect(component.isLoading()).toBe(false);
   });
 
-  it('should successfully register customer, perform automatic login, and navigate to /profile', () => {
+  it('should block submission if active terms are not loaded or missing id', () => {
+    activeDocSignal.set(null);
+    fixture.detectChanges();
+
+    component.signupForm.patchValue({
+      fullName: 'Ishika Patron',
+      email: 'ishika@example.com',
+      phone: '9876543210',
+      password: 'Password@123',
+      confirmPassword: 'Password@123',
+      agreeTerms: true
+    });
+
+    component.onSubmit();
+
+    expect(customerAuthServiceMock.register).not.toHaveBeenCalled();
+    expect(component.errorMessage()).toContain('Terms and Conditions could not be verified');
+  });
+
+  it('should prevent checking terms checkbox when terms are not loaded or are loading', () => {
+    loadingTermsSignal.set(true);
+    fixture.detectChanges();
+
+    const mockEvent = {
+      preventDefault: vi.fn()
+    } as unknown as MouseEvent;
+
+    component.handleTermsCheckboxClick(mockEvent);
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
+  });
+
+  it('should display error message and retry button when terms loading fails', () => {
+    errorTermsSignal.set('Failed to retrieve terms. Service unavailable.');
+    activeDocSignal.set(null);
+    fixture.detectChanges();
+
+    const errorAlert = fixture.nativeElement.querySelector('.terms-error-alert');
+    expect(errorAlert).toBeTruthy();
+    expect(errorAlert.textContent).toContain('Failed to retrieve terms');
+
+    const retryBtn = fixture.nativeElement.querySelector('.terms-retry-btn') as HTMLButtonElement;
+    expect(retryBtn).toBeTruthy();
+    retryBtn.click();
+
+    expect(legalDocumentServiceMock.reloadActiveTerms).toHaveBeenCalledTimes(1);
+  });
+
+  it('should successfully register customer with legalDocumentId and acceptedTerms, perform automatic login, and navigate to /profile', () => {
     const navigateSpy = vi.spyOn(router, 'navigate');
 
     component.signupForm.patchValue({
@@ -253,11 +355,13 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
 
     component.onSubmit();
 
-    // Verify register called with backend-supported fields only (NO phone)
+    // Verify register called with acceptedTerms: true and legalDocumentId: 42
     expect(customerAuthServiceMock.register).toHaveBeenCalledWith({
       name: 'Ishika Patron',
       email: 'ishika@example.com',
-      password: 'Password@123'
+      password: 'Password@123',
+      acceptedTerms: true,
+      legalDocumentId: 42
     });
 
     // Verify automatic login called with credentials
@@ -276,6 +380,30 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     expect(authService.getCustomerAccessToken()).toBe(validCustomerJwt);
     expect(authService.currentUser()?.fullName).toBe('Ishika Patron');
     expect(authService.currentUser()?.email).toBe('ishika@example.com');
+  });
+
+  it('should handle terms updated error from backend by unchecking terms, displaying notice, and reloading terms', () => {
+    customerAuthServiceMock.register.mockReturnValue(
+      throwError(() => ({
+        status: 400,
+        error: { message: 'Terms and Conditions have been updated. Please accept the latest terms.' }
+      }))
+    );
+
+    component.signupForm.patchValue({
+      fullName: 'Ishika Patron',
+      email: 'ishika@example.com',
+      phone: '9876543210',
+      password: 'Password@123',
+      confirmPassword: 'Password@123',
+      agreeTerms: true
+    });
+
+    component.onSubmit();
+
+    expect(component.signupForm.get('agreeTerms')?.value).toBe(false);
+    expect(component.errorMessage()).toContain('Terms and Conditions have been updated');
+    expect(legalDocumentServiceMock.reloadActiveTerms).toHaveBeenCalled();
   });
 
   it('should handle duplicate email (400 Bad Request / 409 Conflict) from backend gracefully', () => {
@@ -531,4 +659,3 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     expect(customerAuthServiceMock.register).not.toHaveBeenCalled();
   });
 });
-

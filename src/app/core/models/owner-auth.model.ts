@@ -13,6 +13,8 @@ export interface OwnerRegisterRequest {
   restaurantEmail: string;
   cuisineIds: number[];
   coverImage?: File | null;
+  acceptedTerms: boolean;
+  legalDocumentId: number;
 }
 
 /**

@@ -12,6 +12,13 @@
   <ng-container *ngTemplateOutlet="signupCardTpl"></ng-container>
 }
 
+<!-- Terms and Conditions Modal -->
+<app-terms-modal 
+  [isOpen]="isTermsModalOpen()" 
+  [document]="activeTerms()" 
+  (close)="closeTermsModal()">
+</app-terms-modal>
+
 <ng-template #signupCardTpl>
     <div class="auth-card signup-card" [class.modal-embedded-card]="embedded">
       <!-- Brand & Header -->
@@ -206,11 +213,38 @@
         <!-- Terms and Conditions Checkbox -->
         <div class="terms-row">
           <label class="checkbox-container">
-            <input type="checkbox" formControlName="agreeTerms" class="custom-checkbox" />
+            <input 
+              type="checkbox" 
+              formControlName="agreeTerms" 
+              class="custom-checkbox" 
+              [class.is-disabled]="isLoadingTerms() || !activeTerms()"
+              (click)="handleTermsCheckboxClick($event)" />
             <span class="checkbox-label">
-              I agree to Dinevia's <strong>Member Hospitality Charter</strong> and <strong>Privacy Policies</strong>.
+              I have read and agree to the 
+              <button 
+                type="button" 
+                class="terms-link-btn" 
+                (click)="openTermsModal($event)"
+                [disabled]="isLoadingTerms() || !activeTerms()">
+                Terms and Conditions
+              </button>.
             </span>
           </label>
+
+          @if (isLoadingTerms()) {
+            <div class="terms-status-hint">
+              <span class="terms-spinner" aria-hidden="true"></span>
+              <span>Loading current Terms &amp; Conditions...</span>
+            </div>
+          } @else if (termsError()) {
+            <div class="terms-error-alert" role="alert">
+              <span>{{ termsError() }}</span>
+              <button type="button" class="terms-retry-btn" (click)="retryLoadTerms()">
+                Retry
+              </button>
+            </div>
+          }
+
           @if (isFieldInvalid('agreeTerms')) {
             <span class="error-hint">You must accept the terms to create an account.</span>
           }
@@ -219,7 +253,7 @@
         <!-- Submit Button -->
         <button 
           type="submit" 
-          [disabled]="isLoading()"
+          [disabled]="isLoading() || isLoadingTerms() || !activeTerms() || signupForm.invalid"
           class="btn btn-terracotta btn-lg auth-submit-btn">
           @if (!isLoading()) {
             <span>Create Complimentary Membership</span>

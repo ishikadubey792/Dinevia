@@ -1,4 +1,5 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+
+import { Component, inject, signal, computed, OnInit, OnDestroy, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -28,6 +29,14 @@ import {
 
 export type SortOption = 'name-asc' | 'name-desc' | 'rating-desc' | 'reviews-desc' | 'recommended';
 
+export interface AutocompleteItem {
+  id: string;
+  label: string;
+  type: 'restaurant' | 'cuisine' | 'city';
+  categoryLabel: 'Restaurant' | 'Cuisine' | 'City';
+  value: string;
+}
+
 @Component({
   selector: 'app-explore',
   standalone: true,
@@ -45,12 +54,17 @@ export type SortOption = 'name-asc' | 'name-desc' | 'rating-desc' | 'reviews-des
   templateUrl: './explore.component.html',
   styleUrl: './explore.component.scss'
 })
-export class ExploreComponent implements OnInit {
+export class ExploreComponent implements OnInit, OnDestroy {
   private readonly restaurantService = inject(RestaurantService);
   private readonly cuisineService = inject(CuisineService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly elementRef = inject(ElementRef);
+  private previousBodyOverflow: string | null = null;
+
+  @ViewChild('mobileFilterBtn') mobileFilterBtnRef?: ElementRef<HTMLButtonElement>;
+  @ViewChild('drawerCloseBtn') drawerCloseBtnRef?: ElementRef<HTMLButtonElement>;
 
   // Raw data from service
   readonly allRestaurants = this.restaurantService.restaurants;
@@ -66,6 +80,12 @@ export class ExploreComponent implements OnInit {
   readonly selectedCity = signal<string>('all');
   readonly sortBy = signal<SortOption>('name-asc');
   readonly viewMode = signal<'grid' | 'compact'>('grid');
+
+  // Autocomplete Signals
+  readonly isAutocompleteOpen = signal<boolean>(false);
+  readonly highlightedIndex = signal<number>(-1);
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastRouteSearchParam: string | null | undefined = undefined;
 
   // Booking Schedule Signals
   readonly minDate = signal<string>(getTodayDateString());
@@ -164,6 +184,115 @@ export class ExploreComponent implements OnInit {
       }
     });
     return Array.from(cities).sort((a, b) => a.localeCompare(b));
+  });
+
+  // Autocomplete matching score helper: 1=exact, 2=prefix, 3=word-prefix, 4=partial/substring
+  private getMatchScore(label: string, query: string): number {
+    const l = label.toLowerCase();
+    const q = query.toLowerCase();
+    if (l === q) return 1;
+    if (l.startsWith(q)) return 2;
+    const words = l.split(/[\s,.-]+/);
+    if (words.some(w => w.startsWith(q))) return 3;
+    if (l.includes(q)) return 4;
+    return 0;
+  }
+
+  // Live Dynamic Autocomplete Suggestions derived from loaded restaurants, cuisines, and cities
+  readonly autocompleteSuggestions = computed<AutocompleteItem[]>(() => {
+    const query = this.searchQuery().trim();
+    if (query.length < 1) {
+      return [];
+    }
+
+    const queryLower = query.toLowerCase();
+    const candidates: { item: AutocompleteItem; score: number }[] = [];
+    const seenKeys = new Set<string>();
+
+    const addCandidate = (
+      label: string,
+      type: 'restaurant' | 'cuisine' | 'city',
+      categoryLabel: 'Restaurant' | 'Cuisine' | 'City',
+      value: string
+    ) => {
+      const trimmed = label.trim();
+      if (!trimmed) return;
+      const key = `${type}:${trimmed.toLowerCase()}`;
+      if (seenKeys.has(key)) return;
+      seenKeys.add(key);
+
+      const score = this.getMatchScore(trimmed, queryLower);
+      if (score > 0) {
+        candidates.push({
+          item: {
+            id: '',
+            label: trimmed,
+            type,
+            categoryLabel,
+            value
+          },
+          score
+        });
+      }
+    };
+
+    // 1. Available Cuisines
+    for (const c of this.allCuisines()) {
+      if (c.name) {
+        addCandidate(c.name, 'cuisine', 'Cuisine', c.name);
+      }
+    }
+
+    // 2. Destination Cities
+    for (const city of this.availableCities()) {
+      addCandidate(city, 'city', 'City', city);
+    }
+
+    // 3. Restaurant Names
+    for (const r of this.allRestaurants()) {
+      if (r.name) {
+        addCandidate(r.name, 'restaurant', 'Restaurant', r.name);
+      }
+    }
+
+    // Rank: exact match first (1), prefix match second (2), word-prefix third (3), partial fourth (4)
+    candidates.sort((a, b) => {
+      if (a.score !== b.score) {
+        return a.score - b.score;
+      }
+      return a.item.label.localeCompare(b.item.label);
+    });
+
+    // Limit to sensible maximum (8) and assign stable option ids
+    return candidates.slice(0, 8).map((c, index) => ({
+      ...c.item,
+      id: `exp-suggestion-${index}`
+    }));
+  });
+
+  readonly activeDescendantId = computed<string | null>(() => {
+    const index = this.highlightedIndex();
+    const suggestions = this.autocompleteSuggestions();
+    if (index >= 0 && index < suggestions.length) {
+      return suggestions[index].id;
+    }
+    return null;
+  });
+
+  // Dynamic quick-search tags derived purely from loaded cuisines and cities (zero mock data)
+  readonly dynamicQuickTags = computed<string[]>(() => {
+    const tags: string[] = [];
+    for (const c of this.allCuisines()) {
+      if (c.name && tags.length < 3) {
+        tags.push(c.name);
+      }
+    }
+    for (const city of this.availableCities()) {
+      if (city && !tags.includes(city) && tags.length < 5) {
+        tags.push(city);
+      }
+    }
+    return tags;
   });
 
   // Filtered and Sorted Restaurant List (non-mutating; A–Z by default)
@@ -275,9 +404,13 @@ export class ExploreComponent implements OnInit {
       }
       this.lastRouteCuisineParam = normalizedCuisine;
 
-      if (searchParam) {
-        this.searchQuery.set(searchParam);
+      const normalizedSearch = searchParam ? searchParam.trim() : null;
+      if (normalizedSearch) {
+        this.searchQuery.set(normalizedSearch);
+      } else if (this.lastRouteSearchParam !== undefined && this.lastRouteSearchParam !== null) {
+        this.searchQuery.set('');
       }
+      this.lastRouteSearchParam = normalizedSearch;
       if (cityParam) {
         this.selectedCity.set(cityParam);
       }
@@ -316,10 +449,196 @@ export class ExploreComponent implements OnInit {
   // Filter setters
   onSearchChange(query: string): void {
     this.searchQuery.set(query);
+    this.highlightedIndex.set(-1);
+    if (query.trim().length >= 1) {
+      this.isAutocompleteOpen.set(true);
+    } else {
+      this.isAutocompleteOpen.set(false);
+    }
+    this.debouncedSyncSearchParam(query);
+  }
+
+  onSearchFocus(): void {
+    if (this.searchQuery().trim().length >= 1 && this.autocompleteSuggestions().length > 0) {
+      this.isAutocompleteOpen.set(true);
+    }
+  }
+
+  onSearchInputClick(): void {
+    if (this.searchQuery().trim().length >= 1 && this.autocompleteSuggestions().length > 0) {
+      this.isAutocompleteOpen.set(true);
+    }
+  }
+
+  onSearchKeydown(event: KeyboardEvent): void {
+    const suggestions = this.autocompleteSuggestions();
+    const isOpen = this.isAutocompleteOpen() && suggestions.length > 0;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        if (!isOpen) {
+          if (suggestions.length > 0) {
+            this.isAutocompleteOpen.set(true);
+            this.highlightedIndex.set(0);
+            event.preventDefault();
+          }
+        } else {
+          event.preventDefault();
+          const next = this.highlightedIndex() + 1;
+          this.highlightedIndex.set(next >= suggestions.length ? 0 : next);
+        }
+        break;
+
+      case 'ArrowUp':
+        if (isOpen) {
+          event.preventDefault();
+          const prev = this.highlightedIndex() - 1;
+          this.highlightedIndex.set(prev < 0 ? suggestions.length - 1 : prev);
+        }
+        break;
+
+      case 'Enter':
+        if (isOpen && this.highlightedIndex() >= 0 && this.highlightedIndex() < suggestions.length) {
+          event.preventDefault();
+          this.selectSuggestion(suggestions[this.highlightedIndex()]);
+        } else {
+          this.closeAutocomplete();
+        }
+        break;
+
+      case 'Escape':
+        if (isOpen) {
+          event.preventDefault();
+          this.closeAutocomplete();
+        }
+        break;
+
+      case 'Tab':
+        this.closeAutocomplete();
+        break;
+    }
+  }
+
+  selectSuggestion(item: AutocompleteItem): void {
+    this.searchQuery.set(item.value);
+    this.closeAutocomplete();
+    this.syncSearchQueryParam(item.value);
+  }
+
+  selectQuickTag(tag: string): void {
+    this.onSearchChange(tag);
+    this.syncSearchQueryParam(tag);
   }
 
   clearSearch(): void {
     this.searchQuery.set('');
+    this.closeAutocomplete();
+    this.syncSearchQueryParam('');
+  }
+
+  closeAutocomplete(): void {
+    this.isAutocompleteOpen.set(false);
+    this.highlightedIndex.set(-1);
+  }
+
+  setHighlightedIndex(index: number): void {
+    this.highlightedIndex.set(index);
+  }
+
+  private debouncedSyncSearchParam(query: string): void {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+    this.searchDebounceTimer = setTimeout(() => {
+      this.syncSearchQueryParam(query);
+    }, 250);
+  }
+
+  syncSearchQueryParam(query: string): void {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+    const trimmed = query.trim();
+    const nextParam = trimmed.length > 0 ? trimmed : null;
+    const currentParam = this.route.snapshot.queryParamMap.get('search') || this.lastRouteSearchParam || null;
+
+    if (currentParam !== nextParam) {
+      this.lastRouteSearchParam = nextParam;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { search: nextParam },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    const searchWrapper = this.elementRef.nativeElement.querySelector('.search-bar-wrapper');
+    if (searchWrapper && !searchWrapper.contains(target)) {
+      this.closeAutocomplete();
+    }
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscapeKey(event?: Event): void {
+    if (this.isMobileFilterOpen()) {
+      event?.preventDefault();
+      this.closeMobileFilters();
+    }
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeyDown(event: KeyboardEvent): void {
+    if (!this.isMobileFilterOpen()) return;
+
+    if (event.key === 'Tab') {
+      this.handleDrawerFocusTrap(event);
+    }
+  }
+
+  private handleDrawerFocusTrap(event: KeyboardEvent): void {
+    const drawerEl = this.elementRef.nativeElement.querySelector('#mobileFilterDrawer') as HTMLElement | null;
+    if (!drawerEl) return;
+
+    const focusableSelectors = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusableElements = Array.from(drawerEl.querySelectorAll<HTMLElement>(focusableSelectors))
+      .filter(el => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true' && el.style.display !== 'none');
+
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey) {
+      if (document.activeElement === firstElement || !drawerEl.contains(document.activeElement)) {
+        event.preventDefault();
+        lastElement.focus();
+      }
+    } else {
+      if (document.activeElement === lastElement || !drawerEl.contains(document.activeElement)) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+    if (typeof document !== 'undefined' && this.previousBodyOverflow !== null) {
+      document.body.style.overflow = this.previousBodyOverflow;
+      this.previousBodyOverflow = null;
+    }
   }
 
   setCuisine(slug: string): void {
@@ -387,6 +706,11 @@ export class ExploreComponent implements OnInit {
   }
 
   resetAllFilters(): void {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+    this.closeAutocomplete();
     this.searchQuery.set('');
     this.selectedCuisine.set('all');
     this.selectedRating.set(0);
@@ -397,6 +721,8 @@ export class ExploreComponent implements OnInit {
     this.selectedStartTime.set('18:30');
     this.selectedEndTime.set('20:00');
     this.selectedGuests.set(2);
+    this.lastRouteSearchParam = null;
+    this.lastRouteCuisineParam = null;
 
     this.router.navigate([], {
       relativeTo: this.route,
@@ -426,12 +752,40 @@ export class ExploreComponent implements OnInit {
     });
   }
 
+  openMobileFilters(): void {
+    this.isMobileFilterOpen.set(true);
+    if (typeof document !== 'undefined') {
+      if (this.previousBodyOverflow === null) {
+        this.previousBodyOverflow = document.body.style.overflow;
+      }
+      document.body.style.overflow = 'hidden';
+    }
+    setTimeout(() => {
+      const closeBtn = this.drawerCloseBtnRef?.nativeElement ||
+        this.elementRef.nativeElement.querySelector('.drawer-close-btn') as HTMLElement | null;
+      closeBtn?.focus();
+    }, 50);
+  }
+
   toggleMobileFilters(): void {
-    this.isMobileFilterOpen.update(open => !open);
+    if (this.isMobileFilterOpen()) {
+      this.closeMobileFilters();
+    } else {
+      this.openMobileFilters();
+    }
   }
 
   closeMobileFilters(): void {
     this.isMobileFilterOpen.set(false);
+    if (typeof document !== 'undefined' && this.previousBodyOverflow !== null) {
+      document.body.style.overflow = this.previousBodyOverflow;
+      this.previousBodyOverflow = null;
+    }
+    setTimeout(() => {
+      const filterBtn = this.mobileFilterBtnRef?.nativeElement ||
+        this.elementRef.nativeElement.querySelector('.mobile-filter-btn') as HTMLElement | null;
+      filterBtn?.focus();
+    }, 0);
   }
 
   // Navigation to restaurant details page

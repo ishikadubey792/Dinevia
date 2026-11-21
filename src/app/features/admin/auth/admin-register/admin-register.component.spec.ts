@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminRegisterComponent } from './admin-register.component';
@@ -6,8 +7,10 @@ import { AdminDataService } from '../../../../core/services/admin-data.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { CuisineService } from '../../../../core/services/cuisine.service';
 import { OwnerAuthService } from '../../../../core/services/owner-auth.service';
+import { LegalDocumentService } from '../../../../core/services/legal-document.service';
 import { ApiCuisine, ApiResponse } from '../../../../core/models/cuisine.model';
 import { OwnerRegisterResponseData } from '../../../../core/models/owner-auth.model';
+import { LegalDocument } from '../../../../core/models/legal-document.model';
 
 describe('AdminRegisterComponent', () => {
   let component: AdminRegisterComponent;
@@ -17,6 +20,24 @@ describe('AdminRegisterComponent', () => {
   let authService: AuthService;
   let cuisineServiceMock: { getCuisines: ReturnType<typeof vi.fn> };
   let ownerAuthServiceMock: { registerRestaurantOwner: ReturnType<typeof vi.fn> };
+  let legalDocumentServiceMock: {
+    activeDocument: WritableSignal<LegalDocument | null>;
+    loading: WritableSignal<boolean>;
+    error: WritableSignal<string | null>;
+    loadActiveTerms: ReturnType<typeof vi.fn>;
+    reloadActiveTerms: ReturnType<typeof vi.fn>;
+  };
+  let activeDocSignal: WritableSignal<LegalDocument | null>;
+  let loadingTermsSignal: WritableSignal<boolean>;
+  let errorTermsSignal: WritableSignal<string | null>;
+
+  const mockLegalDocument: LegalDocument = {
+    id: 42,
+    title: 'Dinevia Terms and Conditions',
+    content: '<h2>Restaurant Owner Onboarding Charter</h2><p>Rules and hospitality standards...</p>',
+    version: '2.0',
+    effectiveDate: '2026-11-21'
+  };
 
   const mockCuisinesResponse: ApiResponse<ApiCuisine[]> = {
     statusCode: 200,
@@ -57,6 +78,24 @@ describe('AdminRegisterComponent', () => {
       registerRestaurantOwner: vi.fn().mockReturnValue(of(mockRegisterSuccessResponse))
     };
 
+    activeDocSignal = signal<LegalDocument | null>(mockLegalDocument);
+    loadingTermsSignal = signal<boolean>(false);
+    errorTermsSignal = signal<string | null>(null);
+
+    legalDocumentServiceMock = {
+      activeDocument: activeDocSignal,
+      loading: loadingTermsSignal,
+      error: errorTermsSignal,
+      loadActiveTerms: vi.fn().mockImplementation(() => {
+        activeDocSignal.set(mockLegalDocument);
+        return of(mockLegalDocument);
+      }),
+      reloadActiveTerms: vi.fn().mockImplementation(() => {
+        activeDocSignal.set(mockLegalDocument);
+        return of(mockLegalDocument);
+      })
+    };
+
     await TestBed.configureTestingModule({
       imports: [AdminRegisterComponent],
       providers: [
@@ -76,6 +115,10 @@ describe('AdminRegisterComponent', () => {
         {
           provide: OwnerAuthService,
           useValue: ownerAuthServiceMock
+        },
+        {
+          provide: LegalDocumentService,
+          useValue: legalDocumentServiceMock
         }
       ]
     }).compileComponents();
@@ -96,7 +139,29 @@ describe('AdminRegisterComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should initialize the business registration fields empty and terms unchecked by default', () => {
+  // 1. Terms loading on initialization
+  it('should fetch active Terms on initialization using LegalDocumentService', () => {
+    expect(legalDocumentServiceMock.loadActiveTerms).toHaveBeenCalledTimes(1);
+    expect(component.activeTerms()).toEqual(mockLegalDocument);
+  });
+
+  // 2. Modal open and close
+  it('should open and close the Terms modal without automatically checking acceptance', () => {
+    expect(component.isTermsModalOpen()).toBe(false);
+    expect(component.termsAccepted()).toBe(false);
+
+    component.openTermsModal();
+    expect(component.isTermsModalOpen()).toBe(true);
+
+    component.closeTermsModal();
+    expect(component.isTermsModalOpen()).toBe(false);
+    // Closing modal must not check checkbox
+    expect(component.termsAccepted()).toBe(false);
+    expect(component.registerForm.get('termsAccepted')?.value).toBe(false);
+  });
+
+  // 3. Checkbox initially unchecked
+  it('should initialize business registration fields empty and terms unchecked by default', () => {
     expect(component.ownerName).toBe('');
     expect(component.ownerEmail).toBe('');
     expect(component.password).toBe('');
@@ -111,6 +176,7 @@ describe('AdminRegisterComponent', () => {
     expect(component.coverImagePreview).toBe('');
 
     expect(component.termsAccepted()).toBe(false);
+    expect(component.registerForm.get('termsAccepted')?.value).toBe(false);
     expect(component.isSubmitting()).toBe(false);
   });
 
@@ -120,6 +186,7 @@ describe('AdminRegisterComponent', () => {
     expect(component.isLoadingCuisines()).toBe(false);
   });
 
+  // 12. Existing cuisine selection works
   it('should toggle cuisine selection using number IDs and names', () => {
     expect(component.isCuisineSelected(3)).toBe(false);
     expect(component.selectedCuisineIds.includes(3)).toBe(false);
@@ -143,6 +210,7 @@ describe('AdminRegisterComponent', () => {
     expect(component.availableCuisines().length).toBeGreaterThan(0);
   });
 
+  // 4. Mandatory acceptance
   it('should keep termsAccepted unchecked by default and block submission until checked', () => {
     const termsCheckbox = fixture.nativeElement.querySelector('input[name="termsAccepted"]') as HTMLInputElement;
     expect(termsCheckbox).toBeTruthy();
@@ -163,7 +231,7 @@ describe('AdminRegisterComponent', () => {
 
     component.onSubmit();
 
-    expect(component.errorMessage()).toContain('Please confirm that your establishment meets Dinevia hospitality standards.');
+    expect(component.errorMessage()).toContain('You must accept the Terms and Conditions to register.');
     expect(ownerAuthServiceMock.registerRestaurantOwner).not.toHaveBeenCalled();
     expect(component.isSubmitting()).toBe(false);
 
@@ -174,7 +242,8 @@ describe('AdminRegisterComponent', () => {
     expect(ownerAuthServiceMock.registerRestaurantOwner).toHaveBeenCalledTimes(1);
   });
 
-  it('should register restaurant, establish owner session, and navigate to /admin/dashboard on submit', () => {
+  // 5, 6, 7. Correct LegalDocumentId & AcceptedTerms in payload, successful owner registration
+  it('should register restaurant with AcceptedTerms and LegalDocumentId, establish owner session, and navigate', () => {
     vi.useFakeTimers();
     const initialCount = adminData.ownerRestaurants().length;
     const navigateSpy = vi.spyOn(router, 'navigate');
@@ -193,7 +262,14 @@ describe('AdminRegisterComponent', () => {
 
     component.onSubmit();
 
-    expect(ownerAuthServiceMock.registerRestaurantOwner).toHaveBeenCalled();
+    expect(ownerAuthServiceMock.registerRestaurantOwner).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerName: 'Chef Julien Laurent',
+        ownerEmail: 'julien.laurent@dinevia.com',
+        acceptedTerms: true,
+        legalDocumentId: 42
+      })
+    );
     expect(component.successMessage()).toContain('Registration successful');
     expect(authService.isOwnerAuthenticated()).toBe(true);
     expect(authService.currentOwner()?.name).toBe('Chef Julien Laurent');
@@ -203,6 +279,91 @@ describe('AdminRegisterComponent', () => {
     vi.advanceTimersByTime(500);
     expect(navigateSpy).toHaveBeenCalledWith(['/admin/dashboard']);
     vi.useRealTimers();
+  });
+
+  // 8. Terms API failure blocks registration
+  it('should block registration if active Terms cannot be loaded or verified', () => {
+    activeDocSignal.set(null);
+    fixture.detectChanges();
+
+    component.ownerName = 'Chef Julien Laurent';
+    component.ownerEmail = 'julien.laurent@dinevia.com';
+    component.password = 'OwnerPass@2026';
+    component.restaurantName = 'Le Gabriel Atelier';
+    component.streetAddress = '42 Rue du Faubourg';
+    component.city = 'Paris';
+    component.description = 'Contemporary fine dining sanctuary with seasonal tasting menus.';
+    component.phone = '9876543210';
+    component.restaurantEmail = 'reservations@legabriel.com';
+    component.selectedCuisineIds = [1];
+    component.termsAccepted.set(true);
+
+    component.onSubmit();
+
+    expect(ownerAuthServiceMock.registerRestaurantOwner).not.toHaveBeenCalled();
+    expect(component.errorMessage()).toContain('Terms and Conditions could not be verified');
+  });
+
+  // 9. Retry functionality
+  it('should display error message and allow retry when terms fail to load', () => {
+    errorTermsSignal.set('Failed to load terms document.');
+    activeDocSignal.set(null);
+    fixture.detectChanges();
+
+    const errorAlert = fixture.nativeElement.querySelector('.terms-error-alert');
+    expect(errorAlert).toBeTruthy();
+    expect(errorAlert.textContent).toContain('Failed to load terms document.');
+
+    const retryBtn = fixture.nativeElement.querySelector('.terms-retry-btn') as HTMLButtonElement;
+    expect(retryBtn).toBeTruthy();
+    retryBtn.click();
+
+    expect(legalDocumentServiceMock.reloadActiveTerms).toHaveBeenCalledTimes(1);
+  });
+
+  // 10. Updated Terms response resets acceptance
+  it('should reset acceptance checkbox, show update notice, and reload terms when backend indicates terms changed', () => {
+    ownerAuthServiceMock.registerRestaurantOwner.mockReturnValue(
+      throwError(() => ({
+        status: 400,
+        error: {
+          statusCode: 400,
+          message: 'The Terms and Conditions have been updated. Please accept the latest terms.'
+        }
+      }))
+    );
+
+    component.ownerName = 'Chef Julien Laurent';
+    component.ownerEmail = 'julien.laurent@dinevia.com';
+    component.password = 'OwnerPass@2026';
+    component.restaurantName = 'Le Gabriel Atelier';
+    component.streetAddress = '42 Rue du Faubourg';
+    component.city = 'Paris';
+    component.description = 'Contemporary fine dining sanctuary with seasonal tasting menus.';
+    component.phone = '9876543210';
+    component.restaurantEmail = 'reservations@legabriel.com';
+    component.selectedCuisineIds = [1];
+    component.termsAccepted.set(true);
+
+    component.onSubmit();
+
+    expect(component.termsAccepted()).toBe(false);
+    expect(component.registerForm.get('termsAccepted')?.value).toBe(false);
+    expect(component.errorMessage()).toContain('Terms and Conditions have been updated');
+    expect(legalDocumentServiceMock.reloadActiveTerms).toHaveBeenCalled();
+  });
+
+  // 11. Existing image upload works
+  it('should handle cover image selection and preview', () => {
+    const dummyFile = new File(['image-bytes'], 'facade.jpg', { type: 'image/jpeg' });
+    const event = {
+      target: {
+        files: [dummyFile]
+      }
+    } as unknown as Event;
+
+    component.onFileSelected(event);
+    expect(component.selectedCoverFile).toBe(dummyFile);
   });
 
   it('should handle API registration failure gracefully and display error message', () => {
@@ -342,7 +503,9 @@ describe('AdminRegisterComponent', () => {
         city: 'Paris',
         description: 'Contemporary fine dining sanctuary with seasonal tasting menus.',
         phone: '9876543210',
-        restaurantEmail: 'reservations@legabriel.com'
+        restaurantEmail: 'reservations@legabriel.com',
+        acceptedTerms: true,
+        legalDocumentId: 42
       })
     );
   });
@@ -351,5 +514,17 @@ describe('AdminRegisterComponent', () => {
     component.isSubmitting.set(true);
     component.onSubmit();
     expect(ownerAuthServiceMock.registerRestaurantOwner).not.toHaveBeenCalled();
+  });
+
+  it('should prevent checking terms checkbox when terms are loading or not loaded', () => {
+    loadingTermsSignal.set(true);
+    fixture.detectChanges();
+
+    const mockEvent = {
+      preventDefault: vi.fn()
+    } as unknown as MouseEvent;
+
+    component.handleTermsCheckboxClick(mockEvent);
+    expect(mockEvent.preventDefault).toHaveBeenCalled();
   });
 });

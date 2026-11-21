@@ -41,7 +41,9 @@ describe('CustomerAuthService', () => {
       const requestPayload: CustomerRegisterRequest = {
         name: '  Ishika  ',
         email: '  ishika@example.com  ',
-        password: 'Password@123'
+        password: 'Password@123',
+        acceptedTerms: true,
+        legalDocumentId: 1
       };
 
       const mockResponse: ApiResponse<CustomerRegisterResponseData> = {
@@ -67,7 +69,9 @@ describe('CustomerAuthService', () => {
       expect(req.request.body).toEqual({
         name: 'Ishika',
         email: 'ishika@example.com',
-        password: 'Password@123'
+        password: 'Password@123',
+        acceptedTerms: true,
+        legalDocumentId: 1
       });
 
       req.flush(mockResponse);
@@ -77,7 +81,9 @@ describe('CustomerAuthService', () => {
       const requestPayload: CustomerRegisterRequest = {
         name: 'Ishika',
         email: 'ishika@example.com',
-        password: 'Password@123'
+        password: 'Password@123',
+        acceptedTerms: true,
+        legalDocumentId: 1
       };
 
       service.register(requestPayload).subscribe({

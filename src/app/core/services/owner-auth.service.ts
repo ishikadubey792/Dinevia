@@ -54,6 +54,9 @@ export class OwnerAuthService {
       formData.append('CoverImage', request.coverImage, request.coverImage.name);
     }
 
+    formData.append('AcceptedTerms', String(request.acceptedTerms));
+    formData.append('LegalDocumentId', String(request.legalDocumentId));
+
     return formData;
   }
 

@@ -281,15 +281,47 @@
         <!-- Confirmation Terms -->
         <div class="form-terms">
           <label class="terms-label">
-            <input type="checkbox" name="termsAccepted" formControlName="termsAccepted" />
-            <span>I confirm this establishment meets Dinevia's hospitality standards.</span>
+            <input 
+              type="checkbox" 
+              name="termsAccepted" 
+              formControlName="termsAccepted"
+              [class.is-disabled]="isLoadingTerms() || !activeTerms()"
+              (click)="handleTermsCheckboxClick($event)" />
+            <span>
+              I have read and agree to the 
+              <button 
+                type="button" 
+                class="terms-link-btn" 
+                (click)="openTermsModal($event)"
+                [disabled]="isLoadingTerms() || !activeTerms()">
+                Terms and Conditions
+              </button>.
+            </span>
           </label>
+
+          @if (isLoadingTerms()) {
+            <div class="terms-status-hint">
+              <span class="terms-spinner" aria-hidden="true"></span>
+              <span>Loading current Terms &amp; Conditions...</span>
+            </div>
+          } @else if (termsError()) {
+            <div class="terms-error-alert" role="alert">
+              <span>{{ termsError() }}</span>
+              <button type="button" class="terms-retry-btn" (click)="retryLoadTerms()">
+                Retry
+              </button>
+            </div>
+          }
+
           @if (isFieldInvalid('termsAccepted')) {
-            <span class="error-hint">You must accept the hospitality standards to register.</span>
+            <span class="error-hint">You must accept the Terms and Conditions to register.</span>
           }
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block submit-btn" [disabled]="isSubmitting()">
+        <button 
+          type="submit" 
+          class="btn btn-primary btn-block submit-btn" 
+          [disabled]="isSubmitting() || isLoadingTerms() || !activeTerms() || registerForm.invalid">
           @if (isSubmitting()) {
             <span class="loading-spinner" aria-hidden="true"></span>
             <span>Registering Restaurant...</span>
@@ -317,4 +349,11 @@
   <footer class="auth-simple-footer">
     <p>&copy; 2026 Dinevia Hospitality Group &bull; Fine Dining Sanctuary Network</p>
   </footer>
+
+  <!-- Terms and Conditions Modal -->
+  <app-terms-modal 
+    [isOpen]="isTermsModalOpen()" 
+    [document]="activeTerms()" 
+    (close)="closeTermsModal()">
+  </app-terms-modal>
 </div>

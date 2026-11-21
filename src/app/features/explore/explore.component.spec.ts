@@ -489,5 +489,391 @@ describe('ExploreComponent Search and Filters Integration', () => {
     expect(component.selectedGuests()).toBe(2);
     expect(component.activeFilterCount()).toBe(0);
   });
+
+  // ---- Phase 2: Live Autocomplete, Keyboard Accessibility & URL Synchronization Tests ----
+
+  describe('Phase 2: Live Autocomplete and Search Enhancements', () => {
+    it('should reactively generate autocomplete suggestions derived from loaded restaurants, cuisines, and cities', () => {
+      // Query "Ital" should match cuisine "Italian"
+      component.onSearchChange('Ital');
+      fixture.detectChanges();
+
+      const suggestions = component.autocompleteSuggestions();
+      expect(suggestions.length).toBeGreaterThan(0);
+      const cuisineSuggestion = suggestions.find(s => s.type === 'cuisine' && s.label === 'Italian');
+      expect(cuisineSuggestion).toBeDefined();
+      expect(cuisineSuggestion?.categoryLabel).toBe('Cuisine');
+    });
+
+    it('should return empty autocomplete suggestions when search query is empty or whitespace only', () => {
+      component.onSearchChange('');
+      expect(component.autocompleteSuggestions()).toEqual([]);
+      expect(component.isAutocompleteOpen()).toBe(false);
+
+      component.onSearchChange('    ');
+      expect(component.autocompleteSuggestions()).toEqual([]);
+      expect(component.isAutocompleteOpen()).toBe(false);
+    });
+
+    it('should prioritize exact and prefix matches before partial substring matches', () => {
+      // With query 'Nap', City 'Naples' (prefix) should rank before 'Trattoria Bella Napoli' (word-prefix/partial)
+      component.onSearchChange('Nap');
+      const suggestions = component.autocompleteSuggestions();
+
+      expect(suggestions.length).toBeGreaterThanOrEqual(2);
+      expect(suggestions[0].label).toBe('Naples');
+      expect(suggestions[0].type).toBe('city');
+      expect(suggestions[1].label).toBe('Trattoria Bella Napoli');
+      expect(suggestions[1].type).toBe('restaurant');
+    });
+
+    it('should perform case-insensitive and trimmed matching for autocomplete suggestions', () => {
+      component.onSearchChange('   fReNcH   ');
+      const suggestions = component.autocompleteSuggestions();
+
+      expect(suggestions.some(s => s.label === 'French Haute' && s.type === 'cuisine')).toBe(true);
+    });
+
+    it('should limit suggestions to sensible maximum (8) and avoid duplicate items', () => {
+      component.onSearchChange('a');
+      const suggestions = component.autocompleteSuggestions();
+      expect(suggestions.length).toBeLessThanOrEqual(8);
+
+      const keys = suggestions.map(s => `${s.type}:${s.label.toLowerCase()}`);
+      const uniqueKeys = new Set(keys);
+      expect(keys.length).toBe(uniqueKeys.size);
+    });
+
+    it('should render ARIA combobox attributes on the search input and listbox on dropdown', () => {
+      component.onSearchChange('Sakura');
+      fixture.detectChanges();
+
+      const inputEl = fixture.nativeElement.querySelector('#restaurantSearchInput');
+      expect(inputEl.getAttribute('role')).toBe('combobox');
+      expect(inputEl.getAttribute('aria-autocomplete')).toBe('list');
+      expect(inputEl.getAttribute('aria-expanded')).toBe('true');
+      expect(inputEl.getAttribute('aria-controls')).toBe('exploreAutocompleteListbox');
+
+      const listboxEl = fixture.nativeElement.querySelector('#exploreAutocompleteListbox');
+      expect(listboxEl).toBeTruthy();
+      expect(listboxEl.getAttribute('role')).toBe('listbox');
+
+      const options = fixture.nativeElement.querySelectorAll('.autocomplete-item');
+      expect(options.length).toBeGreaterThan(0);
+      expect(options[0].getAttribute('role')).toBe('option');
+    });
+
+    it('should support ArrowDown and ArrowUp keyboard navigation with cyclic wrap-around', () => {
+      component.onSearchChange('a');
+      fixture.detectChanges();
+
+      const suggestionsCount = component.autocompleteSuggestions().length;
+      expect(suggestionsCount).toBeGreaterThan(1);
+      expect(component.highlightedIndex()).toBe(-1);
+      expect(component.activeDescendantId()).toBeNull();
+
+      // First ArrowDown: moves to index 0
+      const eventDown1 = new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true });
+      component.onSearchKeydown(eventDown1);
+      expect(component.highlightedIndex()).toBe(0);
+      expect(component.activeDescendantId()).toBe('exp-suggestion-0');
+
+      // Second ArrowDown: moves to index 1
+      const eventDown2 = new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true });
+      component.onSearchKeydown(eventDown2);
+      expect(component.highlightedIndex()).toBe(1);
+      expect(component.activeDescendantId()).toBe('exp-suggestion-1');
+
+      // ArrowUp: moves back to index 0
+      const eventUp1 = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true });
+      component.onSearchKeydown(eventUp1);
+      expect(component.highlightedIndex()).toBe(0);
+
+      // ArrowUp from 0 wraps to end
+      const eventUp2 = new KeyboardEvent('keydown', { key: 'ArrowUp', cancelable: true });
+      component.onSearchKeydown(eventUp2);
+      expect(component.highlightedIndex()).toBe(suggestionsCount - 1);
+    });
+
+    it('should select highlighted suggestion on Enter key press and update search query and results', () => {
+      component.onSearchChange('Sakura');
+      fixture.detectChanges();
+
+      // ArrowDown to highlight first suggestion
+      component.onSearchKeydown(new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true }));
+      expect(component.highlightedIndex()).toBe(0);
+      const highlightedItem = component.autocompleteSuggestions()[0];
+
+      // Enter selects highlighted suggestion
+      component.onSearchKeydown(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
+      fixture.detectChanges();
+
+      expect(component.searchQuery()).toBe(highlightedItem.value);
+      expect(component.isAutocompleteOpen()).toBe(false);
+      expect(component.highlightedIndex()).toBe(-1);
+      expect(component.filteredRestaurants().length).toBe(1);
+      expect(component.filteredRestaurants()[0].name).toBe('Sakura Omakase Lounge');
+    });
+
+    it('should close autocomplete dropdown on Escape key without altering query', () => {
+      component.onSearchChange('Bistro');
+      fixture.detectChanges();
+      expect(component.isAutocompleteOpen()).toBe(true);
+
+      component.onSearchKeydown(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+      fixture.detectChanges();
+
+      expect(component.isAutocompleteOpen()).toBe(false);
+      expect(component.searchQuery()).toBe('Bistro');
+    });
+
+    it('should select suggestion when clicked with mouse and update query and close dropdown', () => {
+      component.onSearchChange('Nap');
+      fixture.detectChanges();
+
+      const suggestions = component.autocompleteSuggestions();
+      expect(suggestions.length).toBeGreaterThan(0);
+
+      component.selectSuggestion(suggestions[0]);
+      fixture.detectChanges();
+
+      expect(component.searchQuery()).toBe(suggestions[0].value);
+      expect(component.isAutocompleteOpen()).toBe(false);
+      expect(component.highlightedIndex()).toBe(-1);
+    });
+
+    it('should close autocomplete dropdown when clicking outside search wrapper', () => {
+      component.onSearchChange('French');
+      fixture.detectChanges();
+      expect(component.isAutocompleteOpen()).toBe(true);
+
+      // Simulate click outside
+      const outsideEvent = new MouseEvent('click', { bubbles: true });
+      document.body.dispatchEvent(outsideEvent);
+      fixture.detectChanges();
+
+      expect(component.isAutocompleteOpen()).toBe(false);
+    });
+
+    it('should sync ?search query parameter preserving existing query params with replaceUrl: true', () => {
+      const router = TestBed.inject(Router);
+      const navSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+      // Direct sync call (e.g. from selectSuggestion or immediate sync)
+      component.syncSearchQueryParam('Omakase');
+
+      expect(navSpy).toHaveBeenCalledWith([], {
+        relativeTo: expect.anything(),
+        queryParams: { search: 'Omakase' },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    });
+
+    it('should remove ?search parameter when search is cleared while preserving other query params', async () => {
+      const router = TestBed.inject(Router);
+      await router.navigate([], { queryParams: { search: 'Omakase', cuisine: 'japanese' } });
+      fixture.detectChanges();
+
+      const navSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+      component.clearSearch();
+
+      expect(component.searchQuery()).toBe('');
+      expect(component.isAutocompleteOpen()).toBe(false);
+      expect(navSpy).toHaveBeenCalledWith([], {
+        relativeTo: expect.anything(),
+        queryParams: { search: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    });
+
+    it('should dynamically generate quick search tags from active cuisines and cities without mock data', () => {
+      const tags = component.dynamicQuickTags();
+      expect(tags.length).toBeGreaterThan(0);
+      expect(tags.some(t => ['French Haute', 'Italian', 'Japanese'].includes(t))).toBe(true);
+      expect(tags).not.toContain('SoHo');
+      expect(tags).not.toContain('Mayfair');
+      expect(tags).not.toContain('Truffle Pasta');
+
+      // Selecting quick tag updates search query
+      component.selectQuickTag(tags[0]);
+      expect(component.searchQuery()).toBe(tags[0]);
+    });
+  });
+
+  describe('Phase 4: Mobile Filter Drawer and Responsive Refinement', () => {
+    it('should open and close mobile drawer, toggling state and locking/unlocking body scroll', () => {
+      expect(component.isMobileFilterOpen()).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+
+      component.openMobileFilters();
+      expect(component.isMobileFilterOpen()).toBe(true);
+      expect(document.body.style.overflow).toBe('hidden');
+
+      component.closeMobileFilters();
+      expect(component.isMobileFilterOpen()).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+
+      component.toggleMobileFilters();
+      expect(component.isMobileFilterOpen()).toBe(true);
+      expect(document.body.style.overflow).toBe('hidden');
+
+      component.toggleMobileFilters();
+      expect(component.isMobileFilterOpen()).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+    });
+
+    it('should close drawer on backdrop click', () => {
+      component.openMobileFilters();
+      fixture.detectChanges();
+
+      const backdrop: HTMLElement | null = fixture.nativeElement.querySelector('.mobile-drawer-backdrop');
+      expect(backdrop).toBeTruthy();
+
+      backdrop?.click();
+      fixture.detectChanges();
+
+      expect(component.isMobileFilterOpen()).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+    });
+
+    it('should close drawer on Escape key press', () => {
+      component.openMobileFilters();
+      expect(component.isMobileFilterOpen()).toBe(true);
+
+      const event = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+      document.dispatchEvent(event);
+
+      expect(component.isMobileFilterOpen()).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+    });
+
+    it('should restore document.body.style.overflow on ngOnDestroy if destroyed while open', () => {
+      component.openMobileFilters();
+      expect(document.body.style.overflow).toBe('hidden');
+
+      component.ngOnDestroy();
+      expect(document.body.style.overflow).toBe('');
+    });
+
+    it('should render proper accessible dialog attributes (role, aria-modal, aria-labelledby, aria-controls)', () => {
+      const toggleBtn: HTMLButtonElement | null = fixture.nativeElement.querySelector('.mobile-filter-btn');
+      expect(toggleBtn).toBeTruthy();
+      expect(toggleBtn?.getAttribute('aria-controls')).toBe('mobileFilterDrawer');
+      expect(toggleBtn?.getAttribute('aria-expanded')).toBe('false');
+
+      component.openMobileFilters();
+      fixture.detectChanges();
+
+      expect(toggleBtn?.getAttribute('aria-expanded')).toBe('true');
+      const drawer: HTMLElement | null = fixture.nativeElement.querySelector('#mobileFilterDrawer');
+      expect(drawer).toBeTruthy();
+      expect(drawer?.getAttribute('role')).toBe('dialog');
+      expect(drawer?.getAttribute('aria-modal')).toBe('true');
+      expect(drawer?.getAttribute('aria-labelledby')).toBe('mobileDrawerHeading');
+
+      const heading = fixture.nativeElement.querySelector('#mobileDrawerHeading');
+      expect(heading).toBeTruthy();
+      expect(heading.textContent).toContain('Filter Restaurants');
+    });
+
+    it('should retain filter selections made inside mobile drawer upon closing', () => {
+      component.openMobileFilters();
+      fixture.detectChanges();
+
+      // Set cuisine to 'italian'
+      component.setCuisine('italian');
+      expect(component.selectedCuisine()).toBe('italian');
+
+      // Set minimum rating to 4.5
+      component.setRating(4.5);
+      expect(component.selectedRating()).toBe(4.5);
+
+      // Close drawer (e.g. by applying or clicking close)
+      component.closeMobileFilters();
+      fixture.detectChanges();
+
+      expect(component.selectedCuisine()).toBe('italian');
+      expect(component.selectedRating()).toBe(4.5);
+      expect(component.activeFilterCount()).toBeGreaterThan(0);
+    });
+
+    it('should reset all filters from drawer Reset All button', () => {
+      component.setCuisine('italian');
+      component.setRating(4.5);
+      component.openMobileFilters();
+      fixture.detectChanges();
+
+      expect(component.activeFilterCount()).toBeGreaterThan(0);
+
+      const resetBtn: HTMLButtonElement | null = fixture.nativeElement.querySelector('.drawer-reset-btn');
+      expect(resetBtn).toBeTruthy();
+      resetBtn?.click();
+      fixture.detectChanges();
+
+      expect(component.selectedCuisine()).toBe('all');
+      expect(component.selectedRating()).toBe(0);
+      expect(component.activeFilterCount()).toBe(0);
+    });
+
+    it('should display Show X Restaurants button with correct filtered count and close drawer on click', () => {
+      component.openMobileFilters();
+      fixture.detectChanges();
+
+      const applyBtn: HTMLButtonElement | null = fixture.nativeElement.querySelector('.drawer-apply-btn');
+      expect(applyBtn).toBeTruthy();
+      const count = component.filteredRestaurants().length;
+      expect(applyBtn?.textContent).toContain(`Show ${count} ${count === 1 ? 'Restaurant' : 'Restaurants'}`);
+
+      applyBtn?.click();
+      fixture.detectChanges();
+
+      expect(component.isMobileFilterOpen()).toBe(false);
+      expect(document.body.style.overflow).toBe('');
+    });
+
+    it('should preserve and restore original inline body overflow value', () => {
+      document.body.style.overflow = 'scroll';
+
+      component.openMobileFilters();
+      expect(document.body.style.overflow).toBe('hidden');
+
+      component.closeMobileFilters();
+      expect(document.body.style.overflow).toBe('scroll');
+
+      // Cleanup
+      document.body.style.overflow = '';
+    });
+
+    it('should trap focus inside the drawer when Tab or Shift+Tab is pressed', () => {
+      component.openMobileFilters();
+      fixture.detectChanges();
+
+      const drawer: HTMLElement = fixture.nativeElement.querySelector('#mobileFilterDrawer');
+      const focusable = drawer.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled])');
+      const firstEl = focusable[0];
+      const lastEl = focusable[focusable.length - 1];
+
+      // Focusing first element and pressing Shift+Tab should wrap to last element
+      firstEl.focus();
+      const shiftTabEvent = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, cancelable: true });
+      const shiftTabPreventSpy = vi.spyOn(shiftTabEvent, 'preventDefault');
+      document.dispatchEvent(shiftTabEvent);
+      expect(shiftTabPreventSpy).toHaveBeenCalled();
+      expect(document.activeElement).toBe(lastEl);
+
+      // Focusing last element and pressing Tab should wrap to first element
+      lastEl.focus();
+      const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: false, cancelable: true });
+      const tabPreventSpy = vi.spyOn(tabEvent, 'preventDefault');
+      document.dispatchEvent(tabEvent);
+      expect(tabPreventSpy).toHaveBeenCalled();
+      expect(document.activeElement).toBe(firstEl);
+
+      component.closeMobileFilters();
+    });
+  });
 });
 

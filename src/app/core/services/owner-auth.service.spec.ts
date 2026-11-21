@@ -50,7 +50,9 @@ describe('OwnerAuthService', () => {
       phone: '+33 1 42 68 88 00',
       restaurantEmail: 'reservations@legabriel.fr',
       cuisineIds: [1, 2, 7],
-      coverImage: dummyFile
+      coverImage: dummyFile,
+      acceptedTerms: true,
+      legalDocumentId: 10
     };
 
     const formData = service.buildRegisterFormData(request);
@@ -65,6 +67,8 @@ describe('OwnerAuthService', () => {
     expect(formData.get('Description')).toBe('Haute gastronomy sanctuary.');
     expect(formData.get('Phone')).toBe('+33 1 42 68 88 00');
     expect(formData.get('RestaurantEmail')).toBe('reservations@legabriel.fr');
+    expect(formData.get('AcceptedTerms')).toBe('true');
+    expect(formData.get('LegalDocumentId')).toBe('10');
 
     // Verify each numeric cuisine ID is appended separately with key "CuisineIds"
     const cuisineIds = formData.getAll('CuisineIds');
@@ -88,7 +92,9 @@ describe('OwnerAuthService', () => {
       description: 'Fine dining.',
       phone: '+33 1 42 68 88 00',
       restaurantEmail: 'info@maisonlaurent.com',
-      cuisineIds: [1, 3]
+      cuisineIds: [1, 3],
+      acceptedTerms: true,
+      legalDocumentId: 5
     };
 
     const mockResponse: ApiResponse<OwnerRegisterResponseData> = {
@@ -138,7 +144,9 @@ describe('OwnerAuthService', () => {
       description: '',
       phone: '',
       restaurantEmail: '',
-      cuisineIds: []
+      cuisineIds: [],
+      acceptedTerms: true,
+      legalDocumentId: 1
     };
 
     let errorResponse: any;

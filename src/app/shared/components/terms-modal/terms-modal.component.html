@@ -1,0 +1,58 @@
+@if (isOpen) {
+  <div class="terms-modal-backdrop" (click)="onBackdropClick($event)" aria-hidden="true"></div>
+  <div
+    #modalDialog
+    class="terms-modal-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="termsModalTitle"
+    tabindex="-1"
+  >
+    <!-- Modal Header -->
+    <div class="terms-modal-header">
+      <div class="terms-header-text">
+        <span class="terms-kicker">Legal Agreement</span>
+        <h2 id="termsModalTitle" class="terms-modal-title">
+          {{ document?.title || 'Terms and Conditions' }}
+        </h2>
+        @if (document) {
+          <div class="terms-meta-info">
+            <span class="terms-meta-badge">Version {{ document.version }}</span>
+            <span class="terms-meta-date">Effective: {{ document.effectiveDate }}</span>
+          </div>
+        }
+      </div>
+      <button
+        #closeBtn
+        type="button"
+        class="terms-close-btn"
+        (click)="onClose()"
+        aria-label="Close Terms and Conditions"
+      >
+        <span class="d-icon d-icon-close" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <!-- Scrollable Modal Body -->
+    <div class="terms-modal-body" tabindex="0" role="region" aria-label="Terms and Conditions content">
+      @if (document && document.content) {
+        <div class="terms-html-content" [innerHTML]="document.content"></div>
+      } @else {
+        <div class="terms-empty-state">
+          <p>No document content is currently available.</p>
+        </div>
+      }
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="terms-modal-footer">
+      <button
+        type="button"
+        class="btn btn-primary terms-acknowledge-btn"
+        (click)="onClose()"
+      >
+        <span>Close</span>
+      </button>
+    </div>
+  </div>
+}
