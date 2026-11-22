@@ -4,7 +4,7 @@
 
 ---
 
-## ✦ Overview
+##  Overview
 
 **Dinevia** (code name `savoria`) connects discerning diners with Michelin-starred sanctuaries and trending culinary destinations while offering restaurant proprietors a comprehensive management console. The application comprises two core ecosystems:
 
@@ -13,7 +13,7 @@
 
 ---
 
-## ✦ Key Features
+##  Key Features
 
 ### 1. Customer Dining Portal
 - **Exploration & Discovery (`/explore`)**:
@@ -60,7 +60,7 @@
 
 ---
 
-## ✦ Architecture & Technology Stack
+##  Architecture & Technology Stack
 
 | Domain | Technology / Specification |
 | :--- | :--- |
@@ -81,7 +81,7 @@
 
 ---
 
-## ✦ Project Structure
+##  Project Structure
 
 ```
 src/
@@ -121,7 +121,7 @@ src/
 
 ---
 
-## ✦ Getting Started
+##  Getting Started
 
 ### Prerequisites
 - **Node.js**: `v20.x` or `v22.x` (LTS recommended)
@@ -139,7 +139,7 @@ npm install
 
 ---
 
-## ✦ Development & Build Commands
+##  Development & Build Commands
 
 ### Development Server
 Starts the client application with hot-module replacement on port `4200`:
@@ -173,7 +173,7 @@ npm run serve:ssr:savoria
 
 ---
 
-## ✦ Testing
+##  Testing
 
 Dinevia uses **Vitest** for blazing-fast unit tests and DOM verification:
 
@@ -190,7 +190,7 @@ npm test -- --include="src/app/features/admin/auth/admin-register/**/*.spec.ts" 
 
 ---
 
-## ✦ API Integration Reference
+##  API Integration Reference
 
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
@@ -206,6 +206,6 @@ npm test -- --include="src/app/features/admin/auth/admin-register/**/*.spec.ts" 
 
 ---
 
-## ✦ License
+##  License
 
 This project is proprietary and confidential. &copy; 2026 Dinevia Hospitality Group. All rights reserved.
