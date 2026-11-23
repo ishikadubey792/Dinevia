@@ -197,7 +197,10 @@ export function mapApiRestaurantToDomain(dto: ApiRestaurantDto): Restaurant {
  */
 export function matchesRestaurantSearch(restaurant: Restaurant, query: string): boolean {
   if (!query || typeof query !== 'string') return true;
-  const q = query.trim().toLowerCase();
+  const raw = query.trim().toLowerCase();
+  if (raw.length === 0) return true;
+  // Normalize trailing punctuation so queries with trailing full stops/commas match cleanly
+  const q = raw.replace(/[.,!?;:।॥\s]+$/u, '').trim() || raw;
   if (q.length === 0) return true;
 
   // 1. Restaurant Name

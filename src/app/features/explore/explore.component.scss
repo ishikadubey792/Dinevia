@@ -126,6 +126,7 @@
 
   .search-input {
     flex: 1;
+    min-width: 0;
     border: none;
     outline: none;
     background: transparent;
@@ -159,6 +160,8 @@
     justify-content: center;
     border-radius: var(--radius-pill);
     transition: var(--transition-fast);
+    flex-shrink: 0;
+    margin-left: 0.25rem;
 
     svg {
       width: 1.15rem;
@@ -169,6 +172,13 @@
       background-color: var(--color-sage-light);
       color: var(--color-forest-dark);
     }
+  }
+
+  app-voice-search {
+    flex-shrink: 0;
+    margin-left: 0.35rem;
+    display: inline-flex;
+    align-items: center;
   }
 }
 

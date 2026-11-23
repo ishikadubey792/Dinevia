@@ -2,7 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
+import { By } from '@angular/platform-browser';
 import { ExploreComponent } from './explore.component';
+import { VoiceSearchComponent } from '../../shared/components/voice-search/voice-search.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { CuisineService } from '../../core/services/cuisine.service';
 import { environment } from '../../../environments/environment';
@@ -873,6 +875,203 @@ describe('ExploreComponent Search and Filters Integration', () => {
       expect(document.activeElement).toBe(firstEl);
 
       component.closeMobileFilters();
+    });
+  });
+
+  // ---- Phase 3: Voice Search Integration Tests ----
+
+  describe('Phase 3: Voice Search Integration', () => {
+    it('should render VoiceSearchComponent inside the luxury search box', () => {
+      const voiceSearchEl = fixture.nativeElement.querySelector('app-voice-search');
+      expect(voiceSearchEl).toBeTruthy();
+
+      const searchBox = fixture.nativeElement.querySelector('.luxury-search-box');
+      expect(searchBox.contains(voiceSearchEl)).toBe(true);
+
+      const voiceComponent = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      expect(voiceComponent).toBeTruthy();
+    });
+
+    it('should update searchQuery and filter restaurants when a final English transcript is emitted', () => {
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
+
+      voiceComp.transcriptChange.emit('Chatelet');
+      fixture.detectChanges();
+
+      expect(component.searchQuery()).toBe('Chatelet');
+      const results = component.filteredRestaurants();
+      expect(results.length).toBe(1);
+      expect(results[0].name).toBe('Le Chatelet Bistro');
+    });
+
+    it('should update searchQuery and execute filtering when a Hindi transcript is emitted', () => {
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
+
+      voiceComp.transcriptChange.emit('बिरयानी');
+      fixture.detectChanges();
+
+      expect(component.searchQuery()).toBe('बिरयानी');
+      expect(component.filteredRestaurants().length).toBe(0);
+    });
+
+    it('should update searchQuery and execute filtering when a Tamil transcript is emitted', () => {
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
+
+      voiceComp.transcriptChange.emit('பிரியாணி');
+      fixture.detectChanges();
+
+      expect(component.searchQuery()).toBe('பிரியாணி');
+      expect(component.filteredRestaurants().length).toBe(0);
+    });
+
+    it('should invoke onSearchChange when transcriptChange is emitted from VoiceSearchComponent', () => {
+      const searchSpy = vi.spyOn(component, 'onSearchChange');
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+
+      voiceDe.triggerEventHandler('transcriptChange', 'Bella');
+      fixture.detectChanges();
+
+      expect(searchSpy).toHaveBeenCalledWith('Bella');
+      expect(component.searchQuery()).toBe('Bella');
+      expect(component.filteredRestaurants().length).toBe(1);
+      expect(component.filteredRestaurants()[0].name).toBe('Trattoria Bella Napoli');
+    });
+
+    it('should preserve existing filters (cuisine, rating, city) when a voice transcript arrives', () => {
+      component.setCuisine('italian');
+      component.setRating(4.5);
+      component.setCity('Naples');
+      fixture.detectChanges();
+
+      expect(component.selectedCuisine()).toBe('italian');
+      expect(component.selectedRating()).toBe(4.5);
+      expect(component.selectedCity()).toBe('Naples');
+
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
+      voiceComp.transcriptChange.emit('Bella');
+      fixture.detectChanges();
+
+      expect(component.selectedCuisine()).toBe('italian');
+      expect(component.selectedRating()).toBe(4.5);
+      expect(component.selectedCity()).toBe('Naples');
+      expect(component.searchQuery()).toBe('Bella');
+
+      const results = component.filteredRestaurants();
+      expect(results.length).toBe(1);
+      expect(results[0].name).toBe('Trattoria Bella Napoli');
+    });
+
+    it('should update autocomplete suggestions and sync search query param when a voice transcript arrives', () => {
+      const router = TestBed.inject(Router);
+      const navSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
+
+      voiceComp.transcriptChange.emit('Sakura');
+      fixture.detectChanges();
+
+      expect(component.isAutocompleteOpen()).toBe(true);
+      const suggestions = component.autocompleteSuggestions();
+      expect(suggestions.length).toBeGreaterThan(0);
+      expect(suggestions.some(s => s.label === 'Sakura Omakase Lounge')).toBe(true);
+
+      component.syncSearchQueryParam('Sakura');
+      expect(navSpy).toHaveBeenCalledWith([], {
+        relativeTo: expect.anything(),
+        queryParams: { search: 'Sakura' },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    });
+
+    it('should continue supporting manual typed search alongside voice search', () => {
+      const inputEl: HTMLInputElement = fixture.nativeElement.querySelector('#restaurantSearchInput');
+      inputEl.value = 'Paris';
+      inputEl.dispatchEvent(new Event('input'));
+      component.onSearchChange('Paris');
+      fixture.detectChanges();
+
+      expect(component.searchQuery()).toBe('Paris');
+      expect(component.filteredRestaurants().length).toBe(1);
+      expect(component.filteredRestaurants()[0].name).toBe('Le Chatelet Bistro');
+    });
+
+    it('should allow clearing search after a voice search and restore full results', () => {
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
+
+      voiceComp.transcriptChange.emit('Chatelet');
+      fixture.detectChanges();
+
+      expect(component.filteredRestaurants().length).toBe(1);
+      expect(fixture.nativeElement.querySelector('.clear-search-btn')).toBeTruthy();
+
+      component.clearSearch();
+      fixture.detectChanges();
+
+      expect(component.searchQuery()).toBe('');
+      expect(component.filteredRestaurants().length).toBe(3);
+    });
+  });
+
+  // ---- Phase 4: Search Equivalence & Punctuation Resiliency ----
+
+  describe('Phase 4: Search Equivalence and Punctuation Resiliency', () => {
+    it('should match restaurants cleanly when typed search contains trailing punctuation', () => {
+      component.onSearchChange('Chatelet.');
+      fixture.detectChanges();
+
+      const results = component.filteredRestaurants();
+      expect(results.length).toBe(1);
+      expect(results[0].name).toBe('Le Chatelet Bistro');
+    });
+
+    it('should maintain cuisine and city filters alongside voice search transcripts', () => {
+      component.setCuisine('italian');
+      component.setCity('Naples');
+      fixture.detectChanges();
+
+      expect(component.selectedCuisine()).toBe('italian');
+      expect(component.selectedCity()).toBe('Naples');
+
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
+      voiceComp.transcriptChange.emit('Bella');
+      fixture.detectChanges();
+
+      expect(component.selectedCuisine()).toBe('italian');
+      expect(component.selectedCity()).toBe('Naples');
+      const results = component.filteredRestaurants();
+      expect(results.length).toBe(1);
+      expect(results[0].name).toBe('Trattoria Bella Napoli');
+    });
+
+    it('should produce identical filtered restaurant results for voice and typed search of the same query', () => {
+      // 1. Typed search with "Bella"
+      component.onSearchChange('Bella');
+      fixture.detectChanges();
+      const typedResults = component.filteredRestaurants();
+
+      // Reset
+      component.clearSearch();
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(3);
+
+      // 2. Voice search emitting "Bella"
+      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
+      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
+      voiceComp.transcriptChange.emit('Bella');
+      fixture.detectChanges();
+      const voiceResults = component.filteredRestaurants();
+
+      expect(voiceResults).toEqual(typedResults);
+      expect(voiceResults.length).toBe(1);
+      expect(voiceResults[0].name).toBe('Trattoria Bella Napoli');
     });
   });
 });

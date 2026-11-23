@@ -1,0 +1,180 @@
+<div class="voice-search-container" [class.active-listening]="isListening()">
+  <!-- Language Selector Pill -->
+  @if (showLanguageSelector) {
+    <div class="lang-selector-wrapper">
+      <button
+        type="button"
+        class="lang-pill"
+        [disabled]="disabled || !isSupported() || isListening()"
+        (click)="toggleLangMenu()"
+        aria-haspopup="listbox"
+        [attr.aria-expanded]="isLangMenuOpen()"
+        [attr.aria-label]="'Speech recognition language: ' + currentLangLabel()"
+        [title]="'Speech recognition language: ' + currentLangLabel()"
+      >
+        <span class="lang-pill-text">{{ currentLangShortCode() }}</span>
+        <span class="lang-pill-chevron" aria-hidden="true">▾</span>
+      </button>
+
+      @if (isLangMenuOpen()) {
+        <ul
+          class="lang-dropdown"
+          role="listbox"
+          aria-label="Select voice search language"
+        >
+          @for (lang of languages; track lang.code) {
+            <li
+              role="option"
+              [attr.aria-selected]="currentLanguage() === lang.code"
+              class="lang-option"
+              [class.selected]="currentLanguage() === lang.code"
+              (click)="onSelectLanguage(lang.code)"
+              tabindex="0"
+              (keydown.enter)="onSelectLanguage(lang.code)"
+              (keydown.space)="onSelectLanguage(lang.code)"
+            >
+              <div class="lang-option-text">
+                <span class="lang-native">{{ lang.nativeLabel }}</span>
+                <span class="lang-label">{{ lang.label }}</span>
+              </div>
+              @if (currentLanguage() === lang.code) {
+                <span class="lang-check" aria-hidden="true">✓</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <!-- Circular Microphone Action Button -->
+  <div class="mic-btn-wrapper">
+    @if (isListening()) {
+      <span class="pulse-ring" aria-hidden="true"></span>
+      <span class="pulse-ring-inner" aria-hidden="true"></span>
+    }
+
+    <button
+      type="button"
+      class="mic-btn"
+      [class.listening]="isListening()"
+      [disabled]="disabled || !isSupported()"
+      (click)="onMicClick()"
+      [attr.aria-pressed]="isListening()"
+      [attr.aria-label]="isListening() ? 'Stop voice listening' : 'Start voice search'"
+      [title]="isListening() ? 'Stop voice listening' : (isSupported() ? 'Search restaurants by voice' : 'Voice search is not supported in this browser')"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="mic-svg"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"
+          [attr.fill]="isListening() ? 'currentColor' : 'none'"
+        ></path>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+        <line x1="12" y1="19" x2="12" y2="22"></line>
+        <line x1="8" y1="22" x2="16" y2="22"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Active Listening Modal / Popover -->
+  @if (isListening()) {
+    <div
+      class="voice-popover listening-popover"
+      role="dialog"
+      aria-modal="false"
+      aria-label="Listening to your speech"
+    >
+      <div class="popover-content">
+        <div class="listening-status-row">
+          <div class="listening-wave-anim" aria-hidden="true">
+            <span class="bar bar-1"></span>
+            <span class="bar bar-2"></span>
+            <span class="bar bar-3"></span>
+            <span class="bar bar-4"></span>
+          </div>
+          <div class="listening-status-meta">
+            <span class="status-heading">Listening...</span>
+            <span class="status-lang-badge">{{ currentLangNativeLabel() }} ({{ currentLanguage() }})</span>
+          </div>
+        </div>
+
+        <div class="transcript-box">
+          @if (interimTranscript()) {
+            <p class="transcript-interim">&ldquo;{{ interimTranscript() }}&rdquo;</p>
+          } @else {
+            <p class="transcript-hint">Speak now &mdash; e.g. &ldquo;Biryani&rdquo;, &ldquo;Bistro&rdquo;, or &ldquo;Italian&rdquo;...</p>
+          }
+        </div>
+
+        <div class="popover-actions">
+          <button
+            type="button"
+            class="btn-action btn-cancel"
+            (click)="onCancel()"
+            aria-label="Cancel voice search and discard speech"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn-action btn-stop"
+            (click)="onStop()"
+            aria-label="Finish speaking and search"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Error Notice Popover -->
+  @if (errorMessage() && !isListening()) {
+    <div
+      class="voice-popover error-popover"
+      role="alert"
+      aria-live="assertive"
+    >
+      <div class="popover-content">
+        <div class="error-header">
+          <div class="error-tag">
+            <span class="error-dot" aria-hidden="true"></span>
+            <span>Voice Notice</span>
+          </div>
+          <button
+            type="button"
+            class="error-close-btn"
+            (click)="onDismissError()"
+            aria-label="Dismiss voice message"
+          >
+            &times;
+          </button>
+        </div>
+
+        <p class="error-desc">{{ errorMessage() }}</p>
+
+        @if (canRetry()) {
+          <div class="popover-actions">
+            <button
+              type="button"
+              class="btn-action btn-retry"
+              (click)="onRetry()"
+              aria-label="Try speaking again"
+            >
+              Try Again
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

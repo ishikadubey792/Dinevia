@@ -9,6 +9,7 @@ import { RestaurantCardComponent } from '../../shared/components/restaurant-card
 import { ErrorAlertComponent } from '../../shared/components/error-alert/error-alert.component';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
+import { VoiceSearchComponent } from '../../shared/components/voice-search/voice-search.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { CuisineService } from '../../core/services/cuisine.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -49,7 +50,8 @@ export interface AutocompleteItem {
     RestaurantCardComponent,
     ErrorAlertComponent,
     LoadingSpinnerComponent,
-    ScrollRevealDirective
+    ScrollRevealDirective,
+    VoiceSearchComponent
   ],
   templateUrl: './explore.component.html',
   styleUrl: './explore.component.scss'
