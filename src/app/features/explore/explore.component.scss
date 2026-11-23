@@ -1750,3 +1750,320 @@
   font-weight: 600;
   margin-top: 0.45rem;
 }
+
+/* ==========================================================================
+   NEARBY LOCATION DISCOVERY STYLES (STAGE 3)
+   ========================================================================== */
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Near Me Toolbar Button */
+.near-me-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-border);
+  background-color: var(--color-white);
+  color: var(--color-forest-dark);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+
+  .near-me-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    stroke: var(--color-terracotta);
+    transition: transform var(--transition-fast);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-forest);
+    background-color: var(--color-ivory-light);
+    color: var(--color-forest);
+
+    .near-me-icon {
+      transform: scale(1.1);
+    }
+  }
+
+  &.active {
+    background-color: var(--color-forest-dark);
+    color: var(--color-ivory);
+    border-color: var(--color-forest-dark);
+    box-shadow: 0 4px 12px rgba(35, 70, 55, 0.2);
+
+    .near-me-icon {
+      stroke: var(--color-brass-light, #DFBF7E);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: wait;
+  }
+}
+
+/* Location Spinner */
+.loc-spinner {
+  display: inline-block;
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 2px solid rgba(200, 121, 90, 0.25);
+  border-top-color: var(--color-terracotta);
+  border-radius: 50%;
+  animation: locSpinAnim 0.75s linear infinite;
+}
+
+@keyframes locSpinAnim {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Location Error Banner */
+.location-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  color: #991b1b;
+  font-size: 0.88rem;
+
+  .loc-banner-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #dc2626;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .loc-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    flex: 1;
+
+    .loc-retry-link {
+      background: none;
+      border: none;
+      color: var(--color-terracotta-dark);
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0;
+      font-size: 0.86rem;
+
+      &:hover {
+        color: var(--color-terracotta);
+      }
+    }
+  }
+}
+
+/* Sidebar Nearby Discovery */
+.sidebar-location-box {
+  margin-bottom: 0.85rem;
+
+  .sidebar-near-me-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border);
+    background-color: var(--color-white);
+    color: var(--color-forest-dark);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    .sidebar-loc-icon {
+      width: 1.1rem;
+      height: 1.1rem;
+      stroke: var(--color-terracotta);
+    }
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-forest);
+      background-color: var(--color-ivory-light);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+  }
+
+  .sidebar-location-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-sage-light);
+    border: 1px solid var(--color-sage-border);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.85rem;
+
+    .loc-active-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--color-forest);
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.5rem;
+      box-shadow: 0 0 0 3px rgba(35, 70, 55, 0.2);
+    }
+
+    .loc-active-text {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--color-forest-dark);
+      flex: 1;
+    }
+
+    .sidebar-clear-loc-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      line-height: 1;
+      color: var(--color-charcoal-light);
+      cursor: pointer;
+      padding: 0 0.25rem;
+      transition: color var(--transition-fast);
+
+      &:hover {
+        color: var(--color-terracotta);
+      }
+    }
+  }
+
+  .sidebar-location-error {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-xs);
+    font-size: 0.78rem;
+    color: #991b1b;
+    line-height: 1.4;
+
+    .sidebar-retry-link {
+      background: none;
+      border: none;
+      color: var(--color-terracotta-dark);
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 0.25rem;
+      padding: 0;
+      display: inline-block;
+      font-size: 0.78rem;
+    }
+  }
+}
+
+.sidebar-radius-wrap {
+  margin-top: 0.75rem;
+
+  .sidebar-radius-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-charcoal-light);
+    margin-bottom: 0.45rem;
+  }
+}
+
+/* Mobile Drawer Nearby Discovery */
+.drawer-location-box {
+  .drawer-near-me-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border);
+    background-color: var(--color-white);
+    color: var(--color-forest-dark);
+    cursor: pointer;
+
+    .drawer-loc-icon {
+      width: 1.15rem;
+      height: 1.15rem;
+      stroke: var(--color-terracotta);
+    }
+  }
+
+  .drawer-location-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-sage-light);
+    border: 1px solid var(--color-sage-border);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 0.75rem;
+
+    .loc-active-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--color-forest);
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+
+    .loc-active-text {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--color-forest-dark);
+      flex: 1;
+    }
+
+    .drawer-clear-loc-btn {
+      background: none;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xs);
+      padding: 0.25rem 0.55rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--color-charcoal-muted);
+      cursor: pointer;
+
+      &:hover {
+        background-color: var(--color-white);
+        color: var(--color-terracotta);
+      }
+    }
+  }
+
+  .drawer-location-error {
+    margin-top: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-xs);
+    font-size: 0.8rem;
+    color: #991b1b;
+  }
+}

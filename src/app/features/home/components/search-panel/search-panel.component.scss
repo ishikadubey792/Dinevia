@@ -71,6 +71,402 @@
   }
 }
 
+// ── Location Selector & Popover ──
+.location-field {
+  position: relative;
+}
+
+.location-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.location-trigger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background-color: var(--color-ivory-light);
+
+  &.active-current {
+    border-color: #059669;
+    background-color: #f0fdf4;
+  }
+
+  .trigger-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: calc(100% - 1.25rem);
+  }
+
+  .trigger-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chevron-down {
+    font-size: 0.75rem;
+    color: var(--color-charcoal-light);
+    transition: transform var(--transition-fast);
+
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+  animation: pulse-ring 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.location-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 300px;
+  width: 100%;
+  max-width: 360px;
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 36px rgba(27, 56, 43, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
+  z-index: 100;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: dropdown-fade-in 0.18s ease-out;
+
+  @media (max-width: 520px) {
+    min-width: 100%;
+    max-width: 100%;
+  }
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.option-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+// Option A: Current Location Button
+.current-loc-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-ivory-light);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    border-color: #10b981;
+    background-color: #f0fdf4;
+  }
+
+  &.is-selected {
+    border-color: #059669;
+    background-color: #ecfdf5;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.85;
+  }
+
+  .loc-btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    flex-shrink: 0;
+
+    .gps-icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .loc-btn-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    .loc-primary-text {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--color-forest-dark);
+    }
+
+    .loc-subtext {
+      font-size: 0.75rem;
+      color: var(--color-charcoal-light);
+      margin-top: 1px;
+    }
+  }
+
+  .check-icon {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #059669;
+  }
+}
+
+.loc-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(5, 150, 105, 0.2);
+  border-top-color: #059669;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Inline Error Box
+.loc-error-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  margin-top: 0.25rem;
+
+  .loc-error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.76rem;
+    color: #b91c1c;
+    flex: 1;
+    min-width: 0;
+
+    .err-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .err-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .btn-retry-loc {
+    background: none;
+    border: none;
+    color: #b91c1c;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    flex-shrink: 0;
+
+    &:hover {
+      color: #7f1d1d;
+    }
+  }
+}
+
+// Divider
+.dropdown-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 0.15rem 0;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  span {
+    padding: 0 0.5rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: var(--color-charcoal-light);
+  }
+}
+
+// Option B: Manual City Selection
+.manual-city-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.city-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .search-mini-icon {
+    position: absolute;
+    left: 0.65rem;
+    width: 14px;
+    height: 14px;
+    color: var(--color-charcoal-light);
+    pointer-events: none;
+  }
+
+  .city-search-input {
+    width: 100%;
+    padding: 0.45rem 1.8rem 0.45rem 2rem;
+    font-size: 0.82rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-ivory-light);
+    color: var(--color-charcoal);
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-terracotta);
+      background-color: var(--color-white);
+    }
+  }
+
+  .clear-query-btn {
+    position: absolute;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    font-size: 0.7rem;
+    color: var(--color-charcoal-light);
+    cursor: pointer;
+    padding: 2px 4px;
+
+    &:hover {
+      color: var(--color-charcoal);
+    }
+  }
+}
+
+.cities-list {
+  max-height: 165px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 2px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 4px;
+  }
+}
+
+.city-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.84rem;
+  color: var(--color-charcoal);
+  transition: background-color var(--transition-fast);
+
+  &:hover {
+    background-color: var(--color-ivory-light);
+    color: var(--color-forest-dark);
+  }
+
+  &.is-selected {
+    background-color: rgba(200, 121, 90, 0.1);
+    color: var(--color-terracotta);
+    font-weight: 600;
+  }
+
+  .city-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .check-icon {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--color-terracotta);
+  }
+}
+
+.empty-cities-msg {
+  padding: 0.75rem 0.5rem;
+  font-size: 0.78rem;
+  color: var(--color-charcoal-light);
+  text-align: center;
+  font-style: italic;
+}
+
 .form-select,
 .form-input {
   width: 100%;

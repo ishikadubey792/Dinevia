@@ -7,6 +7,10 @@ export interface SearchCriteria {
   endTime?: string;   // e.g. "20:00" or "8:00 PM"
   /** Backwards compatibility for legacy consumers */
   time?: string;
+  /** GPS / Current Location support */
+  useCurrentLocation?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface QuickFilter {

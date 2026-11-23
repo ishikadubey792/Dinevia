@@ -179,3 +179,23 @@
 .arrow-icon {
   transition: transform var(--transition-fast);
 }
+
+.distance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: var(--color-terracotta-dark, #A85D40);
+  background: var(--color-terracotta-subtle, rgba(200, 121, 90, 0.12));
+  padding: 0.12rem 0.45rem;
+  border-radius: var(--radius-xs, 4px);
+  font-size: 0.78rem;
+  white-space: nowrap;
+
+  .dist-icon {
+    width: 0.8rem;
+    height: 0.8rem;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
+}

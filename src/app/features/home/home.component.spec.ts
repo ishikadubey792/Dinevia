@@ -219,4 +219,107 @@ describe('HomeComponent Dynamic Cuisine Counts & Navigation', () => {
     expect(heroLink?.textContent).toContain('Explore Restaurants');
     expect(heroLink?.getAttribute('routerlink') || heroLink?.getAttribute('href')).toMatch(/explore/);
   });
+
+  // ── Home Page Search Navigation & Location State Tests ──
+
+  it('should navigate to /explore with city query param when search is submitted with manual city', () => {
+    const restReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
+    restReq.flush(mockRestaurantsResponse);
+    fixture.detectChanges();
+
+    const cuisinesReq = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    cuisinesReq.flush(mockCuisinesResponse);
+    fixture.detectChanges();
+
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    component.onSearch({
+      location: 'Rome',
+      cuisine: 'italian',
+      date: '2026-12-01',
+      startTime: '19:00',
+      endTime: '21:30',
+      guests: 4
+    });
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/explore'], {
+      queryParams: {
+        city: 'Rome',
+        cuisine: 'italian',
+        date: '2026-12-01',
+        startTime: '19:00',
+        endTime: '21:30',
+        guests: 4
+      }
+    });
+  });
+
+  it('should navigate to /explore with nearMe=true and sort=nearest when search is submitted with current location', () => {
+    const restReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
+    restReq.flush(mockRestaurantsResponse);
+    fixture.detectChanges();
+
+    const cuisinesReq = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    cuisinesReq.flush(mockCuisinesResponse);
+    fixture.detectChanges();
+
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    component.onSearch({
+      location: '',
+      cuisine: 'all',
+      date: '2026-12-01',
+      startTime: '18:30',
+      endTime: '20:00',
+      guests: 2,
+      useCurrentLocation: true,
+      latitude: 48.8566,
+      longitude: 2.3522
+    });
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/explore'], {
+      queryParams: {
+        nearMe: 'true',
+        sort: 'nearest',
+        lat: 48.8566,
+        lng: 2.3522,
+        date: '2026-12-01',
+        startTime: '18:30',
+        endTime: '20:00',
+        guests: 2
+      }
+    });
+  });
+
+  it('should preserve selected filters during navigation to /explore', () => {
+    const restReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants`);
+    restReq.flush(mockRestaurantsResponse);
+    fixture.detectChanges();
+
+    const cuisinesReq = httpTesting.expectOne(`${environment.apiUrl}/cuisines`);
+    cuisinesReq.flush(mockCuisinesResponse);
+    fixture.detectChanges();
+
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    component.onSearch({
+      location: 'Milan',
+      cuisine: 'japanese',
+      date: '2026-12-25',
+      startTime: '20:00',
+      endTime: '22:00',
+      guests: 6
+    });
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/explore'], {
+      queryParams: {
+        city: 'Milan',
+        cuisine: 'japanese',
+        date: '2026-12-25',
+        startTime: '20:00',
+        endTime: '22:00',
+        guests: 6
+      }
+    });
+  });
 });

@@ -24,6 +24,13 @@ export class RestaurantCardComponent {
   readonly imgLoaded = signal<boolean>(false);
   readonly imgError = signal<boolean>(false);
 
+  get formattedDistance(): string | null {
+    if (this.restaurant?.distanceKm != null && Number.isFinite(this.restaurant.distanceKm)) {
+      return `${this.restaurant.distanceKm.toFixed(1)} km away`;
+    }
+    return null;
+  }
+
   isSaved(): boolean {
     return this.restaurant ? this.wishlistService.isSaved(this.restaurant.id) : false;
   }

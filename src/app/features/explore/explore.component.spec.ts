@@ -1,20 +1,84 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { PLATFORM_ID } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { ExploreComponent } from './explore.component';
+import { RestaurantCardComponent } from '../../shared/components/restaurant-card/restaurant-card.component';
 import { VoiceSearchComponent } from '../../shared/components/voice-search/voice-search.component';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { CuisineService } from '../../core/services/cuisine.service';
+import { GeolocationService, GEOLOCATION } from '../../core/services/geolocation.service';
 import { environment } from '../../../environments/environment';
 import { ApiCuisine, ApiResponse } from '../../core/models/cuisine.model';
 import { ApiRestaurantDto } from '../../core/models/restaurant.model';
+
+class MockGeolocation implements Geolocation {
+  lastSuccessCb: PositionCallback | null = null;
+  lastErrorCb: PositionErrorCallback | null = null;
+  lastOptions: PositionOptions | null = null;
+
+  readonly getCurrentPositionSpy = vi.fn(
+    (
+      success: PositionCallback,
+      error?: PositionErrorCallback | null,
+      options?: PositionOptions
+    ) => {
+      this.lastSuccessCb = success;
+      this.lastErrorCb = error ?? null;
+      this.lastOptions = options ?? null;
+    }
+  );
+
+  getCurrentPosition(
+    success: PositionCallback,
+    error?: PositionErrorCallback | null,
+    options?: PositionOptions
+  ): void {
+    this.getCurrentPositionSpy(success, error, options);
+  }
+
+  readonly watchPosition = vi.fn();
+  readonly clearWatch = vi.fn();
+
+  triggerSuccess(coords: { latitude: number; longitude: number; accuracy?: number }): void {
+    if (this.lastSuccessCb) {
+      this.lastSuccessCb({
+        coords: {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          accuracy: coords.accuracy ?? 10,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+          toJSON: () => ({})
+        },
+        timestamp: Date.now(),
+        toJSON: () => ({})
+      } as GeolocationPosition);
+    }
+  }
+
+  triggerError(code: number, message = 'Geolocation error'): void {
+    if (this.lastErrorCb) {
+      this.lastErrorCb({
+        code,
+        message,
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3
+      } as GeolocationPositionError);
+    }
+  }
+}
 
 describe('ExploreComponent Search and Filters Integration', () => {
   let component: ExploreComponent;
   let fixture: ComponentFixture<ExploreComponent>;
   let httpTesting: HttpTestingController;
+  let mockGeo: MockGeolocation;
 
   const mockApiData: ApiResponse<ApiRestaurantDto[]> = {
     statusCode: 200,
@@ -25,6 +89,8 @@ describe('ExploreComponent Search and Filters Integration', () => {
         name: 'Le Chatelet Bistro',
         address: '42 Boulevard Saint-Germain',
         city: 'Paris',
+        latitude: 48.8584,
+        longitude: 2.2945,
         description: 'Atmospheric French brasserie with seasonal duck confit and rare burgundy cellars.',
         coverImagePath: '/uploads/chatelet.jpg',
         isActive: true,
@@ -41,6 +107,8 @@ describe('ExploreComponent Search and Filters Integration', () => {
         name: 'Trattoria Bella Napoli',
         address: 'Via Toledo 15',
         city: 'Naples',
+        latitude: 40.8518,
+        longitude: 14.2681,
         description: 'Authentic wood-fired Neapolitan sourdough pizza and coastal campanian wines.',
         coverImagePath: '/uploads/bella.jpg',
         isActive: true,
@@ -57,6 +125,8 @@ describe('ExploreComponent Search and Filters Integration', () => {
         name: 'Sakura Omakase Lounge',
         address: 'Ginza 6-Chome',
         city: 'Tokyo',
+        latitude: null,
+        longitude: null,
         description: 'Intimate 8-seat Japanese sushi counter with direct daily Toyosu imports.',
         coverImagePath: '/uploads/sakura.jpg',
         isActive: true,
@@ -84,14 +154,19 @@ describe('ExploreComponent Search and Filters Integration', () => {
   };
 
   beforeEach(async () => {
+    mockGeo = new MockGeolocation();
+
     await TestBed.configureTestingModule({
       imports: [ExploreComponent],
       providers: [
         RestaurantService,
         CuisineService,
+        GeolocationService,
         provideRouter([]),
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: GEOLOCATION, useValue: mockGeo }
       ]
     }).compileComponents();
 
@@ -1072,6 +1147,322 @@ describe('ExploreComponent Search and Filters Integration', () => {
       expect(voiceResults).toEqual(typedResults);
       expect(voiceResults.length).toBe(1);
       expect(voiceResults[0].name).toBe('Trattoria Bella Napoli');
+    });
+  });
+
+  // ── 7. Stage 3: Location-Based Restaurant Discovery Integration ──
+
+  describe('Location-Based Discovery (Stage 3 Integration)', () => {
+    it('should not request location automatically on page load', () => {
+      expect(mockGeo.getCurrentPositionSpy).not.toHaveBeenCalled();
+      expect(component.hasLocation()).toBe(false);
+      expect(component.isLocating()).toBe(false);
+      expect(component.locationStatus()).toBe('idle');
+      expect(component.selectedRadius()).toBe(0);
+    });
+
+    it('should trigger GeolocationService when Near Me is clicked and show locating state', async () => {
+      const nearMePromise = component.requestLocation();
+
+      expect(mockGeo.getCurrentPositionSpy).toHaveBeenCalledOnce();
+      expect(component.isLocating()).toBe(true);
+      expect(component.locationStatus()).toBe('locating');
+
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 }); // Paris coordinates
+      await nearMePromise;
+      fixture.detectChanges();
+
+      expect(component.hasLocation()).toBe(true);
+      expect(component.isLocating()).toBe(false);
+      expect(component.locationStatus()).toBe('granted');
+      expect(component.sortBy()).toBe('nearest');
+    });
+
+    it('should calculate full-precision distance for restaurants with valid coordinates and undefined for null coordinates', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 }); // Paris Center
+      await nearMePromise;
+      fixture.detectChanges();
+
+      const withDist = component.restaurantsWithDistance();
+      const rParis = withDist.find(r => r.id === '101');
+      const rNaples = withDist.find(r => r.id === '102');
+      const rTokyo = withDist.find(r => r.id === '103');
+
+      // Paris restaurant (101): ~4.25 km from user
+      expect(rParis?.distanceKm).toBeDefined();
+      expect(rParis!.distanceKm!).toBeGreaterThan(4.0);
+      expect(rParis!.distanceKm!).toBeLessThan(4.5);
+
+      // Naples restaurant (102): ~1280 km from Paris
+      expect(rNaples?.distanceKm).toBeDefined();
+      expect(rNaples!.distanceKm!).toBeGreaterThan(1000);
+
+      // Tokyo restaurant (103): null coordinates -> distanceKm must be undefined
+      expect(rTokyo?.distanceKm).toBeUndefined();
+    });
+
+    it('should handle permission denied gracefully and display location error banner with retry link', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerError(1, 'User denied Geolocation');
+      await nearMePromise;
+      fixture.detectChanges();
+
+      expect(component.hasLocation()).toBe(false);
+      expect(component.locationStatus()).toBe('denied');
+      expect(component.locationError()).toContain('permission denied');
+
+      const banner: HTMLElement | null = fixture.nativeElement.querySelector('.location-error-banner');
+      expect(banner).not.toBeNull();
+      expect(banner?.textContent).toContain('permission denied');
+    });
+
+    it('should handle timeout gracefully and allow retry via retry action', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerError(3, 'Timeout expired');
+      await nearMePromise;
+      fixture.detectChanges();
+
+      expect(component.hasLocation()).toBe(false);
+      expect(component.locationStatus()).toBe('timeout');
+      expect(component.locationError()).toContain('timed out');
+
+      // Click retry link in the error banner
+      const retryBtn: HTMLButtonElement | null = fixture.nativeElement.querySelector('.loc-retry-link');
+      expect(retryBtn).not.toBeNull();
+      retryBtn!.click();
+
+      expect(mockGeo.getCurrentPositionSpy).toHaveBeenCalledTimes(2);
+
+      // Successfully resolve retry
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      fixture.detectChanges();
+
+      expect(component.hasLocation()).toBe(true);
+      expect(component.locationStatus()).toBe('granted');
+    });
+
+    it('should filter restaurants by radius options (2 km, 5 km, 10 km, 25 km, Any)', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 }); // Paris Center (~4.25 km from Le Chatelet)
+      await nearMePromise;
+      fixture.detectChanges();
+
+      // Within 2 km: Le Chatelet (~4.25 km) is outside -> 0 results
+      component.setRadius(2);
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(0);
+
+      // Within 5 km: Le Chatelet (~4.25 km) is inside -> 1 result
+      component.setRadius(5);
+      fixture.detectChanges();
+      const within5 = component.filteredRestaurants();
+      expect(within5.length).toBe(1);
+      expect(within5[0].id).toBe('101');
+      expect(within5[0].name).toBe('Le Chatelet Bistro');
+
+      // Within 10 km: Le Chatelet is inside -> 1 result
+      component.setRadius(10);
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(1);
+
+      // Within 25 km: Le Chatelet is inside -> 1 result
+      component.setRadius(25);
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(1);
+
+      // Any Distance (0): All 3 restaurants match
+      component.setRadius(0);
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(3);
+    });
+
+    it('should exclude restaurants with null coordinates from radius-filtered results', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.setRadius(25);
+      fixture.detectChanges();
+
+      const results = component.filteredRestaurants();
+      const hasNullCoords = results.some(r => r.id === '103');
+      expect(hasNullCoords).toBe(false);
+    });
+
+    it('should perform exact radius boundary comparison using full-precision distance', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      const chateletDist = component.restaurantsWithDistance().find(r => r.id === '101')!.distanceKm!;
+
+      // Radius smaller than exact distance by 0.05 km -> excluded
+      component.selectedRadius.set(Math.floor(chateletDist) as any);
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().some(r => r.id === '101')).toBe(false);
+
+      // Radius larger than exact distance -> included
+      component.selectedRadius.set(Math.ceil(chateletDist) as any);
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().some(r => r.id === '101')).toBe(true);
+    });
+
+    it('should sort nearest-first with valid distance restaurants first and null coordinates last', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.setSort('nearest');
+      component.setRadius(0); // Any distance so all 3 appear
+      fixture.detectChanges();
+
+      const results = component.filteredRestaurants();
+      expect(results.length).toBe(3);
+      // Nearest: Paris Bistro (4.25 km)
+      expect(results[0].id).toBe('101');
+      // Second: Naples Trattoria (~1280 km)
+      expect(results[1].id).toBe('102');
+      // Last: Tokyo Lounge (null coordinates, no distance)
+      expect(results[2].id).toBe('103');
+    });
+
+    it('should combine search text with radius filter', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.setRadius(5);
+
+      // Search matching restaurant within 5 km
+      component.onSearchChange('Chatelet');
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(1);
+      expect(component.filteredRestaurants()[0].name).toBe('Le Chatelet Bistro');
+
+      // Search restaurant outside 5 km
+      component.onSearchChange('Bella');
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(0);
+    });
+
+    it('should combine cuisine filter with radius filter', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.setRadius(5);
+
+      // Cuisine inside 5 km
+      component.setCuisine('french-haute');
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(1);
+      expect(component.filteredRestaurants()[0].name).toBe('Le Chatelet Bistro');
+
+      // Cuisine outside 5 km
+      component.setCuisine('italian');
+      fixture.detectChanges();
+      expect(component.filteredRestaurants().length).toBe(0);
+    });
+
+    it('should combine city filter with radius filter and preserve city selection', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.setRadius(5);
+
+      // Select city Paris (within 5 km)
+      component.setCity('Paris');
+      fixture.detectChanges();
+      expect(component.selectedCity()).toBe('Paris');
+      expect(component.filteredRestaurants().length).toBe(1);
+
+      // Select city Naples (outside 5 km)
+      component.setCity('Naples');
+      fixture.detectChanges();
+      expect(component.selectedCity()).toBe('Naples');
+      expect(component.filteredRestaurants().length).toBe(0);
+    });
+
+    it('should display distance formatting on restaurant cards when location is available', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.selectedRadius.set(5);
+      fixture.detectChanges();
+
+      const cardDe = fixture.debugElement.query(By.directive(RestaurantCardComponent));
+      expect(cardDe).not.toBeNull();
+      const cardComp = cardDe.componentInstance as RestaurantCardComponent;
+
+      expect(cardComp.formattedDistance).toMatch(/^\d+\.\d km away$/);
+      expect(cardComp.formattedDistance).toContain('4.2 km away');
+      const distTag: HTMLElement | null = cardDe.nativeElement.querySelector('.distance-tag');
+      expect(distTag?.textContent).toContain('4.2 km away');
+    });
+
+    it('should clear location and reset radius on clearUserLocation', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.setRadius(5);
+      fixture.detectChanges();
+      expect(component.hasLocation()).toBe(true);
+      expect(component.selectedRadius()).toBe(5);
+
+      component.clearUserLocation();
+      fixture.detectChanges();
+
+      expect(component.hasLocation()).toBe(false);
+      expect(component.selectedRadius()).toBe(0);
+      expect(component.sortBy()).toBe('name-asc');
+      expect(component.filteredRestaurants().length).toBe(3);
+    });
+
+    it('should reset radius and location when resetAllFilters is invoked', async () => {
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.setRadius(5);
+      fixture.detectChanges();
+
+      component.resetAllFilters();
+      fixture.detectChanges();
+
+      expect(component.hasLocation()).toBe(false);
+      expect(component.selectedRadius()).toBe(0);
+      expect(component.filteredRestaurants().length).toBe(3);
+    });
+
+    it('should not initiate duplicate restaurant catalog HTTP requests during location operations', async () => {
+      // Multiple location & radius changes
+      const nearMePromise = component.requestLocation();
+      mockGeo.triggerSuccess({ latitude: 48.8566, longitude: 2.3522 });
+      await nearMePromise;
+
+      component.setRadius(2);
+      component.setRadius(5);
+      component.setRadius(10);
+      component.setSort('nearest');
+      component.clearUserLocation();
+      fixture.detectChanges();
+
+      // httpTesting.verify() in afterEach verifies no extra /api/restaurants requests were issued
+    });
+
+    it('should trigger requestLocation and set nearest sort when nearMe=true query parameter is received', async () => {
+      const router = TestBed.inject(Router);
+      const reqLocationSpy = vi.spyOn(component, 'requestLocation');
+
+      await router.navigate([], { queryParams: { nearMe: 'true', sort: 'nearest' } });
+      fixture.detectChanges();
+
+      expect(reqLocationSpy).toHaveBeenCalled();
+      expect(component.sortBy()).toBe('nearest');
     });
   });
 });

@@ -2,20 +2,170 @@
   <form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="search-form" role="search" aria-label="Restaurant table search">
     
     <!-- Location Control -->
-    <div class="form-field">
-      <label for="searchLocation" class="field-label">
+    <div class="form-field location-field">
+      <label id="locationFieldLabel" for="searchLocationTrigger" class="field-label">
         <svg viewBox="0 0 20 20" fill="currentColor" class="field-icon" aria-hidden="true">
           <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
         </svg>
         <span>Location</span>
       </label>
-      <div class="select-wrapper">
-        <select id="searchLocation" formControlName="location" class="form-select">
+
+      <div class="location-select-wrap">
+        <!-- Trigger Button -->
+        <button
+          type="button"
+          id="searchLocationTrigger"
+          class="form-select location-trigger-btn"
+          [class.active-current]="selectedLocationMode() === 'current'"
+          (click)="toggleDropdown($event)"
+          aria-haspopup="dialog"
+          [attr.aria-expanded]="isDropdownOpen()"
+          aria-labelledby="locationFieldLabel searchLocationTrigger"
+        >
+          <span class="trigger-content">
+            @if (selectedLocationMode() === 'current') {
+              <span class="pulse-dot" aria-hidden="true"></span>
+            }
+            <span class="trigger-label">{{ locationDisplayText() }}</span>
+          </span>
+          <span class="chevron-down" aria-hidden="true" [class.rotated]="isDropdownOpen()">▾</span>
+        </button>
+
+        <!-- Hidden Native Select for Form Compatibility & Legacy Tests -->
+        <select id="searchLocation" formControlName="location" class="sr-only" tabindex="-1" aria-hidden="true">
           @for (loc of locations(); track loc.value) {
             <option [value]="loc.value">{{ loc.label }}</option>
           }
         </select>
-        <span class="chevron-down" aria-hidden="true">▾</span>
+
+        <!-- Dropdown Popover Panel -->
+        @if (isDropdownOpen()) {
+          <div class="location-dropdown-panel" role="region" aria-label="Location selection options">
+            
+            <!-- Option A: Current Location -->
+            <div class="option-section current-location-section">
+              <button
+                type="button"
+                id="btnUseCurrentLocation"
+                class="current-loc-btn"
+                [class.is-locating]="isLocating()"
+                [class.is-selected]="selectedLocationMode() === 'current'"
+                (click)="useCurrentLocation($event)"
+                [disabled]="isLocating()"
+              >
+                <div class="loc-btn-icon" aria-hidden="true">
+                  @if (isLocating()) {
+                    <span class="loc-spinner"></span>
+                  } @else {
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="gps-icon">
+                      <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                    </svg>
+                  }
+                </div>
+                <div class="loc-btn-text">
+                  <span class="loc-primary-text">Use My Current Location</span>
+                  <span class="loc-subtext">
+                    @if (isLocating()) {
+                      Detecting your location...
+                    } @else if (selectedLocationMode() === 'current') {
+                      GPS coordinates active
+                    } @else {
+                      Discover restaurants near you
+                    }
+                  </span>
+                </div>
+                @if (selectedLocationMode() === 'current') {
+                  <span class="check-icon" aria-label="Selected">✓</span>
+                }
+              </button>
+
+              <!-- Inline Geolocation Error & Retry -->
+              @if (locationError()) {
+                <div class="loc-error-inline" role="alert">
+                  <div class="loc-error-message">
+                    <svg viewBox="0 0 20 20" fill="currentColor" class="err-icon" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="err-text">{{ locationError() }}</span>
+                  </div>
+                  <button type="button" class="btn-retry-loc" (click)="useCurrentLocation($event)">
+                    Retry
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Divider -->
+            <div class="dropdown-divider" role="separator">
+              <span>Or choose destination city</span>
+            </div>
+
+            <!-- Option B: Manual City Selection -->
+            <div class="option-section manual-city-section">
+              <!-- Quick Search Input -->
+              <div class="city-search-box">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="search-mini-icon" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                </svg>
+                <input
+                  type="text"
+                  class="city-search-input"
+                  placeholder="Search cities..."
+                  [value]="citySearchQuery()"
+                  (input)="onCitySearchChange($any($event.target).value)"
+                  (click)="$event.stopPropagation()"
+                  aria-label="Filter cities"
+                />
+                @if (citySearchQuery()) {
+                  <button type="button" class="clear-query-btn" (click)="onCitySearchChange(''); $event.stopPropagation()" aria-label="Clear city search">
+                    ✕
+                  </button>
+                }
+              </div>
+
+              <!-- Cities List -->
+              <div class="cities-list" role="listbox" aria-label="Available cities">
+                <!-- All Destinations -->
+                <button
+                  type="button"
+                  class="city-item"
+                  [class.is-selected]="selectedLocationMode() === 'all'"
+                  (click)="selectAllDestinations($event)"
+                  role="option"
+                  [attr.aria-selected]="selectedLocationMode() === 'all'"
+                >
+                  <span class="city-name">All Destinations</span>
+                  @if (selectedLocationMode() === 'all') {
+                    <span class="check-icon" aria-hidden="true">✓</span>
+                  }
+                </button>
+
+                @for (city of filteredCities(); track city) {
+                  <button
+                    type="button"
+                    class="city-item"
+                    [class.is-selected]="selectedLocationMode() === 'city' && selectedCity() === city"
+                    (click)="selectCity(city, $event)"
+                    role="option"
+                    [attr.aria-selected]="selectedLocationMode() === 'city' && selectedCity() === city"
+                  >
+                    <span class="city-name">{{ city }}</span>
+                    @if (selectedLocationMode() === 'city' && selectedCity() === city) {
+                      <span class="check-icon" aria-hidden="true">✓</span>
+                    }
+                  </button>
+                }
+
+                @if (filteredCities().length === 0 && citySearchQuery()) {
+                  <div class="empty-cities-msg">
+                    No cities matching "{{ citySearchQuery() }}"
+                  </div>
+                }
+              </div>
+            </div>
+
+          </div>
+        }
       </div>
     </div>
 
@@ -112,9 +262,9 @@
 
     <!-- Submit Button -->
     <div class="form-action">
-      <button type="submit" class="btn btn-terracotta search-submit-btn" aria-label="Search available tables">
+      <button type="submit" class="btn btn-terracotta search-submit-btn" aria-label="Find Restaurants">
         <span class="d-icon d-icon-search search-btn-icon" aria-hidden="true"></span>
-        <span>Find Table</span>
+        <span>Find Restaurants</span>
       </button>
     </div>
 

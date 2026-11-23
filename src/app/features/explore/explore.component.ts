@@ -13,12 +13,15 @@ import { VoiceSearchComponent } from '../../shared/components/voice-search/voice
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { CuisineService } from '../../core/services/cuisine.service';
 import { AuthService } from '../../core/services/auth.service';
+import { GeolocationService } from '../../core/services/geolocation.service';
 import {
   Restaurant,
   matchesRestaurantSearch,
   matchesRestaurantCuisine,
   meetsMinimumRating,
-  sortRestaurantsAlphabetically
+  sortRestaurantsAlphabetically,
+  calculateHaversineDistanceKm,
+  isValidCoordinate
 } from '../../core/models/restaurant.model';
 import {
   getTodayDateString,
@@ -28,7 +31,8 @@ import {
   formatDisplayTime
 } from '../../core/models/booking.model';
 
-export type SortOption = 'name-asc' | 'name-desc' | 'rating-desc' | 'reviews-desc' | 'recommended';
+export type RadiusOption = 0 | 2 | 5 | 10 | 25;
+export type SortOption = 'name-asc' | 'name-desc' | 'rating-desc' | 'reviews-desc' | 'recommended' | 'nearest';
 
 export interface AutocompleteItem {
   id: string;
@@ -60,6 +64,7 @@ export class ExploreComponent implements OnInit, OnDestroy {
   private readonly restaurantService = inject(RestaurantService);
   private readonly cuisineService = inject(CuisineService);
   private readonly authService = inject(AuthService);
+  private readonly geolocationService = inject(GeolocationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly elementRef = inject(ElementRef);
@@ -73,6 +78,23 @@ export class ExploreComponent implements OnInit, OnDestroy {
   readonly allCuisines = this.restaurantService.cuisines;
   readonly isLoadingCuisines = this.cuisineService.isLoadingCuisines;
   readonly cuisinesLoadError = this.cuisineService.cuisinesLoadError;
+
+  // Geolocation & Radius Signals
+  readonly userCoordinates = this.geolocationService.coordinates;
+  readonly locationStatus = this.geolocationService.status;
+  readonly locationError = this.geolocationService.errorMessage;
+  readonly isLocating = this.geolocationService.isLocating;
+  readonly hasLocation = this.geolocationService.hasLocation;
+
+  readonly selectedRadius = signal<RadiusOption>(0);
+
+  readonly radiusOptions: { label: string; value: RadiusOption }[] = [
+    { label: 'Any Distance', value: 0 },
+    { label: 'Within 2 km', value: 2 },
+    { label: 'Within 5 km', value: 5 },
+    { label: 'Within 10 km', value: 10 },
+    { label: 'Within 25 km', value: 25 }
+  ];
 
   // Filter & Search Signals
   readonly searchQuery = signal<string>('');
@@ -145,8 +167,9 @@ export class ExploreComponent implements OnInit, OnDestroy {
     { label: 'Neighborhood Gems', value: 'gem' }
   ];
 
-  // Sort options list (alphabetical A–Z default)
+  // Sort options list (alphabetical A–Z default, with nearest option)
   readonly sortOptions: { label: string; value: SortOption }[] = [
+    { label: 'Nearest to Me', value: 'nearest' },
     { label: 'Name (A to Z)', value: 'name-asc' },
     { label: 'Name (Z to A)', value: 'name-desc' },
     { label: 'Highest Rated (5.0 → 1.0)', value: 'rating-desc' },
@@ -297,15 +320,41 @@ export class ExploreComponent implements OnInit, OnDestroy {
     return tags;
   });
 
+  // Distance-enriched restaurants derived reactively when coordinates or catalog update
+  readonly restaurantsWithDistance = computed<Restaurant[]>(() => {
+    const list = this.allRestaurants();
+    const coords = this.userCoordinates();
+
+    if (!coords || !isValidCoordinate(coords.latitude, coords.longitude)) {
+      return list.map(r => (r.distanceKm !== undefined ? { ...r, distanceKm: undefined } : r));
+    }
+
+    const { latitude: uLat, longitude: uLon } = coords;
+
+    return list.map(r => {
+      if (
+        r.latitude != null &&
+        r.longitude != null &&
+        isValidCoordinate(r.latitude, r.longitude)
+      ) {
+        const distance = calculateHaversineDistanceKm(uLat, uLon, r.latitude, r.longitude);
+        return { ...r, distanceKm: distance };
+      }
+      return { ...r, distanceKm: undefined };
+    });
+  });
+
   // Filtered and Sorted Restaurant List (non-mutating; A–Z by default)
   readonly filteredRestaurants = computed(() => {
-    let list = [...this.allRestaurants()];
+    let list = [...this.restaurantsWithDistance()];
     const query = this.searchQuery().trim();
     const cuisine = this.selectedCuisine();
     const minRating = this.selectedRating();
     const badge = this.selectedBadge().toLowerCase();
     const city = this.selectedCity();
     const sort = this.sortBy();
+    const radius = this.selectedRadius();
+    const hasUserLocation = this.hasLocation();
 
     // 1. Search Query Filter (name, city, address, description, cuisine)
     if (query.length > 0) {
@@ -341,8 +390,31 @@ export class ExploreComponent implements OnInit, OnDestroy {
       list = list.filter(r => r.city && r.city.trim().toLowerCase() === cityLower);
     }
 
-    // 6. Non-mutating Sorting
+    // 6. Radius Filter (only applied when user location is available and radius > 0)
+    if (hasUserLocation && radius > 0) {
+      list = list.filter(r => r.distanceKm != null && Number.isFinite(r.distanceKm) && r.distanceKm <= radius);
+    }
+
+    // 7. Non-mutating Sorting
     switch (sort) {
+      case 'nearest':
+        list.sort((a, b) => {
+          const distA = a.distanceKm;
+          const distB = b.distanceKm;
+          const hasDistA = distA != null && Number.isFinite(distA);
+          const hasDistB = distB != null && Number.isFinite(distB);
+
+          if (hasDistA && hasDistB) {
+            if (distA! !== distB!) {
+              return distA! - distB!;
+            }
+            return a.name.localeCompare(b.name);
+          }
+          if (hasDistA) return -1;
+          if (hasDistB) return 1;
+          return a.name.localeCompare(b.name);
+        });
+        break;
       case 'rating-desc':
         list.sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
         break;
@@ -376,6 +448,7 @@ export class ExploreComponent implements OnInit, OnDestroy {
     if (this.selectedRating() > 0) count++;
     if (this.selectedBadge() !== 'all') count++;
     if (this.selectedCity() !== 'all') count++;
+    if (this.selectedRadius() > 0 && this.hasLocation()) count++;
     if (this.bookingDate() !== this.minDate()) count++;
     if (this.selectedStartTime() !== '18:30' || this.selectedEndTime() !== '20:00') count++;
     if (this.selectedGuests() !== 2) count++;
@@ -444,6 +517,25 @@ export class ExploreComponent implements OnInit, OnDestroy {
       const guestsParam = params.get('guests');
       if (guestsParam && !Number.isNaN(+guestsParam) && +guestsParam >= 1 && +guestsParam <= 20) {
         this.selectedGuests.set(+guestsParam);
+      }
+
+      const radiusParam = params.get('radius');
+      if (radiusParam && [2, 5, 10, 25].includes(+radiusParam)) {
+        this.selectedRadius.set(+radiusParam as RadiusOption);
+      }
+
+      const sortParam = params.get('sort');
+      if (sortParam && ['nearest', 'name-asc', 'name-desc', 'rating-desc', 'reviews-desc', 'recommended'].includes(sortParam)) {
+        this.sortBy.set(sortParam as SortOption);
+      }
+
+      const nearMeParam = params.get('nearMe');
+      if (nearMeParam === 'true') {
+        if (!this.hasLocation()) {
+          this.requestLocation();
+        } else if (this.sortBy() === 'name-asc') {
+          this.sortBy.set('nearest');
+        }
       }
     });
   }
@@ -701,6 +793,52 @@ export class ExploreComponent implements OnInit, OnDestroy {
 
   setSort(sort: SortOption): void {
     this.sortBy.set(sort);
+    this.syncSortQueryParam(sort);
+  }
+
+  async requestLocation(): Promise<void> {
+    const coords = await this.geolocationService.getCurrentLocation();
+    if (coords) {
+      if (this.sortBy() === 'name-asc') {
+        this.sortBy.set('nearest');
+      }
+      this.showToast('Location updated. Showing nearest restaurants.');
+    }
+  }
+
+  clearUserLocation(): void {
+    this.geolocationService.clearLocation();
+    this.selectedRadius.set(0);
+    if (this.sortBy() === 'nearest') {
+      this.sortBy.set('name-asc');
+    }
+    this.syncRadiusQueryParam(0);
+    this.showToast('Location cleared.');
+  }
+
+  setRadius(radius: number): void {
+    const validRadius = [2, 5, 10, 25].includes(radius) ? (radius as RadiusOption) : 0;
+    this.selectedRadius.set(validRadius);
+    this.syncRadiusQueryParam(validRadius);
+    this.simulateBriefLoading();
+  }
+
+  private syncRadiusQueryParam(radius: RadiusOption): void {
+    const nextParam = radius > 0 ? radius : null;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { radius: nextParam },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  private syncSortQueryParam(sort: SortOption): void {
+    const nextParam = sort === 'name-asc' ? null : sort;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { sort: nextParam },
+      queryParamsHandling: 'merge'
+    });
   }
 
   setViewMode(mode: 'grid' | 'compact'): void {
@@ -718,6 +856,8 @@ export class ExploreComponent implements OnInit, OnDestroy {
     this.selectedRating.set(0);
     this.selectedBadge.set('all');
     this.selectedCity.set('all');
+    this.selectedRadius.set(0);
+    this.geolocationService.clearLocation();
     this.sortBy.set('name-asc');
     this.bookingDate.set(this.minDate());
     this.selectedStartTime.set('18:30');

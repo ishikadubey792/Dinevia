@@ -96,9 +96,41 @@ export class HomeComponent implements OnInit {
     this.bookingPartySize = criteria.guests;
 
     this.restaurantService.searchRestaurants(criteria);
-    const locText = criteria.location ? criteria.location : 'all destinations';
-    this.showToast(`Updated tables for ${criteria.guests} guests in ${locText}.`);
-    this.scrollTo('featured-section');
+
+    const queryParams: Record<string, string | number> = {};
+
+    if (criteria.useCurrentLocation) {
+      queryParams['nearMe'] = 'true';
+      queryParams['sort'] = 'nearest';
+      if (criteria.latitude != null && criteria.longitude != null) {
+        queryParams['lat'] = criteria.latitude;
+        queryParams['lng'] = criteria.longitude;
+      }
+    } else if (criteria.location && criteria.location !== 'all' && criteria.location.trim().length > 0) {
+      queryParams['city'] = criteria.location.trim();
+    }
+
+    if (criteria.cuisine && criteria.cuisine !== 'all') {
+      queryParams['cuisine'] = criteria.cuisine;
+    }
+
+    if (criteria.date) {
+      queryParams['date'] = criteria.date;
+    }
+
+    if (criteria.startTime) {
+      queryParams['startTime'] = criteria.startTime;
+    }
+
+    if (criteria.endTime) {
+      queryParams['endTime'] = criteria.endTime;
+    }
+
+    if (criteria.guests) {
+      queryParams['guests'] = criteria.guests;
+    }
+
+    this.router.navigate(['/explore'], { queryParams });
   }
 
   retryLoad(): void {

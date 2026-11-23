@@ -195,4 +195,29 @@ describe('RestaurantCardComponent Fallback Image & Behavior', () => {
     expect(wishlistService.addToWishlist).not.toHaveBeenCalled();
     expect(wishlistService.removeFromWishlist).not.toHaveBeenCalled();
   });
+
+  it('should display formatted distance tag when restaurant has valid distanceKm', () => {
+    fixture.componentRef.setInput('restaurant', {
+      ...mockRestaurant,
+      distanceKm: 2.3789
+    });
+    fixture.detectChanges();
+
+    expect(component.formattedDistance).toBe('2.4 km away');
+    const distanceTag: HTMLElement | null = fixture.nativeElement.querySelector('.distance-tag');
+    expect(distanceTag).not.toBeNull();
+    expect(distanceTag?.textContent?.trim()).toContain('2.4 km away');
+  });
+
+  it('should not display distance tag when distanceKm is null or undefined', () => {
+    fixture.componentRef.setInput('restaurant', {
+      ...mockRestaurant,
+      distanceKm: undefined
+    });
+    fixture.detectChanges();
+
+    expect(component.formattedDistance).toBeNull();
+    const distanceTag = fixture.nativeElement.querySelector('.distance-tag');
+    expect(distanceTag).toBeNull();
+  });
 });

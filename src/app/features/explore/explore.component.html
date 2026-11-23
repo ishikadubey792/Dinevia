@@ -190,6 +190,61 @@
             }
           </div>
 
+          <!-- SIDEBAR: Nearby Discovery -->
+          <div class="sidebar-section">
+            <h2 class="sidebar-section-title">Nearby Discovery</h2>
+
+            <div class="sidebar-location-box">
+              @if (!hasLocation()) {
+                <button type="button" class="sidebar-near-me-btn" [disabled]="isLocating()" (click)="requestLocation()"
+                  aria-label="Detect current location for nearby dining">
+                  @if (isLocating()) {
+                    <span class="loc-spinner" aria-hidden="true"></span>
+                    <span>Locating...</span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sidebar-loc-icon" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    <span>Use My Location</span>
+                  }
+                </button>
+              } @else {
+                <div class="sidebar-location-status">
+                  <span class="loc-active-dot"></span>
+                  <span class="loc-active-text">Location Active</span>
+                  <button type="button" class="sidebar-clear-loc-btn" (click)="clearUserLocation()" title="Clear location" aria-label="Clear location">
+                    ×
+                  </button>
+                </div>
+              }
+
+              @if (locationError() && !hasLocation()) {
+                <div class="sidebar-location-error" role="alert">
+                  <p>{{ locationError() }}</p>
+                  <button type="button" class="sidebar-retry-link" (click)="requestLocation()">Retry</button>
+                </div>
+              }
+            </div>
+
+            @if (hasLocation()) {
+            <div class="sidebar-radius-wrap">
+              <span class="sidebar-radius-label">Distance Radius</span>
+              <div class="sidebar-filter-list" role="listbox" aria-label="Filter by distance radius">
+                @for (r of radiusOptions; track r.value) {
+                <button type="button" class="sidebar-filter-item"
+                  [class.active]="selectedRadius() === r.value"
+                  [attr.aria-selected]="selectedRadius() === r.value"
+                  role="option"
+                  (click)="setRadius(r.value)">
+                  <span class="sfi-label">{{ r.label }}</span>
+                </button>
+                }
+              </div>
+            </div>
+            }
+          </div>
+
           <!-- SIDEBAR: Cuisines -->
           <div class="sidebar-section">
             <h2 class="sidebar-section-title">Cuisine</h2>
@@ -295,22 +350,42 @@
              ====================== -->
         <div class="content-column">
 
-          <!-- Content Toolbar: Mobile filter toggle + Sort + View mode -->
+          <!-- Content Toolbar: Mobile filter toggle + Near Me + Sort + View mode -->
           <div class="content-toolbar">
-            <!-- Mobile Filter Toggle (hidden on desktop) -->
-            <button #mobileFilterBtn type="button" class="btn btn-outline mobile-filter-btn" (click)="toggleMobileFilters()"
-              [attr.aria-expanded]="isMobileFilterOpen()" aria-controls="mobileFilterDrawer"
-              aria-label="Open filter options">
-              <svg viewBox="0 0 20 20" fill="currentColor" class="filter-icon" aria-hidden="true">
-                <path fill-rule="evenodd"
-                  d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
-                  clip-rule="evenodd" />
-              </svg>
-              <span>Filters</span>
-              @if (activeFilterCount() > 0) {
-              <span class="filter-count-badge">{{ activeFilterCount() }}</span>
-              }
-            </button>
+            <div class="toolbar-left">
+              <!-- Mobile Filter Toggle (hidden on desktop) -->
+              <button #mobileFilterBtn type="button" class="btn btn-outline mobile-filter-btn" (click)="toggleMobileFilters()"
+                [attr.aria-expanded]="isMobileFilterOpen()" aria-controls="mobileFilterDrawer"
+                aria-label="Open filter options">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="filter-icon" aria-hidden="true">
+                  <path fill-rule="evenodd"
+                    d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                    clip-rule="evenodd" />
+                </svg>
+                <span>Filters</span>
+                @if (activeFilterCount() > 0) {
+                <span class="filter-count-badge">{{ activeFilterCount() }}</span>
+                }
+              </button>
+
+              <!-- Near Me Button -->
+              <button type="button" class="btn btn-outline near-me-btn"
+                [class.active]="hasLocation()"
+                [disabled]="isLocating()"
+                (click)="requestLocation()"
+                aria-label="Find restaurants near me">
+                @if (isLocating()) {
+                  <span class="loc-spinner" aria-hidden="true"></span>
+                  <span>Locating...</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="near-me-icon" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                  </svg>
+                  <span>{{ hasLocation() ? 'Near Me (Active)' : 'Near Me' }}</span>
+                }
+              </button>
+            </div>
 
             <!-- Sort and View Mode (always visible) -->
             <div class="toolbar-right">
@@ -353,6 +428,21 @@
               </div>
             </div>
           </div>
+
+          <!-- Location Error Banner -->
+          @if (locationError() && !hasLocation()) {
+          <div class="location-error-banner" role="alert">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="loc-banner-icon" aria-hidden="true">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd" />
+            </svg>
+            <div class="loc-banner-content">
+              <span>{{ locationError() }}</span>
+              <button type="button" class="loc-retry-link" (click)="requestLocation()">Retry Location</button>
+            </div>
+          </div>
+          }
 
           <!-- Time Range Error Banner -->
           @if (timeRangeError()) {
@@ -434,6 +524,22 @@
               </span>
               }
 
+              @if (hasLocation()) {
+              <span class="chip">
+                <span>📍 Near Me</span>
+                <button type="button" class="chip-remove" (click)="clearUserLocation()"
+                  aria-label="Clear location filter">×</button>
+              </span>
+              }
+
+              @if (selectedRadius() > 0 && hasLocation()) {
+              <span class="chip">
+                <span>Within {{ selectedRadius() }} km</span>
+                <button type="button" class="chip-remove" (click)="setRadius(0)"
+                  aria-label="Remove radius filter">×</button>
+              </span>
+              }
+
               <!-- Clear All Action -->
               <button type="button" class="clear-all-chips-btn" (click)="resetAllFilters()">
                 <span>Clear All</span>
@@ -468,6 +574,9 @@
               }
               @if (selectedCity() !== 'all') {
               in <span class="highlight-text">{{ selectedCity() }}</span>
+              }
+              @if (selectedRadius() > 0 && hasLocation()) {
+              within <span class="highlight-text">{{ selectedRadius() }} km</span>
               }
             </p>
 
@@ -645,6 +754,18 @@
           <span class="select-chevron" aria-hidden="true">▾</span>
         </div>
       </div>
+      <div class="filter-field">
+        <label for="radiusSelect" class="filter-field-label">Radius:</label>
+        <div class="select-wrapper">
+          <select id="radiusSelect" [ngModel]="selectedRadius()" (ngModelChange)="setRadius(+$event)"
+            class="filter-select">
+            @for (r of radiusOptions; track r.value) {
+            <option [value]="r.value">{{ r.label }}</option>
+            }
+          </select>
+          <span class="select-chevron" aria-hidden="true">▾</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -692,6 +813,52 @@
         @if (timeRangeError()) {
         <p class="drawer-error-text" role="alert">{{ timeRangeError() }}</p>
         }
+      </div>
+
+      <!-- Nearby Discovery in Drawer -->
+      <div class="drawer-section">
+        <h4 class="drawer-section-title">Nearby Discovery</h4>
+        <div class="drawer-location-box">
+          @if (!hasLocation()) {
+            <button type="button" class="drawer-near-me-btn" [disabled]="isLocating()" (click)="requestLocation()"
+              aria-label="Find restaurants near me">
+              @if (isLocating()) {
+                <span class="loc-spinner" aria-hidden="true"></span>
+                <span>Locating...</span>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="drawer-loc-icon" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                </svg>
+                <span>Find Near Me</span>
+              }
+            </button>
+          } @else {
+            <div class="drawer-location-status">
+              <span class="loc-active-dot"></span>
+              <span class="loc-active-text">Location Active</span>
+              <button type="button" class="drawer-clear-loc-btn" (click)="clearUserLocation()" aria-label="Clear location">
+                Clear Location
+              </button>
+            </div>
+            <div class="drawer-pill-grid radius-grid" role="group" aria-label="Filter by distance radius">
+              @for (r of radiusOptions; track r.value) {
+              <button type="button" class="drawer-pill" [class.active]="selectedRadius() === r.value"
+                [attr.aria-pressed]="selectedRadius() === r.value"
+                (click)="setRadius(r.value)">
+                {{ r.label }}
+              </button>
+              }
+            </div>
+          }
+
+          @if (locationError() && !hasLocation()) {
+            <div class="drawer-location-error" role="alert">
+              <p>{{ locationError() }}</p>
+              <button type="button" class="sidebar-retry-link" (click)="requestLocation()">Retry</button>
+            </div>
+          }
+        </div>
       </div>
 
       <!-- Cuisine selection -->

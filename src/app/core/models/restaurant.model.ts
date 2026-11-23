@@ -39,6 +39,9 @@ export interface Restaurant {
   location: string;
   neighborhood: string;
   city: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  distanceKm?: number;
   rating: number;
   reviewCount: number;
   priceRange: '$$' | '$$$' | '$$$$';
@@ -82,6 +85,8 @@ export interface ApiRestaurantDto {
   name: string;
   address: string;
   city: string;
+  latitude?: number | null;
+  longitude?: number | null;
   description?: string;
   phone?: string;
   email?: string;
@@ -154,6 +159,12 @@ export function mapApiRestaurantToDomain(dto: ApiRestaurantDto): Restaurant {
       ? dto.reviewCount
       : 0;
 
+  const parseCoordinate = (val: unknown): number | null => {
+    if (val === null || val === undefined) return null;
+    const num = typeof val === 'number' ? val : Number(val);
+    return Number.isFinite(num) ? num : null;
+  };
+
   return {
     id: String(dto.id),
     name: dto.name,
@@ -163,6 +174,8 @@ export function mapApiRestaurantToDomain(dto: ApiRestaurantDto): Restaurant {
     location: dto.address ? `${dto.address}, ${dto.city}` : dto.city,
     neighborhood: dto.city,
     city: dto.city,
+    latitude: parseCoordinate(dto.latitude),
+    longitude: parseCoordinate(dto.longitude),
     rating: actualRating,
     reviewCount: actualReviewCount,
     priceRange: validPriceRange,
@@ -389,4 +402,70 @@ export function getCuisineVisualMetadata(name: string, slug: string): { tagline:
     tagline: `Artisanal ${name} culinary artistry`,
     imageUrl: DEFAULT_FALLBACK_RESTAURANT_IMAGE
   };
+}
+
+/**
+ * Validates whether latitude and longitude are finite numbers within valid geographic ranges:
+ * - Latitude: [-90, 90]
+ * - Longitude: [-180, 180]
+ */
+export function isValidCoordinate(latitude: unknown, longitude: unknown): boolean {
+  if (latitude === null || latitude === undefined || longitude === null || longitude === undefined) {
+    return false;
+  }
+  const lat = typeof latitude === 'number' ? latitude : Number(latitude);
+  const lon = typeof longitude === 'number' ? longitude : Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return false;
+  }
+  return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+}
+
+/**
+ * Calculates the great-circle distance between two geographic coordinates in kilometers
+ * using the Haversine formula on a spherical Earth (radius: 6371 km).
+ *
+ * Returns full floating-point precision without premature rounding.
+ * Decimal formatting (e.g. 1 decimal place) should be handled by the UI presentation layer.
+ *
+ * @param lat1 Latitude of first point in decimal degrees (-90 to 90)
+ * @param lon1 Longitude of first point in decimal degrees (-180 to 180)
+ * @param lat2 Latitude of second point in decimal degrees (-90 to 90)
+ * @param lon2 Longitude of second point in decimal degrees (-180 to 180)
+ * @returns Full-precision great-circle distance in km, or 0 for identical coordinates.
+ * @throws Error if coordinates are non-finite or outside valid geographic ranges.
+ */
+export function calculateHaversineDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  if (!isValidCoordinate(lat1, lon1) || !isValidCoordinate(lat2, lon2)) {
+    throw new Error(
+      'Invalid coordinates provided to calculateHaversineDistanceKm. ' +
+      'Latitudes must be finite numbers between -90 and 90, and longitudes between -180 and 180.'
+    );
+  }
+
+  // Fast path for identical coordinates
+  if (lat1 === lat2 && lon1 === lon2) {
+    return 0;
+  }
+
+  const EARTH_RADIUS_KM = 6371;
+  const toRad = (deg: number): number => (deg * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const radLat1 = toRad(lat1);
+  const radLat2 = toRad(lat2);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(radLat1) * Math.cos(radLat2) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return EARTH_RADIUS_KM * c;
 }
