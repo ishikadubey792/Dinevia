@@ -9,6 +9,7 @@ import { AdminDataService } from '../../../core/services/admin-data.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { OwnerDashboardMetrics } from '../../../core/models/owner-dashboard.model';
 import { OwnerRestaurant } from '../../../core/models/admin.model';
+import { createMockOwnerRestaurant } from '../../../core/testing/mock-restaurant.factory';
 
 describe('AdminDashboardComponent (Phase 5.7 Owner Dashboard)', () => {
   let fixture: ComponentFixture<AdminDashboardComponent>;
@@ -54,7 +55,7 @@ describe('AdminDashboardComponent (Phase 5.7 Owner Dashboard)', () => {
   };
 
   const mockRestaurants: OwnerRestaurant[] = [
-    {
+    createMockOwnerRestaurant({
       id: '1',
       name: 'Spice Symphony',
       address: 'Connaught Place',
@@ -65,8 +66,9 @@ describe('AdminDashboardComponent (Phase 5.7 Owner Dashboard)', () => {
       cuisines: ['North Indian'],
       coverImageUrl: 'https://example.com/cover1.jpg',
       status: 'active',
+      isActive: true,
       createdAt: '2026-01-01'
-    }
+    })
   ];
 
   beforeEach(async () => {

@@ -13,6 +13,7 @@ import { BookingConfirmationComponent } from '../booking-confirmation/booking-co
 import { BookingsComponent } from '../bookings/bookings.component';
 import { PaymentHistoryComponent } from '../payment-history/payment-history.component';
 import { CreateBookingRequest } from '../../core/models/booking.model';
+import { createTestJwt } from '../../core/testing/test-jwt.helper';
 
 describe('Phase 4C End-to-End User Journey Integration Tests', () => {
   let httpTesting: HttpTestingController;
@@ -22,14 +23,6 @@ describe('Phase 4C End-to-End User Journey Integration Tests', () => {
   let router: Router;
 
   const apiUrl = environment.apiUrl;
-
-  function createTestJwt(payload: Record<string, any>): string {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const body = btoa(JSON.stringify(payload))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    return `${header}.${body}.mock-signature`;
-  }
 
   const customerToken = createTestJwt({
     nameid: '88',
@@ -224,8 +217,7 @@ describe('Phase 4C End-to-End User Journey Integration Tests', () => {
     expect(successPaymentResult.paidAt).toBe('2026-11-12T10:06:00Z');
   });
 
-  it('Scenarios 9-11: Confirmation Page & Payment History Display Actual Backend State and Survive Refresh', () => {
-    // 9. Confirmation page loads and verifies booking status from backend
+  it('Scenario 9: Confirmation Page loads and verifies booking status from backend', () => {
     const fixture = TestBed.createComponent(BookingConfirmationComponent);
     const component = fixture.componentInstance;
 
@@ -272,14 +264,16 @@ describe('Phase 4C End-to-End User Journey Integration Tests', () => {
     expect(fixture.nativeElement.textContent).toContain('✓ Guaranteed Seating');
     expect(fixture.nativeElement.textContent).toContain('₹200');
     expect(fixture.nativeElement.textContent).toContain('TXN-777-DEMO');
+  });
 
+  it('Scenarios 10-11: Payment History page displays confirmed payment and survives refresh', () => {
     // 10. Payment History page shows the successful payment
     const histFixture = TestBed.createComponent(PaymentHistoryComponent);
     const histComponent = histFixture.componentInstance;
     histFixture.detectChanges();
 
-    const histReq2 = httpTesting.expectOne(`${apiUrl}/payments/history`);
-    histReq2.flush({
+    const histReq = httpTesting.expectOne(`${apiUrl}/payments/history`);
+    histReq.flush({
       statusCode: 200,
       message: 'OK',
       data: [
@@ -303,7 +297,7 @@ describe('Phase 4C End-to-End User Journey Integration Tests', () => {
     expect(histFixture.nativeElement.textContent).toContain('DV-777');
     expect(histFixture.nativeElement.textContent).toContain('TXN-777-DEMO');
 
-    // 11. Refreshing payment history and confirmation preserves backend state
+    // 11. Refreshing payment history preserves backend state
     sessionStorage.clear();
     histComponent.loadPaymentHistory();
     const refreshHistReq = httpTesting.expectOne(`${apiUrl}/payments/history`);

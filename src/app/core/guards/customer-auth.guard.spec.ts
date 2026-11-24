@@ -4,6 +4,7 @@ import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { customerAuthGuard } from './customer-auth.guard';
 import { AuthService, DEFAULT_MOCK_USER } from '../services/auth.service';
 import { Component } from '@angular/core';
+import { createTestJwt, validCustomerJwt, expiredCustomerJwt } from '../testing/test-jwt.helper';
 
 @Component({ standalone: true, template: '' })
 class DummyComponent {}
@@ -15,36 +16,12 @@ describe('customerAuthGuard', () => {
   const dummyRoute = {} as ActivatedRouteSnapshot;
   const dummyState = { url: '/profile' } as RouterStateSnapshot;
 
-  function createTestJwt(payload: Record<string, any>): string {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const body = btoa(JSON.stringify(payload))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    return `${header}.${body}.mock-signature`;
-  }
-
-  const validCustomerJwt = createTestJwt({
-    nameid: '1001',
-    unique_name: 'Ishika Patron',
-    email: 'ishika@example.com',
-    role: 'Customer',
-    exp: Math.floor(Date.now() / 1000) + 3600
-  });
-
   const ownerJwt = createTestJwt({
     nameid: '888',
     unique_name: 'Chef Julien Laurent',
     email: 'julien@restaurant.fr',
     role: 'RestaurantOwner',
     exp: Math.floor(Date.now() / 1000) + 3600
-  });
-
-  const expiredCustomerJwt = createTestJwt({
-    nameid: '1002',
-    unique_name: 'Expired User',
-    email: 'expired@example.com',
-    role: 'Customer',
-    exp: Math.floor(Date.now() / 1000) - 300
   });
 
   beforeEach(() => {

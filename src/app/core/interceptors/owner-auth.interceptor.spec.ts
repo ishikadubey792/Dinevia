@@ -6,6 +6,12 @@ import { Component } from '@angular/core';
 import { ownerAuthInterceptor, authInterceptor } from './owner-auth.interceptor';
 import { AuthService } from '../services/auth.service';
 import { environment } from '../../../environments/environment';
+import {
+  createTestJwt,
+  validCustomerJwt,
+  validOwnerJwt,
+  expiredCustomerJwt
+} from '../testing/test-jwt.helper';
 
 @Component({ standalone: true, template: '' })
 class DummyLoginComponent {}
@@ -15,38 +21,6 @@ describe('ownerAuthInterceptor & authInterceptor', () => {
   let httpTesting: HttpTestingController;
   let authService: AuthService;
   let router: Router;
-
-  function createTestJwt(payload: Record<string, any>): string {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const body = btoa(JSON.stringify(payload))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    return `${header}.${body}.mock-signature`;
-  }
-
-  const validCustomerJwt = createTestJwt({
-    nameid: '1001',
-    unique_name: 'Ishika Patron',
-    email: 'ishika@example.com',
-    role: 'Customer',
-    exp: Math.floor(Date.now() / 1000) + 3600
-  });
-
-  const validOwnerJwt = createTestJwt({
-    nameid: 'owner-44',
-    unique_name: 'Chef Julien Laurent',
-    email: 'chef.julien@legabriel.fr',
-    role: 'RestaurantOwner',
-    exp: Math.floor(Date.now() / 1000) + 3600
-  });
-
-  const expiredCustomerJwt = createTestJwt({
-    nameid: '1002',
-    unique_name: 'Expired Customer',
-    email: 'expired@example.com',
-    role: 'Customer',
-    exp: Math.floor(Date.now() / 1000) - 300
-  });
 
   beforeEach(() => {
     sessionStorage.clear();

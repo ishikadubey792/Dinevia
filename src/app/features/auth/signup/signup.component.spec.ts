@@ -12,6 +12,11 @@ import {
   CustomerRegisterResponseData,
   CustomerLoginResponseData
 } from '../../../core/models/customer-auth.model';
+import {
+  createTestJwt,
+  validCustomerJwt,
+  expiredCustomerJwt
+} from '../../../core/testing/test-jwt.helper';
 
 describe('SignupComponent Real API Integration & Strict Validation', () => {
   let component: SignupComponent;
@@ -41,36 +46,12 @@ describe('SignupComponent Real API Integration & Strict Validation', () => {
     effectiveDate: '2026-11-21'
   };
 
-  function createTestJwt(payload: Record<string, any>): string {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const body = btoa(JSON.stringify(payload))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    return `${header}.${body}.mock-signature`;
-  }
-
-  const validCustomerJwt = createTestJwt({
-    nameid: '1001',
-    unique_name: 'Ishika Patron',
-    email: 'ishika@example.com',
-    role: 'Customer',
-    exp: Math.floor(Date.now() / 1000) + 3600
-  });
-
   const ownerJwt = createTestJwt({
     nameid: '888',
     unique_name: 'Chef Julien Laurent',
     email: 'julien@restaurant.fr',
     role: 'RestaurantOwner',
     exp: Math.floor(Date.now() / 1000) + 3600
-  });
-
-  const expiredCustomerJwt = createTestJwt({
-    nameid: '1002',
-    unique_name: 'Expired User',
-    email: 'expired@example.com',
-    role: 'Customer',
-    exp: Math.floor(Date.now() / 1000) - 300
   });
 
   const mockRegisterResponse: ApiResponse<CustomerRegisterResponseData> = {

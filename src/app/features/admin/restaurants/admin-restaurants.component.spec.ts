@@ -1,15 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { environment } from '../../../../environments/environment';
 import { AdminRestaurantsComponent } from './admin-restaurants.component';
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { createMockOwnerRestaurant } from '../../../core/testing/mock-restaurant.factory';
 
 describe('AdminRestaurantsComponent', () => {
   let component: AdminRestaurantsComponent;
   let fixture: ComponentFixture<AdminRestaurantsComponent>;
   let adminData: AdminDataService;
+  let httpTesting: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -32,9 +35,10 @@ describe('AdminRestaurantsComponent', () => {
     fixture = TestBed.createComponent(AdminRestaurantsComponent);
     component = fixture.componentInstance;
     adminData = TestBed.inject(AdminDataService);
+    httpTesting = TestBed.inject(HttpTestingController);
 
     adminData.setOwnerRestaurants([
-      {
+      createMockOwnerRestaurant({
         id: 'owner-rest-1',
         name: 'Le Gabriel Paris',
         address: '42 Avenue Gabriel',
@@ -48,9 +52,10 @@ describe('AdminRestaurantsComponent', () => {
         rating: 4.96,
         reviewCount: 312,
         status: 'active',
+        isActive: true,
         createdAt: '2026-01-15'
-      },
-      {
+      }),
+      createMockOwnerRestaurant({
         id: 'owner-rest-2',
         name: 'L\'Arpège Heritage',
         address: '84 Rue de Varenne',
@@ -64,8 +69,9 @@ describe('AdminRestaurantsComponent', () => {
         rating: 4.92,
         reviewCount: 284,
         status: 'active',
+        isActive: true,
         createdAt: '2026-02-10'
-      }
+      })
     ]);
 
     fixture.detectChanges();
@@ -113,6 +119,10 @@ describe('AdminRestaurantsComponent', () => {
 
     component.editName = 'Updated Restaurant Name';
     component.saveEdit();
+
+    const saveReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants/my-restaurants/${first.id}`);
+    expect(saveReq.request.method).toBe('PUT');
+    saveReq.flush({ statusCode: 200, message: 'Updated', data: null });
     fixture.detectChanges();
 
     expect(component.editingRestaurant()).toBeNull();
@@ -128,6 +138,12 @@ describe('AdminRestaurantsComponent', () => {
     expect(component.deletingRestaurant()).toEqual(toDelete);
 
     component.executeDelete();
+
+    const deleteReq = httpTesting.expectOne(`${environment.apiUrl}/restaurants/my-restaurants/${toDelete.id}`);
+    expect(deleteReq.request.method).toBe('DELETE');
+    deleteReq.flush({ statusCode: 200, message: 'Deleted', data: { id: Number(toDelete.id) } });
+    fixture.detectChanges();
+
     expect(component.deletingRestaurant()).toBeNull();
     expect(adminData.ownerRestaurants().length).toBe(initialCount - 1);
   });

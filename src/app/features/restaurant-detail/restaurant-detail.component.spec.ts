@@ -2,9 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { RestaurantDetailComponent } from './restaurant-detail.component';
 import { BookingService } from '../../core/services/booking.service';
+import { RestaurantMediaService } from '../../core/services/restaurant-media.service';
 import { environment } from '../../../environments/environment';
 import { ApiRestaurantDto } from '../../core/models/restaurant.model';
 import { ApiResponse } from '../../core/models/cuisine.model';
@@ -72,6 +73,13 @@ describe('RestaurantDetailComponent Phase 2 Details & Real Availability', () => 
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
+        {
+          provide: RestaurantMediaService,
+          useValue: {
+            getGalleryImages: () => of([]),
+            getMenuImages: () => of([])
+          }
+        },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -253,6 +261,6 @@ describe('RestaurantDetailComponent Phase 2 Details & Real Availability', () => 
     expect(text).not.toContain('Grand Cru Sommelier Pairing');
     expect(text).not.toContain('Sommelier Pairing Selection');
     expect(fixture.nativeElement.querySelector('#hoursSection')).toBeNull();
-    expect(fixture.nativeElement.querySelector('#menuSection')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.menu-curation-empty')).toBeTruthy();
   });
 });

@@ -8,6 +8,7 @@ import { OwnerBookingService } from '../../../core/services/owner-booking.servic
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { OwnerRestaurantBooking } from '../../../core/models/owner-booking.model';
 import { OwnerRestaurant } from '../../../core/models/admin.model';
+import { createMockOwnerRestaurants } from '../../../core/testing/mock-restaurant.factory';
 
 describe('OwnerBookingsComponent', () => {
   let fixture: ComponentFixture<OwnerBookingsComponent>;
@@ -15,34 +16,7 @@ describe('OwnerBookingsComponent', () => {
   let ownerBookingService: any;
   let adminDataService: any;
 
-  const mockRestaurants: OwnerRestaurant[] = [
-    {
-      id: '1',
-      name: 'Spice Symphony',
-      address: '12 Connaught Place',
-      city: 'New Delhi',
-      description: 'Modern Indian fine dining',
-      phone: '+91 11 2345 6789',
-      email: 'spice@example.com',
-      cuisines: ['North Indian', 'Mughlai'],
-      coverImageUrl: 'https://example.com/cover1.jpg',
-      status: 'active',
-      createdAt: '2026-01-01'
-    },
-    {
-      id: '2',
-      name: 'Coastal Rasoi',
-      address: '45 Indiranagar',
-      city: 'Bengaluru',
-      description: 'Coastal Karnataka & Mangalorean culinary experience',
-      phone: '+91 80 9876 5432',
-      email: 'coastal@example.com',
-      cuisines: ['Coastal', 'South Indian'],
-      coverImageUrl: 'https://example.com/cover2.jpg',
-      status: 'active',
-      createdAt: '2026-02-01'
-    }
-  ];
+  const mockRestaurants: OwnerRestaurant[] = createMockOwnerRestaurants();
 
   const mockBookings: OwnerRestaurantBooking[] = [
     {

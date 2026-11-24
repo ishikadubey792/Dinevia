@@ -13,66 +13,7 @@ import { GeolocationService, GEOLOCATION } from '../../core/services/geolocation
 import { environment } from '../../../environments/environment';
 import { ApiCuisine, ApiResponse } from '../../core/models/cuisine.model';
 import { ApiRestaurantDto } from '../../core/models/restaurant.model';
-
-class MockGeolocation implements Geolocation {
-  lastSuccessCb: PositionCallback | null = null;
-  lastErrorCb: PositionErrorCallback | null = null;
-  lastOptions: PositionOptions | null = null;
-
-  readonly getCurrentPositionSpy = vi.fn(
-    (
-      success: PositionCallback,
-      error?: PositionErrorCallback | null,
-      options?: PositionOptions
-    ) => {
-      this.lastSuccessCb = success;
-      this.lastErrorCb = error ?? null;
-      this.lastOptions = options ?? null;
-    }
-  );
-
-  getCurrentPosition(
-    success: PositionCallback,
-    error?: PositionErrorCallback | null,
-    options?: PositionOptions
-  ): void {
-    this.getCurrentPositionSpy(success, error, options);
-  }
-
-  readonly watchPosition = vi.fn();
-  readonly clearWatch = vi.fn();
-
-  triggerSuccess(coords: { latitude: number; longitude: number; accuracy?: number }): void {
-    if (this.lastSuccessCb) {
-      this.lastSuccessCb({
-        coords: {
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          accuracy: coords.accuracy ?? 10,
-          altitude: null,
-          altitudeAccuracy: null,
-          heading: null,
-          speed: null,
-          toJSON: () => ({})
-        },
-        timestamp: Date.now(),
-        toJSON: () => ({})
-      } as GeolocationPosition);
-    }
-  }
-
-  triggerError(code: number, message = 'Geolocation error'): void {
-    if (this.lastErrorCb) {
-      this.lastErrorCb({
-        code,
-        message,
-        PERMISSION_DENIED: 1,
-        POSITION_UNAVAILABLE: 2,
-        TIMEOUT: 3
-      } as GeolocationPositionError);
-    }
-  }
-}
+import { MockGeolocation } from '../../core/testing/mock-geolocation.helper';
 
 describe('ExploreComponent Search and Filters Integration', () => {
   let component: ExploreComponent;
@@ -967,39 +908,27 @@ describe('ExploreComponent Search and Filters Integration', () => {
       expect(voiceComponent).toBeTruthy();
     });
 
-    it('should update searchQuery and filter restaurants when a final English transcript is emitted', () => {
+    it('should update searchQuery and filter restaurants when a voice transcript is emitted across supported languages (English, Hindi, Tamil)', () => {
       const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
       const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
 
-      voiceComp.transcriptChange.emit('Chatelet');
-      fixture.detectChanges();
+      const languageScenarios = [
+        { lang: 'English', transcript: 'Chatelet', expectedCount: 1, expectedFirstName: 'Le Chatelet Bistro' },
+        { lang: 'Hindi', transcript: 'बिरयानी', expectedCount: 0, expectedFirstName: null },
+        { lang: 'Tamil', transcript: 'பிரியாணி', expectedCount: 0, expectedFirstName: null }
+      ];
 
-      expect(component.searchQuery()).toBe('Chatelet');
-      const results = component.filteredRestaurants();
-      expect(results.length).toBe(1);
-      expect(results[0].name).toBe('Le Chatelet Bistro');
-    });
+      for (const { transcript, expectedCount, expectedFirstName } of languageScenarios) {
+        voiceComp.transcriptChange.emit(transcript);
+        fixture.detectChanges();
 
-    it('should update searchQuery and execute filtering when a Hindi transcript is emitted', () => {
-      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
-      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
-
-      voiceComp.transcriptChange.emit('बिरयानी');
-      fixture.detectChanges();
-
-      expect(component.searchQuery()).toBe('बिरयानी');
-      expect(component.filteredRestaurants().length).toBe(0);
-    });
-
-    it('should update searchQuery and execute filtering when a Tamil transcript is emitted', () => {
-      const voiceDe = fixture.debugElement.query(By.directive(VoiceSearchComponent));
-      const voiceComp = voiceDe.componentInstance as VoiceSearchComponent;
-
-      voiceComp.transcriptChange.emit('பிரியாணி');
-      fixture.detectChanges();
-
-      expect(component.searchQuery()).toBe('பிரியாணி');
-      expect(component.filteredRestaurants().length).toBe(0);
+        expect(component.searchQuery()).toBe(transcript);
+        const results = component.filteredRestaurants();
+        expect(results.length).toBe(expectedCount);
+        if (expectedFirstName) {
+          expect(results[0].name).toBe(expectedFirstName);
+        }
+      }
     });
 
     it('should invoke onSearchChange when transcriptChange is emitted from VoiceSearchComponent', () => {

@@ -1,25 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { AuthService, DEFAULT_MOCK_USER } from './auth.service';
-
-function createMockJwt(
-  claims: { role?: string; name?: string; email?: string; exp?: any; id?: string | number } = {},
-  options: { omitExp?: boolean } = {}
-): string {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  const payloadData: Record<string, any> = {
-    role: claims.role ?? 'Customer',
-    name: claims.name ?? 'Ishika H',
-    email: claims.email ?? 'ishika@example.com',
-    nameid: String(claims.id ?? 1001)
-  };
-  if (!options.omitExp) {
-    payloadData['exp'] = claims.exp !== undefined ? claims.exp : Math.floor(Date.now() / 1000) + 3600;
-  }
-  const payload = btoa(JSON.stringify(payloadData))
-    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-  return `${header}.${payload}.mockSignature`;
-}
+import { createMockJwt } from '../testing/test-jwt.helper';
 
 describe('AuthService Strict Customer Role Validation & Session Isolation', () => {
   let service: AuthService;

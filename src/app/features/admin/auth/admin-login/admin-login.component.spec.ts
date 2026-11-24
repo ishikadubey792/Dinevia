@@ -6,6 +6,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { OwnerAuthService } from '../../../../core/services/owner-auth.service';
 import { ApiResponse } from '../../../../core/models/cuisine.model';
 import { OwnerLoginResponseData } from '../../../../core/models/owner-auth.model';
+import { createTestJwt } from '../../../../core/testing/test-jwt.helper';
 
 describe('AdminLoginComponent API Integration & Session Isolation', () => {
   let component: AdminLoginComponent;
@@ -13,13 +14,6 @@ describe('AdminLoginComponent API Integration & Session Isolation', () => {
   let router: Router;
   let authService: AuthService;
   let ownerAuthServiceMock: { login: ReturnType<typeof vi.fn> };
-
-  // Helper to generate test JWT token with specific claims
-  function createTestJwt(payload: Record<string, any>): string {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const body = btoa(JSON.stringify(payload));
-    return `${header}.${body}.mock-signature`;
-  }
 
   const validOwnerJwt = createTestJwt({
     'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier': '88',

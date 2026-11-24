@@ -67,12 +67,15 @@ describe('AdminDataService - Real Owner Restaurant API Integration', () => {
     httpMock.verify();
   });
 
-  it('should be created and start with empty restaurants and zero count', () => {
+  it('should be created and start with clean initial state (empty restaurants, zero count, and empty recent bookings/trends)', () => {
     expect(service).toBeTruthy();
     expect(service.ownerRestaurants().length).toBe(0);
     expect(service.isLoadingRestaurants()).toBe(false);
     expect(service.restaurantLoadError()).toBeNull();
     expect(service.isLoaded()).toBe(false);
+    expect(service.recentBookings()).toEqual([]);
+    expect(service.weeklyBookingTrends).toEqual([]);
+    expect(service.monthlyBookingTrends).toEqual([]);
 
     const cards = service.statCards;
     expect(cards[0].title).toBe('My Restaurants');
@@ -147,6 +150,7 @@ describe('AdminDataService - Real Owner Restaurant API Integration', () => {
       email: 'bistro@paris.fr',
       cuisines: ['French'],
       coverImageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
+      isActive: true,
       status: 'active'
     });
 
@@ -158,12 +162,6 @@ describe('AdminDataService - Real Owner Restaurant API Integration', () => {
 
     service.deleteRestaurant(created.id);
     expect(service.ownerRestaurants().length).toBe(0);
-  });
-
-  it('should return empty array for recent bookings and weekly/monthly trends', () => {
-    expect(service.recentBookings()).toEqual([]);
-    expect(service.weeklyBookingTrends).toEqual([]);
-    expect(service.monthlyBookingTrends).toEqual([]);
   });
 });
 

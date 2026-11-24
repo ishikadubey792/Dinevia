@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { CustomerAuthService } from '../../../core/services/customer-auth.service';
 import { ApiResponse } from '../../../core/models/cuisine.model';
 import { CustomerLoginResponseData } from '../../../core/models/customer-auth.model';
+import { createTestJwt, validCustomerJwt } from '../../../core/testing/test-jwt.helper';
 
 describe('LoginComponent Customer API Integration & Strict Validation', () => {
   let component: LoginComponent;
@@ -14,23 +15,6 @@ describe('LoginComponent Customer API Integration & Strict Validation', () => {
   let activatedRoute: ActivatedRoute;
   let authService: AuthService;
   let customerAuthServiceMock: { login: ReturnType<typeof vi.fn> };
-
-  // Helper to generate test JWT token with specific claims
-  function createTestJwt(payload: Record<string, any>): string {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const body = btoa(JSON.stringify(payload))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    return `${header}.${body}.mock-signature`;
-  }
-
-  const validCustomerJwt = createTestJwt({
-    nameid: '1001',
-    unique_name: 'Ishika Patron',
-    email: 'ishika@example.com',
-    role: 'Customer',
-    exp: Math.floor(Date.now() / 1000) + 3600
-  });
 
   const ownerJwt = createTestJwt({
     nameid: '888',
@@ -316,62 +300,6 @@ describe('LoginComponent Customer API Integration & Strict Validation', () => {
     expect(authService.getCustomerAccessToken()).toBeNull();
   });
 
-  it('should reject login if returned token is expired', () => {
-    const expiredResponse: ApiResponse<CustomerLoginResponseData> = {
-      statusCode: 200,
-      message: 'Login successful.',
-      data: {
-        accessToken: expiredCustomerJwt,
-        tokenType: 'Bearer',
-        expiresIn: 1800
-      }
-    };
-    customerAuthServiceMock.login.mockReturnValue(of(expiredResponse));
-    const navigateSpy = vi.spyOn(router, 'navigateByUrl');
-
-    component.loginForm.patchValue({
-      email: 'expired@example.com',
-      password: 'Password@123'
-    });
-
-    component.onSubmit();
-
-    expect(navigateSpy).not.toHaveBeenCalled();
-    expect(component.errorMessage()).toContain('Security token has expired or is invalid.');
-    expect(component.isLoading()).toBe(false);
-    expect(authService.isCustomerAuthenticated()).toBe(false);
-  });
-
-  it('should reject login if token is missing exp claim', () => {
-    const tokenNoExp = createTestJwt({
-      nameid: '1003',
-      unique_name: 'No Exp User',
-      email: 'noexp@example.com',
-      role: 'Customer'
-    });
-
-    const responseNoExp: ApiResponse<CustomerLoginResponseData> = {
-      statusCode: 200,
-      message: 'Login successful.',
-      data: {
-        accessToken: tokenNoExp,
-        tokenType: 'Bearer',
-        expiresIn: 1800
-      }
-    };
-    customerAuthServiceMock.login.mockReturnValue(of(responseNoExp));
-
-    component.loginForm.patchValue({
-      email: 'noexp@example.com',
-      password: 'Password@123'
-    });
-
-    component.onSubmit();
-
-    expect(component.errorMessage()).toContain('Security token has expired or is invalid.');
-    expect(authService.isCustomerAuthenticated()).toBe(false);
-  });
-
   it('should reject login if response is missing accessToken', () => {
     const emptyTokenResponse: ApiResponse<CustomerLoginResponseData> = {
       statusCode: 200,
@@ -395,168 +323,67 @@ describe('LoginComponent Customer API Integration & Strict Validation', () => {
     expect(authService.isCustomerAuthenticated()).toBe(false);
   });
 
-  it('should reject login if token is missing ID claim', () => {
-    const tokenMissingId = createTestJwt({
-      unique_name: 'Ishika Patron',
-      email: 'ishika@example.com',
-      role: 'Customer',
-      exp: Math.floor(Date.now() / 1000) + 3600
-    });
-
-    const response: ApiResponse<CustomerLoginResponseData> = {
-      statusCode: 200,
-      message: 'Login successful.',
-      data: {
-        accessToken: tokenMissingId,
-        tokenType: 'Bearer',
-        expiresIn: 1800
+  it('should reject login and display security error if token has expired, missing, or invalid claims', () => {
+    const invalidTokenScenarios = [
+      {
+        scenario: 'expired token',
+        token: expiredCustomerJwt,
+        expectedError: 'Security token has expired or is invalid.'
+      },
+      {
+        scenario: 'token missing exp claim',
+        token: createTestJwt({ nameid: '1003', unique_name: 'No Exp User', email: 'noexp@example.com', role: 'Customer' }),
+        expectedError: 'Security token has expired or is invalid.'
+      },
+      {
+        scenario: 'token missing ID claim',
+        token: createTestJwt({ unique_name: 'Ishika Patron', email: 'ishika@example.com', role: 'Customer', exp: Math.floor(Date.now() / 1000) + 3600 }),
+        expectedError: 'Security token is missing a valid user identifier.'
+      },
+      {
+        scenario: 'token has invalid/whitespace ID claim',
+        token: createTestJwt({ nameid: '   ', unique_name: 'Ishika Patron', email: 'ishika@example.com', role: 'Customer', exp: Math.floor(Date.now() / 1000) + 3600 }),
+        expectedError: 'Security token is missing a valid user identifier.'
+      },
+      {
+        scenario: 'token missing Name claim',
+        token: createTestJwt({ nameid: '1001', email: 'ishika@example.com', role: 'Customer', exp: Math.floor(Date.now() / 1000) + 3600 }),
+        expectedError: 'Security token is missing a valid user name.'
+      },
+      {
+        scenario: 'token missing Email claim',
+        token: createTestJwt({ nameid: '1001', unique_name: 'Ishika Patron', role: 'Customer', exp: Math.floor(Date.now() / 1000) + 3600 }),
+        expectedError: 'Security token is missing a valid email address.'
+      },
+      {
+        scenario: 'token has invalid Email claim',
+        token: createTestJwt({ nameid: '1001', unique_name: 'Ishika Patron', email: 'not-an-email', role: 'Customer', exp: Math.floor(Date.now() / 1000) + 3600 }),
+        expectedError: 'Security token is missing a valid email address.'
       }
-    };
-    customerAuthServiceMock.login.mockReturnValue(of(response));
-    const setSessionSpy = vi.spyOn(authService, 'setCustomerSession');
-    const navigateSpy = vi.spyOn(router, 'navigateByUrl');
+    ];
 
-    component.loginForm.patchValue({
-      email: 'ishika@example.com',
-      password: 'Password@123'
-    });
+    for (const { scenario, token, expectedError } of invalidTokenScenarios) {
+      const response: ApiResponse<CustomerLoginResponseData> = {
+        statusCode: 200,
+        message: 'Login successful.',
+        data: { accessToken: token, tokenType: 'Bearer', expiresIn: 1800 }
+      };
+      customerAuthServiceMock.login.mockReturnValue(of(response));
+      const setSessionSpy = vi.spyOn(authService, 'setCustomerSession');
+      const navigateSpy = vi.spyOn(router, 'navigateByUrl');
 
-    component.onSubmit();
+      component.loginForm.patchValue({
+        email: 'user@example.com',
+        password: 'Password@123'
+      });
 
-    expect(component.errorMessage()).toContain('Security token is missing a valid user identifier.');
-    expect(setSessionSpy).not.toHaveBeenCalled();
-    expect(navigateSpy).not.toHaveBeenCalled();
-    expect(authService.isCustomerAuthenticated()).toBe(false);
-  });
+      component.onSubmit();
 
-  it('should reject login if token has invalid ID claim', () => {
-    const tokenInvalidId = createTestJwt({
-      nameid: '   ',
-      unique_name: 'Ishika Patron',
-      email: 'ishika@example.com',
-      role: 'Customer',
-      exp: Math.floor(Date.now() / 1000) + 3600
-    });
-
-    const response: ApiResponse<CustomerLoginResponseData> = {
-      statusCode: 200,
-      message: 'Login successful.',
-      data: {
-        accessToken: tokenInvalidId,
-        tokenType: 'Bearer',
-        expiresIn: 1800
-      }
-    };
-    customerAuthServiceMock.login.mockReturnValue(of(response));
-    const setSessionSpy = vi.spyOn(authService, 'setCustomerSession');
-
-    component.loginForm.patchValue({
-      email: 'ishika@example.com',
-      password: 'Password@123'
-    });
-
-    component.onSubmit();
-
-    expect(component.errorMessage()).toContain('Security token is missing a valid user identifier.');
-    expect(setSessionSpy).not.toHaveBeenCalled();
-    expect(authService.isCustomerAuthenticated()).toBe(false);
-  });
-
-  it('should reject login if token is missing Name claim', () => {
-    const tokenMissingName = createTestJwt({
-      nameid: '1001',
-      email: 'ishika@example.com',
-      role: 'Customer',
-      exp: Math.floor(Date.now() / 1000) + 3600
-    });
-
-    const response: ApiResponse<CustomerLoginResponseData> = {
-      statusCode: 200,
-      message: 'Login successful.',
-      data: {
-        accessToken: tokenMissingName,
-        tokenType: 'Bearer',
-        expiresIn: 1800
-      }
-    };
-    customerAuthServiceMock.login.mockReturnValue(of(response));
-    const setSessionSpy = vi.spyOn(authService, 'setCustomerSession');
-
-    component.loginForm.patchValue({
-      email: 'ishika@example.com',
-      password: 'Password@123'
-    });
-
-    component.onSubmit();
-
-    expect(component.errorMessage()).toContain('Security token is missing a valid user name.');
-    expect(setSessionSpy).not.toHaveBeenCalled();
-    expect(authService.isCustomerAuthenticated()).toBe(false);
-  });
-
-  it('should reject login if token is missing Email claim', () => {
-    const tokenMissingEmail = createTestJwt({
-      nameid: '1001',
-      unique_name: 'Ishika Patron',
-      role: 'Customer',
-      exp: Math.floor(Date.now() / 1000) + 3600
-    });
-
-    const response: ApiResponse<CustomerLoginResponseData> = {
-      statusCode: 200,
-      message: 'Login successful.',
-      data: {
-        accessToken: tokenMissingEmail,
-        tokenType: 'Bearer',
-        expiresIn: 1800
-      }
-    };
-    customerAuthServiceMock.login.mockReturnValue(of(response));
-    const setSessionSpy = vi.spyOn(authService, 'setCustomerSession');
-
-    component.loginForm.patchValue({
-      email: 'ishika@example.com',
-      password: 'Password@123'
-    });
-
-    component.onSubmit();
-
-    expect(component.errorMessage()).toContain('Security token is missing a valid email address.');
-    expect(setSessionSpy).not.toHaveBeenCalled();
-    expect(authService.isCustomerAuthenticated()).toBe(false);
-  });
-
-  it('should reject login if token has invalid Email claim', () => {
-    const tokenInvalidEmail = createTestJwt({
-      nameid: '1001',
-      unique_name: 'Ishika Patron',
-      email: 'not-an-email',
-      role: 'Customer',
-      exp: Math.floor(Date.now() / 1000) + 3600
-    });
-
-    const response: ApiResponse<CustomerLoginResponseData> = {
-      statusCode: 200,
-      message: 'Login successful.',
-      data: {
-        accessToken: tokenInvalidEmail,
-        tokenType: 'Bearer',
-        expiresIn: 1800
-      }
-    };
-    customerAuthServiceMock.login.mockReturnValue(of(response));
-    const setSessionSpy = vi.spyOn(authService, 'setCustomerSession');
-
-    component.loginForm.patchValue({
-      email: 'ishika@example.com',
-      password: 'Password@123'
-    });
-
-    component.onSubmit();
-
-    expect(component.errorMessage()).toContain('Security token is missing a valid email address.');
-    expect(setSessionSpy).not.toHaveBeenCalled();
-    expect(authService.isCustomerAuthenticated()).toBe(false);
+      expect(navigateSpy, `Failed on scenario: ${scenario}`).not.toHaveBeenCalled();
+      expect(setSessionSpy, `Failed on scenario: ${scenario}`).not.toHaveBeenCalled();
+      expect(component.errorMessage(), `Failed on scenario: ${scenario}`).toContain(expectedError);
+      expect(authService.isCustomerAuthenticated(), `Failed on scenario: ${scenario}`).toBe(false);
+    }
   });
 
   it('should preserve existing Owner session during customer login', () => {

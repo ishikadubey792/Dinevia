@@ -7,6 +7,7 @@ import { OperatingHourService } from '../../../core/services/operating-hour.serv
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { OperatingHour } from '../../../core/models/operating-hour.model';
 import { OwnerRestaurant } from '../../../core/models/admin.model';
+import { createMockOwnerRestaurant } from '../../../core/testing/mock-restaurant.factory';
 
 describe('AdminOperatingHoursComponent', () => {
   let component: AdminOperatingHoursComponent;
@@ -15,7 +16,7 @@ describe('AdminOperatingHoursComponent', () => {
   let adminDataSpy: any;
 
   const mockRestaurants: OwnerRestaurant[] = [
-    {
+    createMockOwnerRestaurant({
       id: '10',
       name: 'Le Gabriel Paris',
       address: 'Avenue Gabriel',
@@ -26,9 +27,10 @@ describe('AdminOperatingHoursComponent', () => {
       cuisines: ['French Haute Cuisine'],
       coverImageUrl: 'https://example.com/cover.jpg',
       status: 'active',
+      isActive: true,
       createdAt: '2026-01-01'
-    },
-    {
+    }),
+    createMockOwnerRestaurant({
       id: '20',
       name: 'Mirazur Menton',
       address: 'Route de Menton',
@@ -39,8 +41,9 @@ describe('AdminOperatingHoursComponent', () => {
       cuisines: ['Mediterranean'],
       coverImageUrl: 'https://example.com/cover2.jpg',
       status: 'active',
+      isActive: true,
       createdAt: '2026-01-01'
-    }
+    })
   ];
 
   const mockHours: OperatingHour[] = [

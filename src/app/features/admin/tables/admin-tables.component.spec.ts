@@ -7,6 +7,7 @@ import { RestaurantTableService } from '../../../core/services/restaurant-table.
 import { AdminDataService } from '../../../core/services/admin-data.service';
 import { RestaurantTable } from '../../../core/models/restaurant-table.model';
 import { OwnerRestaurant } from '../../../core/models/admin.model';
+import { createMockOwnerRestaurant } from '../../../core/testing/mock-restaurant.factory';
 
 describe('AdminTablesComponent', () => {
   let component: AdminTablesComponent;
@@ -15,7 +16,7 @@ describe('AdminTablesComponent', () => {
   let adminDataSpy: any;
 
   const mockRestaurants: OwnerRestaurant[] = [
-    {
+    createMockOwnerRestaurant({
       id: '10',
       name: 'Le Gabriel Paris',
       address: 'Avenue Gabriel',
@@ -26,9 +27,10 @@ describe('AdminTablesComponent', () => {
       cuisines: ['French Haute Cuisine'],
       coverImageUrl: 'https://example.com/cover.jpg',
       status: 'active',
+      isActive: true,
       createdAt: '2026-01-01'
-    },
-    {
+    }),
+    createMockOwnerRestaurant({
       id: '20',
       name: 'Mirazur Menton',
       address: 'Route de Menton',
@@ -39,8 +41,9 @@ describe('AdminTablesComponent', () => {
       cuisines: ['Mediterranean'],
       coverImageUrl: 'https://example.com/cover2.jpg',
       status: 'active',
+      isActive: true,
       createdAt: '2026-01-01'
-    }
+    })
   ];
 
   const mockTables: RestaurantTable[] = [

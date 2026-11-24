@@ -285,23 +285,16 @@ describe('NavbarComponent Responsive & Auth-Aware Navigation', () => {
       expect(document.body.style.overflow).toBe('');
     });
 
-    it('1440px Desktop: should auto-close mobile drawer on resize', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1440 });
-      component.isMobileMenuOpen.set(true);
-      window.dispatchEvent(new Event('resize'));
-      fixture.detectChanges();
+    it('Desktop viewports (1024px and 1440px): should auto-close mobile drawer on resize and unlock scroll', () => {
+      for (const width of [1024, 1440]) {
+        Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: width });
+        component.isMobileMenuOpen.set(true);
+        window.dispatchEvent(new Event('resize'));
+        fixture.detectChanges();
 
-      expect(component.isMobileMenuOpen()).toBe(false);
-      expect(document.body.style.overflow).toBe('');
-    });
-
-    it('1024px Laptop: should auto-close mobile drawer on resize', () => {
-      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 });
-      component.isMobileMenuOpen.set(true);
-      window.dispatchEvent(new Event('resize'));
-      fixture.detectChanges();
-
-      expect(component.isMobileMenuOpen()).toBe(false);
+        expect(component.isMobileMenuOpen()).toBe(false);
+        expect(document.body.style.overflow).toBe('');
+      }
     });
 
     it('768px Tablet, 390px Mobile, and 360px Mobile: allow drawer toggle with scroll lock', () => {
